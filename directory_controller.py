@@ -70,6 +70,15 @@ class DirectoryController:
                 mod_install_path,
                 target_is_directory=True)
 
+    def install_mods(self, mods: List[ModInfo]) -> None:
+        """Install of the specified mods from download to the II mods/ path."""
+        for mod in mods:
+            try:
+                self.install_mod(mod)
+            except (OSError, ValueError) as e:
+                print('Error reading {0}: {1}'.format(info_filename, e),
+                        sys.stderr)
+
 
     def uninstall_mod(self, mod: ModInfo) -> None:
         """Uninstalls the specified mod from the II mods/ path."""
