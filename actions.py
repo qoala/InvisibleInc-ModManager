@@ -63,7 +63,7 @@ class InstallFromSpecAction:
                 self._config.install_path))
         requested_mods = modspec_converter.read_modspec(
                 reader, downloaded_mods)
-        self._moddir.uninstall_mods(current_mods.difference(requested_mods))
+        # self._moddir.uninstall_mods(current_mods.difference(requested_mods))
         self._moddir.install_mods(requested_mods)
 
 
