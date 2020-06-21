@@ -1,5 +1,6 @@
 """Behavior of operations by the mod manager."""
 
+import io
 import sys
 
 from config import Config
@@ -34,9 +35,30 @@ class InstallAllAction:
         self._moddir.install_mods(mods)
 
 
+class InstallFromSpecAction:
+    """Install all downloaded mods."""
+    _config: Config
+    _moddir: DirectoryController
+
+    def __init__(self, config: Config):
+        self._config = config
+        self._moddir = DirectoryController(config)
+
+    def run(self, reader: io.TextIOBase) -> None:
+        downloaded_mods = modinfo_parser.all_from_dir(
+                self._config.download_path)
+        current_mods = set(modinfo_parser.all_from_dir(
+                self._config.install_path))
+        requested_mods = modspec_converter.read_modspec(
+                reader, downloaded_mods)
+        self._moddir.uninstall_mods(current_mods.difference(requested_mods))
+        self._moddir.install_mods(requested_mods)
+
+
 if __name__ == '__main__':
     import sys
 
     config = Config(install_path=sys.argv[1], download_path=sys.argv[2])
     # ListDownloadedAction(config).run()
-    InstallAllAction(config).run()
+    # InstallAllAction(config).run()
+    # InstallFromSpecAction(config).run(sys.stdin)
