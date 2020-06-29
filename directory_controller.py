@@ -18,7 +18,7 @@ class DirectoryController:
         self._config = config
 
 
-    def _validate_existing(self, mod_install_path: str) -> Optional[str]:
+    def _validate_existing_link(self, mod_install_path: str) -> Optional[str]:
         """Raises an error if the intended install path shouldn't be modified.
 
         Prevents this program from destroying or modifying files in the II mods/
@@ -57,7 +57,7 @@ class DirectoryController:
         mod_install_path = os.path.join(self._config.install_path, mod.mod_id)
         abs_mod_download_path = os.path.abspath(mod_download_path)
 
-        existing_target = self._validate_existing(mod_install_path)
+        existing_target = self._validate_existing_link(mod_install_path)
 
         if existing_target == abs_mod_download_path:
             # Already installed.
@@ -87,7 +87,7 @@ class DirectoryController:
         """Uninstalls the specified mod from the II mods/ path."""
         mod_install_path = os.path.join(self._config.install_path, mod.mod_id)
 
-        existing_target = self._validate_existing(mod_install_path)
+        existing_target = self._validate_existing_link(mod_install_path)
 
         if existing_target:
             os.remove(mod_install_path)
@@ -107,9 +107,10 @@ class DirectoryController:
         mod_download_path = os.path.join(self._config.download_path, mod.mod_id)
         mod_install_path = os.path.join(self._config.install_path, mod.mod_id)
 
-        if os.path.isdir(mod_install_path):
-            # Already installed.
-            return
+        if os.path.isdir(mod_install_path) and not os.path.islink(mod_install_path):
+            shutil.rmtree(mod_install_path)
+        elif os.path.lexists(mod_install_path):
+            raise ValueError('Existing mod is not currently a directory: {0}'.format(mod_install_path))
 
         # Install via copy
         shutil.copytree(mod_download_path, mod_install_path)
@@ -121,5 +122,24 @@ class DirectoryController:
                 self.install_mod(mod)
             except (OSError, ValueError, shutil.Error) as e:
                 print('Error installing {0}({1}): {2}'.format(
+                    mod.name, mod.mod_id, e),
+                        sys.stderr)
+
+    def uninstall_mod(self, mod: ModInfo) -> None:
+        """Uninstalls the specified mod from the II mods/ path."""
+        mod_install_path = os.path.join(self._config.install_path, mod.mod_id)
+
+        if os.path.isdir(mod_install_path) and not os.path.islink(mod_install_path):
+            shutil.rmtree(mod_install_path)
+        elif os.path.lexists(mod_install_path):
+            raise ValueError('Existing mod is not currently a directory: {0}'.format(mod_install_path))
+
+    def uninstall_mods(self, mods: List[ModInfo]) -> None:
+        """Uninstalls the specified mods from the II mods/ path."""
+        for mod in mods:
+            try:
+                self.uninstall_mod(mod)
+            except (OSError, ValueError, shutil.Error) as e:
+                print('Error uninstalling {0}({1}): {2}'.format(
                     mod.name, mod.mod_id, e),
                         sys.stderr)
