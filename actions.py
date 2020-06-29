@@ -68,9 +68,9 @@ class InstallFromSpecAction:
 
 
 if __name__ == '__main__':
-    import sys
+    import config_parser
 
-    config = Config(install_path=sys.argv[1], download_path=sys.argv[2])
+    config = config_parser.read_config('iimodman.conf')
     # ListDownloadedAction(config).run()
     # ListInstalledAction(config).run()
     # InstallAllAction(config).run()
