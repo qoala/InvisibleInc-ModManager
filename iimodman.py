@@ -18,7 +18,16 @@ def list_installed_fn(config:Config, args: argparse.Namespace) -> None:
 
 
 def install_fn(config:Config, args: argparse.Namespace) -> None:
-    actions.InstallFromSpecAction(config).run(sys.stdin)
+    blobs = []
+    read_stdin = False
+    for spec in args.specs:
+        if isinstance(spec, str):
+            with open(os.path.expanduser(spec)) as f:
+                blobs.append(f.readlines())
+        elif spec == sys.stdin and not read_stdin:
+            blobs.append(sys.stdin.readlines())
+            read_stdin = True
+    actions.InstallFromSpecAction(config).run(blobs)
 
 
 def install_all_fn(config:Config, args: argparse.Namespace) -> None:
@@ -31,7 +40,10 @@ def createParser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(required=True, dest='command')
     subparsers.add_parser('list-downloaded', aliases=['list', 'l']).set_defaults(func=list_downloaded_fn)
     subparsers.add_parser('list-installed', aliases=['li']).set_defaults(func=list_installed_fn)
-    subparsers.add_parser('install').set_defaults(func=install_fn)
+    install_parser = subparsers.add_parser('install')
+    install_parser.set_defaults(func=install_fn)
+    install_parser.add_argument('-s', '--spec', dest='specs', action='append')
+    install_parser.add_argument('--stdin', dest='specs', action='append_const', const=sys.stdin)
     subparsers.add_parser('install-all').set_defaults(func=install_all_fn)
     return parser
 

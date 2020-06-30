@@ -35,10 +35,11 @@ class DirectoryController:
         for mod in mods:
             try:
                 self.install_mod(mod)
+                print('INSTALLED {0}({1})'.format(mod.name, mod.mod_id), file=sys.stderr)
             except (OSError, ValueError, shutil.Error) as e:
                 print('Error installing {0}({1}): {2}'.format(
                     mod.name, mod.mod_id, e),
-                        sys.stderr)
+                        file=sys.stderr)
 
     def uninstall_mod(self, mod: ModInfo) -> None:
         """Uninstalls the specified mod from the II mods/ path."""
@@ -54,7 +55,8 @@ class DirectoryController:
         for mod in mods:
             try:
                 self.uninstall_mod(mod)
+                print('UNINSTALLED {0}({1})'.format(mod.name, mod.mod_id), file=sys.stderr)
             except (OSError, ValueError, shutil.Error) as e:
                 print('Error uninstalling {0}({1}): {2}'.format(
                     mod.name, mod.mod_id, e),
-                        sys.stderr)
+                        file=sys.stderr)

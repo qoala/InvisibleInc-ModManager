@@ -1,5 +1,6 @@
 """Behavior of operations by the mod manager."""
 
+from typing import List
 import io
 import sys
 
@@ -56,12 +57,12 @@ class InstallFromSpecAction:
         self._config = config
         self._moddir = DirectoryController(config)
 
-    def run(self, reader: io.TextIOBase) -> None:
+    def run(self, blobs: List[List[str]]) -> None:
         downloaded_mods = modinfo_parser.all_from_dir(
                 self._config.download_path)
         current_mods = set(modinfo_parser.all_from_dir(
                 self._config.install_path))
-        requested_mods = modspec_converter.read_modspec(
-                reader, downloaded_mods)
+        requested_mods = modspec_converter.read_modspecs(
+                blobs, downloaded_mods)
         self._moddir.uninstall_mods(current_mods.difference(requested_mods))
         self._moddir.install_mods(requested_mods)

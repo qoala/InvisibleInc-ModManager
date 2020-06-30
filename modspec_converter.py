@@ -31,25 +31,40 @@ def to_modspec(mods: List[ModInfo]) -> str:
     return writer.getvalue()
 
 
-def read_modspec(reader: io.TextIOBase, available_mods: List[ModInfo]) -> None:
-    """Read a modspec from the specified IO stream."""
+def read_modspecs(blobs: List[List[str]], available_mods: List[ModInfo]) -> List[ModInfo]:
+    """Read a modspec from the specified sets of lines."""
     mod_index = {m.mod_id: m for m in available_mods}
     
     mods = set()
-    for line_number, line in enumerate(reader, 1):
-        if not line:
-            next
-        mod_id, _, name = line.rstrip('\n').split(':', 2)
+    for blob_number, blob in enumerate(blobs, start=1):
+        for line_number, line in enumerate(blob, start=1):
+            if len(blobs) > 1:
+                src = 'input #{0}, line {1}'.format(blob_number, line_number)
+            else:
+                src = 'line {0}'.format(line_number)
 
-        if mod_id in mod_index:
-            mods.add(mod_index[mod_id])
-        else:
-            print('WARNING: No match for {0}:{1} (line {2}) in available '
-                    'mods.'.format(mod_id, name, line_number), file=sys.stderr)
+            try:
+                if not line.rstrip('\n'):
+                    continue
+                mod_id, _, name = line.rstrip('\n').split(':', 2)
+            except:
+                print('ERROR on {0}: {1}'.format(src, line), file=sys.stderr)
+                raise
+
+            if mod_id in mod_index:
+                mods.add(mod_index[mod_id])
+            else:
+                print('WARNING: No match for {0}:{1} ({2}) in available '
+                        'mods.'.format(mod_id, name, src), file=sys.stderr)
     return sorted(mods, key=lambda m: m.mod_id)
 
 
-def from_modspec(modspec: str, available_mods: List[ModInfo]) -> None:
+def read_modspec(blob: List[str], available_mods: List[ModInfo]) -> List[ModInfo]:
+    """Read a modspec from the specified set of lines."""
+    return read_modspecs([reader], available_mods)
+
+
+def from_modspec(modspec: str, available_mods: List[ModInfo]) -> List[ModInfo]:
     """Convert the given mods to a modspec string."""
     reader = io.StringIO(modspec)
-    return read_modspec(reader, available_mods)
+    return read_modspec(reader.readlines(), available_mods)
