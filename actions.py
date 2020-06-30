@@ -65,13 +65,3 @@ class InstallFromSpecAction:
                 reader, downloaded_mods)
         self._moddir.uninstall_mods(current_mods.difference(requested_mods))
         self._moddir.install_mods(requested_mods)
-
-
-if __name__ == '__main__':
-    import config_parser
-
-    config = config_parser.read_config('iimodman.conf')
-    # ListDownloadedAction(config).run()
-    # ListInstalledAction(config).run()
-    # InstallAllAction(config).run()
-    # InstallFromSpecAction(config).run(sys.stdin)
