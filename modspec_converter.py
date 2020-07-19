@@ -44,6 +44,8 @@ def read_modspecs(blobs: List[List[str]], available_mods: List[ModInfo]) -> List
                 src = 'line {0}'.format(line_number)
 
             try:
+                if line.startswith('#'):
+                    continue
                 if not line.rstrip('\n'):
                     continue
                 mod_id, _, name = line.rstrip('\n').split(':', 2)
