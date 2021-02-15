@@ -1,4 +1,5 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    iimodman-cli
+    iimodman-cli \
+    iimodman-lib
