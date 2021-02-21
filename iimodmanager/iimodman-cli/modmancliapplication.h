@@ -9,7 +9,10 @@ namespace iimodmanager {
 class ModManCliApplication
 {
 public:
-    ModManCliApplication(int argc, char *argv[]);
+    ModManCliApplication(int &argc, char **argv[]);
+
+    inline ModManConfig &config() { return config_; }
+    inline const QString applicationName() const { return app_.applicationName(); }
 
     static int main(int argc, char *argv[]);
 
@@ -17,6 +20,7 @@ private:
     QCoreApplication app_;
     ModManConfig config_;
 
+    void handleArgs();
     void printConfigValues();
 };
 

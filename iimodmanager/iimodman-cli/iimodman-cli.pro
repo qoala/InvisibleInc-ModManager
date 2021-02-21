@@ -16,7 +16,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    modmancliapplication.cpp
+    modmancliapplication.cpp \
+    configcommands.cpp \
+    commandparser.cpp \
+    commandcategory.cpp \
+    command.cpp \
+    configlistcommand.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -31,4 +36,9 @@ INCLUDEPATH += $$PWD/../iimodman-lib
 DEPENDPATH += $$PWD/../iimodman-lib
 
 HEADERS += \
-    modmancliapplication.h
+    modmancliapplication.h \
+    configcommands.h \
+    commandparser.h \
+    commandcategory.h \
+    command.h \
+    configlistcommand.h
