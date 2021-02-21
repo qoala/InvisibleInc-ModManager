@@ -22,11 +22,4 @@ int ModManCliApplication::main(int argc, char *argv[])
     return 0;
 }
 
-void ModManCliApplication::printConfigValues()
-{
-    QTextStream cout(stdout);
-    cout << "DownloadPath=" << config_.downloadPath() << endl;
-    cout << "InstallPath=" << config_.installPath() << endl;
-}
-
 }  // namespace iimodmanager

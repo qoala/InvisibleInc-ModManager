@@ -19,8 +19,8 @@ void ConfigListCommand::execute(const QCommandLineParser &parser, const QStringL
     Q_UNUSED(args);
 
     QTextStream cout(stdout);
-    cout << "DownloadPath=" << app_.config().downloadPath() << endl;
-    cout << "InstallPath=" << app_.config().installPath() << endl;
+    cout << "core.cachePath=" << app_.config().cachePath() << endl;
+    cout << "core.installPath=" << app_.config().installPath() << endl;
 }
 
 }  // namespace iimodmanager

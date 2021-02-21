@@ -7,37 +7,37 @@ namespace iimodmanager {
 const QString ModManConfig::applicationName = QStringLiteral("InvisibleInc Mod Manager");
 const QString ModManConfig::organizationName = QStringLiteral("QoalatyEngineering");
 
-const QString kDownloadPath = QStringLiteral("downloadPath");
-const QString kInstallPath = QStringLiteral("installPath");
+const QString cachePathKey = QStringLiteral("core/downloadPath");
+const QString installPathKey = QStringLiteral("core/installPath");
 
 ModManConfig::ModManConfig()
     : settings_(organizationName, applicationName)
 {}
 
-const QString ModManConfig::downloadPath() const
+const QString ModManConfig::cachePath() const
 {
-    return this->settings_.value(kDownloadPath, this->defaultDownloadPath()).toString();
+    return this->settings_.value(cachePathKey, this->defaultCachePath()).toString();
 }
 
-void ModManConfig::setDownloadPath(const QString& value)
+void ModManConfig::setCachePath(const QString& value)
 {
-    this->settings_.setValue(kDownloadPath, value);
+    this->settings_.setValue(cachePathKey, value);
 }
 
 const QString ModManConfig::installPath() const
 {
-    return this->settings_.value(kInstallPath, this->defaultInstallPath()).toString();
+    return this->settings_.value(installPathKey, this->defaultInstallPath()).toString();
 }
 
 void ModManConfig::setInstallPath(const QString& value)
 {
-    this->settings_.setValue(kInstallPath, value);
+    this->settings_.setValue(installPathKey, value);
 }
 
-const QString ModManConfig::defaultDownloadPath()
+const QString ModManConfig::defaultCachePath()
 {
     // Linux default.
-    return QStringLiteral("~/.local/share/Steam/steamapps/common/InvisibleInc/mods-dl");
+    return QStringLiteral("~/.local/share/Steam/steamapps/common/InvisibleInc/mods-cache");
 }
 
 const QString ModManConfig::defaultInstallPath()

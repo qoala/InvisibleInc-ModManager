@@ -14,14 +14,14 @@ public:
 
     ModManConfig();
 
-    const QString downloadPath() const;
-    void setDownloadPath(const QString&);
+    const QString cachePath() const;
+    void setCachePath(const QString&);
     const QString installPath() const;
     void setInstallPath(const QString&);
 private:
     QSettings settings_;
 
-    static const QString defaultDownloadPath();
+    static const QString defaultCachePath();
     static const QString defaultInstallPath();
 };
 

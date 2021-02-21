@@ -19,9 +19,6 @@ public:
 private:
     QCoreApplication app_;
     ModManConfig config_;
-
-    void handleArgs();
-    void printConfigValues();
 };
 
 }  // namespace iimodmanager
