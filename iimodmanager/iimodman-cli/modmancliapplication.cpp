@@ -1,0 +1,30 @@
+#include "modmancliapplication.h"
+
+#include <QTextStream>
+
+namespace iimodmanager {
+
+ModManCliApplication::ModManCliApplication(int argc, char *argv[])
+    : app_(argc, argv), config_()
+{
+    app_.setApplicationName(ModManConfig::organizationName);
+    app_.setOrganizationName(ModManConfig::applicationName);
+}
+
+int ModManCliApplication::main(int argc, char *argv[])
+{
+    ModManCliApplication app(argc, argv);
+
+    // TODO: Examine arguments and do things based on that.
+    app.printConfigValues();
+    return 0;
+}
+
+void ModManCliApplication::printConfigValues()
+{
+    QTextStream cout(stdout);
+    cout << "DownloadPath=" << config_.downloadPath() << endl;
+    cout << "InstallPath=" << config_.installPath() << endl;
+}
+
+}  // namespace iimodmanager

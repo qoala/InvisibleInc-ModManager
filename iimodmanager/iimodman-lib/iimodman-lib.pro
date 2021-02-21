@@ -6,6 +6,8 @@
 
 QT       -= gui
 
+CONFIG += c++1z
+
 TARGET = iimodman-lib
 TEMPLATE = lib
 
@@ -23,11 +25,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        moddownloader.cpp
+    moddownloader.cpp \
+    modmanconfig.cpp
 
 HEADERS += \
-        moddownloader.h \
-        iimodman-lib_global.h 
+    moddownloader.h \
+    iimodman-lib_global.h \
+    modmanconfig.h
 
 unix {
     target.path = /usr/lib
