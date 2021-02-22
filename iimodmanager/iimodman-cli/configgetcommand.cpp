@@ -10,7 +10,7 @@ ConfigGetCommand::ConfigGetCommand(ModManCliApplication &app)
 
 void ConfigGetCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
-    parser.addPositionalArgument("", "", "get");
+    parser.addPositionalArgument("get", "Command: Retrieve a single config value");
     parser.addPositionalArgument("key", "Config key to retrieve", "[key]");
 }
 

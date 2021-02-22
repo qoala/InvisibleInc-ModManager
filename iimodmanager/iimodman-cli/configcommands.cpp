@@ -10,7 +10,7 @@ ConfigCommands::ConfigCommands(ModManCliApplication &app)
 {}
 
 void ConfigCommands::addArgs(QCommandLineParser &parser) const {
-    parser.addPositionalArgument("", "", "config");
+    parser.addPositionalArgument("config", "Category: Configs for II Mod Manager");
 }
 
 void ConfigCommands::addTerminalArgs(QCommandLineParser &parser) const {

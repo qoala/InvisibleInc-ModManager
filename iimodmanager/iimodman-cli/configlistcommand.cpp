@@ -10,7 +10,7 @@ ConfigListCommand::ConfigListCommand(ModManCliApplication &app)
 
 void ConfigListCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
-    parser.addPositionalArgument("", "", "list");
+    parser.addPositionalArgument("list", "Command: List all config values");
 }
 
 void ConfigListCommand::execute(QCommandLineParser &parser, const QStringList &args) const

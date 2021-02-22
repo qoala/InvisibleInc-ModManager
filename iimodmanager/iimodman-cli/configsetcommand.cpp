@@ -10,7 +10,7 @@ ConfigSetCommand::ConfigSetCommand(ModManCliApplication &app)
 
 void ConfigSetCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
-    parser.addPositionalArgument("", "", "set");
+    parser.addPositionalArgument("set", "Command: Set a single config value");
     parser.addPositionalArgument("key", "Config key to set", "[key]");
     parser.addPositionalArgument("value", "Config value to set", "[value]");
 }
