@@ -13,7 +13,7 @@ void ConfigListCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("", "", "list");
 }
 
-void ConfigListCommand::execute(const QCommandLineParser &parser, const QStringList &args) const
+void ConfigListCommand::execute(QCommandLineParser &parser, const QStringList &args) const
 {
     Q_UNUSED(parser);
     Q_UNUSED(args);

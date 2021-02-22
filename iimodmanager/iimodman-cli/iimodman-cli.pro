@@ -21,7 +21,9 @@ SOURCES += \
     commandparser.cpp \
     commandcategory.cpp \
     command.cpp \
-    configlistcommand.cpp
+    configlistcommand.cpp \
+    configsetcommand.cpp \
+    configgetcommand.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -41,4 +43,6 @@ HEADERS += \
     commandparser.h \
     commandcategory.h \
     command.h \
-    configlistcommand.h
+    configlistcommand.h \
+    configsetcommand.h \
+    configgetcommand.h

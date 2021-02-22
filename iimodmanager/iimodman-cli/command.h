@@ -20,7 +20,7 @@ protected:
     Command(ModManCliApplication &app);
 
     virtual void addTerminalArgs(QCommandLineParser &parser) const = 0;
-    virtual void execute(const QCommandLineParser &parser, const QStringList &args) const = 0;
+    virtual void execute(QCommandLineParser &parser, const QStringList &args) const = 0;
 };
 
 }  // namespace iimodmanager

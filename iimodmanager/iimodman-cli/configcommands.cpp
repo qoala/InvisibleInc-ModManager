@@ -1,5 +1,7 @@
 #include "configcommands.h"
+#include "configgetcommand.h"
 #include "configlistcommand.h"
+#include "configsetcommand.h"
 
 namespace iimodmanager {
 
@@ -12,14 +14,27 @@ void ConfigCommands::addArgs(QCommandLineParser &parser) const {
 }
 
 void ConfigCommands::addTerminalArgs(QCommandLineParser &parser) const {
-    parser.addPositionalArgument("command", "Command to be executed (list)", "list|help");
+    parser.addPositionalArgument("command", "Command to be executed (list|get|set)", "list|get|set|help");
 }
 
 bool ConfigCommands::parseCommands(QCommandLineParser &parser, const QStringList &args, bool isHelpSet, const QString command) const
 {
-    if (command == "list") {
+    if (command == "list")
+    {
         ConfigListCommand listCommand(app_);
         listCommand.parse(parser, args, isHelpSet);
+        return true;
+    }
+    else if (command == "get")
+    {
+        ConfigGetCommand getCommand(app_);
+        getCommand.parse(parser, args, isHelpSet);
+        return true;
+    }
+    else if (command == "set")
+    {
+        ConfigSetCommand setCommand(app_);
+        setCommand.parse(parser, args, isHelpSet);
         return true;
     }
     return false;

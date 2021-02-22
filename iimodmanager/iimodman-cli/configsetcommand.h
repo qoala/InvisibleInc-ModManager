@@ -1,14 +1,15 @@
-#ifndef CONFIGLISTCOMMAND_H
-#define CONFIGLISTCOMMAND_H
+#ifndef CONFIGSETCOMMAND_H
+#define CONFIGSETCOMMAND_H
 
 #include "command.h"
 
+
 namespace iimodmanager {
 
-class ConfigListCommand : public Command
+class ConfigSetCommand : public Command
 {
 public:
-    ConfigListCommand(ModManCliApplication &app);
+    ConfigSetCommand(ModManCliApplication &app);
 
     // Command interface
 protected:
@@ -18,4 +19,4 @@ protected:
 
 }  // namespace iimodmanager
 
-#endif // CONFIGLISTCOMMAND_H
+#endif // CONFIGSETCOMMAND_H
