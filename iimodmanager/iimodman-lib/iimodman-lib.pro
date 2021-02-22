@@ -26,12 +26,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     moddownloader.cpp \
-    modmanconfig.cpp
+    modmanconfig.cpp \
+    mod.cpp \
+    modlist.cpp
 
 HEADERS += \
     moddownloader.h \
     iimodman-lib_global.h \
-    modmanconfig.h
+    modmanconfig.h \
+    mod.h \
+    modlist.h
 
 unix {
     target.path = /usr/lib

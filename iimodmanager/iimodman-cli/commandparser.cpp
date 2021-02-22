@@ -1,6 +1,7 @@
 #include "commandparser.h"
 #include "configcommands.h"
 #include "commandcategory.h"
+#include "cachecommands.h"
 
 #include <QTextStream>
 
@@ -9,7 +10,7 @@ namespace iimodmanager {
 CommandParser::CommandParser(ModManCliApplication &app) : app_(app) {}
 
 void CommandParser::addTerminalArgs() {
-    parser_.addPositionalArgument("category", "Category of the command to be executed (config)", "(config)");
+    parser_.addPositionalArgument("category", "Category of the command to be executed (cache|config)", "(cache|config)");
     parser_.addPositionalArgument("command", "Command to be executed", "[command]|help");
 }
 
@@ -45,6 +46,11 @@ void CommandParser::parse(const QStringList &arguments)
     {
         addTerminalArgs();
         parser_.showHelp(EXIT_SUCCESS);
+    }
+    else if (category == "cache")
+    {
+        CacheCommands cacheCommands(app_);
+        cacheCommands.parse(parser_, args, parser_.isSet(help));
     }
     else if (category == "config")
     {

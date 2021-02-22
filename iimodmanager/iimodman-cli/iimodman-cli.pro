@@ -23,7 +23,9 @@ SOURCES += \
     command.cpp \
     configlistcommand.cpp \
     configsetcommand.cpp \
-    configgetcommand.cpp
+    configgetcommand.cpp \
+    cachecommands.cpp \
+    cachelistcommand.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -45,4 +47,6 @@ HEADERS += \
     command.h \
     configlistcommand.h \
     configsetcommand.h \
-    configgetcommand.h
+    configgetcommand.h \
+    cachecommands.h \
+    cachelistcommand.h
