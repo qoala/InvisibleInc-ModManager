@@ -1,12 +1,13 @@
 #ifndef MODMANCONFIG_H
 #define MODMANCONFIG_H
 
+#include "iimodman-lib_global.h"
 #include <QSettings>
 #include <QString>
 
 namespace iimodmanager {
 
-class ModManConfig
+class IIMODMANLIBSHARED_EXPORT ModManConfig
 {
 public:
     static const QString applicationName;

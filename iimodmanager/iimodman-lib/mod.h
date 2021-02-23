@@ -2,17 +2,18 @@
 #define MOD_H
 
 #include <QString>
+#include "iimodman-lib_global.h"
 #include "modmanconfig.h"
 
 
 namespace iimodmanager {
 
-enum ModLocation {
+enum IIMODMANLIBSHARED_EXPORT ModLocation {
     CACHED,
     INSTALLED
 };
 
-class Mod
+class IIMODMANLIBSHARED_EXPORT Mod
 {
 public:
     Mod(const QString &id, ModLocation location = CACHED, const QString &name = QString());

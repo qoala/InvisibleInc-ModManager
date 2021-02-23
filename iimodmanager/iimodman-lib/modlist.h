@@ -1,12 +1,13 @@
 #ifndef MODLIST_H
 #define MODLIST_H
 
-# include "mod.h"
-# include "modmanconfig.h"
+#include "iimodman-lib_global.h"
+#include "mod.h"
+#include "modmanconfig.h"
 
 namespace iimodmanager {
 
-class ModList
+class IIMODMANLIBSHARED_EXPORT ModList
 {
 public:
     ModList(const std::list<Mod> &mods, ModLocation location = CACHED);
