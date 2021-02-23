@@ -9,6 +9,7 @@ const QString ModManConfig::organizationName = QStringLiteral("QoalatyEngineerin
 
 const QString cachePathKey = QStringLiteral("core/downloadPath");
 const QString installPathKey = QStringLiteral("core/installPath");
+const QString steamApiKeyKey = QStringLiteral("steam/apiKey");
 
 ModManConfig::ModManConfig()
     : settings_(organizationName, applicationName)
@@ -32,6 +33,17 @@ const QString ModManConfig::installPath() const
 void ModManConfig::setInstallPath(const QString& value)
 {
     this->settings_.setValue(installPathKey, value);
+}
+
+const QString ModManConfig::steamApiKey() const
+{
+
+    return this->settings_.value(steamApiKeyKey).toString();
+}
+
+void ModManConfig::setSteamApiKey(const QString &value)
+{
+    this->settings_.setValue(steamApiKeyKey, value);
 }
 
 const QString ModManConfig::defaultCachePath()
