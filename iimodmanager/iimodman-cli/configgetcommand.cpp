@@ -19,7 +19,7 @@ void ConfigGetCommand::execute(QCommandLineParser &parser, const QStringList &ar
     if (args.size() < 3)
     {
         QTextStream cerr(stderr);
-        cerr << app_.applicationName() << ": Missing config key" << endl;
+        cerr << app_.applicationName() << ": Missing config key" << Qt::endl;
         parser.showHelp(EXIT_FAILURE);
     }
 
@@ -27,20 +27,20 @@ void ConfigGetCommand::execute(QCommandLineParser &parser, const QStringList &ar
     QTextStream cout(stdout);
     if (key == "core.cachePath")
     {
-        cout << app_.config().cachePath() << endl;
+        cout << app_.config().cachePath() << Qt::endl;
     }
     else if (key == "core.installPath")
     {
-        cout << app_.config().installPath() << endl;
+        cout << app_.config().installPath() << Qt::endl;
     }
     else if (key == "steam.apiKey")
     {
-        cout << app_.config().steamApiKey() << endl;
+        cout << app_.config().steamApiKey() << Qt::endl;
     }
     else
     {
         QTextStream cerr(stderr);
-        cerr << app_.applicationName() << ": Unknown config key: " << key << endl;
+        cerr << app_.applicationName() << ": Unknown config key: " << key << Qt::endl;
         parser.showHelp(EXIT_FAILURE);
     }
 }

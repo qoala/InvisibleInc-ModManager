@@ -21,7 +21,7 @@ void CommandCategory::parse(QCommandLineParser &parser, const QStringList &args,
         else
         {
             QTextStream cerr(stderr);
-            cerr << app_.applicationName() << ": Missing command" << endl;
+            cerr << app_.applicationName() << ": Missing command" << Qt::endl;
             parser.showHelp(EXIT_FAILURE);
         }
     }
@@ -36,7 +36,7 @@ void CommandCategory::parse(QCommandLineParser &parser, const QStringList &args,
     {
         addTerminalArgs(parser);
         QTextStream cerr(stderr);
-        cerr << app_.applicationName() << ": Unrecognized command: " << command << endl;
+        cerr << app_.applicationName() << ": Unrecognized command: " << command << Qt::endl;
         parser.showHelp(EXIT_FAILURE);
     }
 }

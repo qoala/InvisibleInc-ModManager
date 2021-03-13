@@ -24,7 +24,7 @@ void CacheListCommand::execute(QCommandLineParser &parser, const QStringList &ar
 
     QTextStream cout(stdout);
     for (auto const& mod : mods.list()) {
-        cout << mod.id() << ":" << mod.name() << endl;
+        cout << mod.id() << ":" << mod.name() << Qt::endl;
     }
 }
 

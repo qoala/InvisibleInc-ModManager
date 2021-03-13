@@ -23,7 +23,7 @@ void CommandParser::parse(const QStringList &arguments)
 
     if (!parser_.parse(arguments))
     {
-        cerr << app_.applicationName() << ": " << parser_.errorText() << endl;
+        cerr << app_.applicationName() << ": " << parser_.errorText() << Qt::endl;
         parser_.showHelp(EXIT_FAILURE);
     }
     QStringList args = parser_.positionalArguments();
@@ -36,7 +36,7 @@ void CommandParser::parse(const QStringList &arguments)
         }
         else
         {
-            cerr << app_.applicationName() << ": Missing command category" << endl;
+            cerr << app_.applicationName() << ": Missing command category" << Qt::endl;
             parser_.showHelp(EXIT_FAILURE);
         }
     }
@@ -60,7 +60,7 @@ void CommandParser::parse(const QStringList &arguments)
     else
     {
         addTerminalArgs();
-        cerr << app_.applicationName() << ": Unrecognized command category: " << category << endl;
+        cerr << app_.applicationName() << ": Unrecognized command category: " << category << Qt::endl;
         parser_.showHelp(EXIT_FAILURE);
     }
 }

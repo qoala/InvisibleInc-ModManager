@@ -20,13 +20,13 @@ void ConfigSetCommand::execute(QCommandLineParser &parser, const QStringList &ar
     if (args.size() < 3)
     {
         QTextStream cerr(stderr);
-        cerr << app_.applicationName() << ": Missing config key" << endl;
+        cerr << app_.applicationName() << ": Missing config key" << Qt::endl;
         parser.showHelp(EXIT_FAILURE);
     }
     else if (args.size() < 4)
     {
         QTextStream cerr(stderr);
-        cerr << app_.applicationName() << ": Missing config value" << endl;
+        cerr << app_.applicationName() << ": Missing config value" << Qt::endl;
         parser.showHelp(EXIT_FAILURE);
     }
 
@@ -48,7 +48,7 @@ void ConfigSetCommand::execute(QCommandLineParser &parser, const QStringList &ar
     else
     {
         QTextStream cerr(stderr);
-        cerr << app_.applicationName() << ": Unknown config key: " << key << endl;
+        cerr << app_.applicationName() << ": Unknown config key: " << key << Qt::endl;
         parser.showHelp(EXIT_FAILURE);
     }
 }
