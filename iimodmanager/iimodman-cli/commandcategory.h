@@ -1,6 +1,7 @@
 #ifndef COMMANDCATEGORY_H
 #define COMMANDCATEGORY_H
 
+#include "command.h"
 #include "modmancliapplication.h"
 
 #include <QCommandLineParser>
@@ -8,12 +9,12 @@
 
 namespace iimodmanager {
 
-class CommandCategory
+class CommandCategory : public QObject
 {
 public:
     virtual ~CommandCategory();
 
-    void parse(QCommandLineParser &parser, const QStringList &args, bool isHelpSet) const;
+    Command *parse(QCommandLineParser &parser, const QStringList &args, bool isHelpSet) const;
 protected:
     ModManCliApplication &app_;
 
@@ -21,7 +22,7 @@ protected:
 
     virtual void addArgs(QCommandLineParser &parser) const = 0;
     virtual void addTerminalArgs(QCommandLineParser &parser) const = 0;
-    virtual bool parseCommands(QCommandLineParser &parser, const QStringList &args, bool isHelpSet, const QString command) const = 0;
+    virtual Command *parseCommands(const QString command) const = 0;
 };
 
 }  // namespace iimodmanager

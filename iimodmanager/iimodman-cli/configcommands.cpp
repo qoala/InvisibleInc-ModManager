@@ -17,27 +17,21 @@ void ConfigCommands::addTerminalArgs(QCommandLineParser &parser) const {
     parser.addPositionalArgument("command", "Command to be executed (list|get|set)", "list|get|set|help");
 }
 
-bool ConfigCommands::parseCommands(QCommandLineParser &parser, const QStringList &args, bool isHelpSet, const QString command) const
+Command *ConfigCommands::parseCommands(const QString command) const
 {
     if (command == "list")
     {
-        ConfigListCommand listCommand(app_);
-        listCommand.parse(parser, args, isHelpSet);
-        return true;
+        return new ConfigListCommand(app_);
     }
     else if (command == "get")
     {
-        ConfigGetCommand getCommand(app_);
-        getCommand.parse(parser, args, isHelpSet);
-        return true;
+        return new ConfigGetCommand(app_);
     }
     else if (command == "set")
     {
-        ConfigSetCommand setCommand(app_);
-        setCommand.parse(parser, args, isHelpSet);
-        return true;
+        return new ConfigSetCommand(app_);
     }
-    return false;
+    return nullptr;
 }
 
 }  // namespace iimodmanager

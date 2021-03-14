@@ -17,15 +17,13 @@ void CacheCommands::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("command", "Command to be executed (list)", "list||help");
 }
 
-bool CacheCommands::parseCommands(QCommandLineParser &parser, const QStringList &args, bool isHelpSet, const QString command) const
+Command *CacheCommands::parseCommands(const QString command) const
 {
     if (command == "list")
     {
-        CacheListCommand listCommand(app_);
-        listCommand.parse(parser, args, isHelpSet);
-        return true;
+        return new CacheListCommand(app_);
     }
-    return false;
+    return nullptr;
 }
 
 

@@ -1,5 +1,6 @@
 #include "cachelistcommand.h"
 
+#include <QPromise>
 #include <QTextStream>
 #include <mod.h>
 #include <modlist.h>
@@ -15,7 +16,7 @@ void CacheListCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("list", "Command: List all downloaded mods in the cache");
 }
 
-void CacheListCommand::execute(QCommandLineParser &parser, const QStringList &args) const
+QFuture<void> CacheListCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
 {
     Q_UNUSED(parser);
     Q_UNUSED(args);
@@ -26,6 +27,10 @@ void CacheListCommand::execute(QCommandLineParser &parser, const QStringList &ar
     for (auto const& mod : mods.list()) {
         cout << mod.id() << ":" << mod.name() << Qt::endl;
     }
+
+    QPromise<void> promise;
+    promise.finish();
+    return promise.future();
 }
 
 }  // namespace iimodmanager

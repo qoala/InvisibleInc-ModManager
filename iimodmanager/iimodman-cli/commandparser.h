@@ -4,6 +4,7 @@
 #include "modmancliapplication.h"
 
 #include <QCommandLineParser>
+#include <QFuture>
 #include <QStringList>
 
 namespace iimodmanager {
@@ -13,7 +14,7 @@ class CommandParser
 public:
     CommandParser(ModManCliApplication &app);
 
-    void parse(const QStringList &args);
+    QFuture<void> parse(const QStringList &args);
 
 private:
     ModManCliApplication &app_;

@@ -14,7 +14,7 @@ void CommandParser::addTerminalArgs() {
     parser_.addPositionalArgument("command", "Command to be executed", "[command]|help");
 }
 
-void CommandParser::parse(const QStringList &arguments)
+QFuture<void> CommandParser::parse(const QStringList &arguments)
 {
     parser_.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     QCommandLineOption help = parser_.addHelpOption();
@@ -41,6 +41,7 @@ void CommandParser::parse(const QStringList &arguments)
         }
     }
 
+    Command *command;
     const QString category = args.first();
     if (category == "help")
     {
@@ -50,12 +51,12 @@ void CommandParser::parse(const QStringList &arguments)
     else if (category == "cache")
     {
         CacheCommands cacheCommands(app_);
-        cacheCommands.parse(parser_, args, parser_.isSet(help));
+        command = cacheCommands.parse(parser_, args, parser_.isSet(help));
     }
     else if (category == "config")
     {
         ConfigCommands configCommands(app_);
-        configCommands.parse(parser_, args, parser_.isSet(help));
+        command = configCommands.parse(parser_, args, parser_.isSet(help));
     }
     else
     {
@@ -63,6 +64,8 @@ void CommandParser::parse(const QStringList &arguments)
         cerr << app_.applicationName() << ": Unrecognized command category: " << category << Qt::endl;
         parser_.showHelp(EXIT_FAILURE);
     }
+
+    return command->execute(parser_, args, parser_.isSet(help));
 }
 
 }  // namespace iimodmanager

@@ -1,5 +1,6 @@
 #include "configlistcommand.h"
 
+#include <QPromise>
 #include <QTextStream>
 
 namespace iimodmanager {
@@ -13,7 +14,7 @@ void ConfigListCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("list", "Command: List all config values");
 }
 
-void ConfigListCommand::execute(QCommandLineParser &parser, const QStringList &args) const
+QFuture<void> ConfigListCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
 {
     Q_UNUSED(parser);
     Q_UNUSED(args);
@@ -29,6 +30,10 @@ void ConfigListCommand::execute(QCommandLineParser &parser, const QStringList &a
     {
         cout << "steam.apiKey [private] (Obtain explicitly with `config get steam.apiKey`)" << Qt::endl;
     }
+
+    QPromise<void> promise;
+    promise.finish();
+    return promise.future();
 }
 
 }  // namespace iimodmanager

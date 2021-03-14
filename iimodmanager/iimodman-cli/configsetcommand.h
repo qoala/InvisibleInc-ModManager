@@ -14,7 +14,7 @@ public:
     // Command interface
 protected:
     void addTerminalArgs(QCommandLineParser &parser) const;
-    void execute(QCommandLineParser &parser, const QStringList &args) const;
+    QFuture<void> executeCommand(QCommandLineParser &parser, const QStringList &args);
 };
 
 }  // namespace iimodmanager

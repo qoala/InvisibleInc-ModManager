@@ -16,7 +16,7 @@ public:
 protected:
     void addArgs(QCommandLineParser &parser) const;
     void addTerminalArgs(QCommandLineParser &parser) const;
-    bool parseCommands(QCommandLineParser &parser, const QStringList &args, bool isHelpSet, const QString command) const;
+    Command *parseCommands(const QString command) const;
 };
 
 }  // namespace iimodmanager

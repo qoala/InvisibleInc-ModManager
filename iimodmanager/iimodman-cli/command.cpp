@@ -5,7 +5,7 @@ namespace iimodmanager {
 Command::~Command()
 {}
 
-void Command::parse(QCommandLineParser &parser, const QStringList &args, bool isHelpSet) const
+QFuture<void> Command::execute(QCommandLineParser &parser, const QStringList &args, bool isHelpSet)
 {
     addTerminalArgs(parser);
 
@@ -14,11 +14,11 @@ void Command::parse(QCommandLineParser &parser, const QStringList &args, bool is
         parser.showHelp(EXIT_SUCCESS);
     }
 
-    execute(parser, args);
+    return executeCommand(parser, args);
 }
 
 Command::Command(ModManCliApplication &app)
-    : app_(app)
+    : QObject(&app), app_(app)
 {}
 
 }  // namespace iimodmanager

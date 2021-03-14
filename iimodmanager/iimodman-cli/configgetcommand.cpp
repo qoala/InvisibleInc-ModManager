@@ -1,5 +1,6 @@
 #include "configgetcommand.h"
 
+#include <QPromise>
 #include <QTextStream>
 
 namespace iimodmanager {
@@ -14,7 +15,7 @@ void ConfigGetCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("key", "Config key to retrieve", "[key]");
 }
 
-void ConfigGetCommand::execute(QCommandLineParser &parser, const QStringList &args) const
+QFuture<void> ConfigGetCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
 {
     if (args.size() < 3)
     {
@@ -43,6 +44,10 @@ void ConfigGetCommand::execute(QCommandLineParser &parser, const QStringList &ar
         cerr << app_.applicationName() << ": Unknown config key: " << key << Qt::endl;
         parser.showHelp(EXIT_FAILURE);
     }
+
+    QPromise<void> promise;
+    promise.finish();
+    return promise.future();
 }
 
 }  // namespace iimodmanager

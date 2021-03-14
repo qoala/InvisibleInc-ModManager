@@ -1,5 +1,6 @@
 #include "configsetcommand.h"
 
+#include <QPromise>
 #include <QTextStream>
 
 namespace iimodmanager {
@@ -15,7 +16,7 @@ void ConfigSetCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("value", "Config value to set", "[value]");
 }
 
-void ConfigSetCommand::execute(QCommandLineParser &parser, const QStringList &args) const
+QFuture<void> ConfigSetCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
 {
     if (args.size() < 3)
     {
@@ -51,6 +52,10 @@ void ConfigSetCommand::execute(QCommandLineParser &parser, const QStringList &ar
         cerr << app_.applicationName() << ": Unknown config key: " << key << Qt::endl;
         parser.showHelp(EXIT_FAILURE);
     }
+
+    QPromise<void> promise;
+    promise.finish();
+    return promise.future();
 }
 
 }  // namespace iimodmanager

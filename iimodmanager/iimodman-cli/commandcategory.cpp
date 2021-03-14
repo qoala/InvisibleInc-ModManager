@@ -7,7 +7,7 @@ namespace iimodmanager {
 CommandCategory::~CommandCategory()
 {}
 
-void CommandCategory::parse(QCommandLineParser &parser, const QStringList &args, bool isHelpSet) const
+Command *CommandCategory::parse(QCommandLineParser &parser, const QStringList &args, bool isHelpSet) const
 {
     addArgs(parser);
 
@@ -32,17 +32,20 @@ void CommandCategory::parse(QCommandLineParser &parser, const QStringList &args,
         addTerminalArgs(parser);
         parser.showHelp(EXIT_SUCCESS);
     }
-    else if (!parseCommands(parser, args, isHelpSet, command))
+    Command *selectedCommand = parseCommands(command);
+    if (selectedCommand == nullptr)
     {
         addTerminalArgs(parser);
         QTextStream cerr(stderr);
         cerr << app_.applicationName() << ": Unrecognized command: " << command << Qt::endl;
         parser.showHelp(EXIT_FAILURE);
     }
+
+    return selectedCommand;
 }
 
 CommandCategory::CommandCategory(ModManCliApplication &app)
-    :app_(app)
+    : QObject(&app), app_(app)
 {}
 
 }  // namespace iimodmanager
