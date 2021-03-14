@@ -2,6 +2,7 @@
 #include "configcommands.h"
 #include "commandcategory.h"
 #include "cachecommands.h"
+#include "steamapicommands.h"
 
 #include <QTextStream>
 
@@ -10,7 +11,7 @@ namespace iimodmanager {
 CommandParser::CommandParser(ModManCliApplication &app) : app_(app) {}
 
 void CommandParser::addTerminalArgs() {
-    parser_.addPositionalArgument("category", "Category of the command to be executed (cache|config)", "(cache|config)");
+    parser_.addPositionalArgument("category", "Category of the command to be executed (cache|config|steamapi)", "(cache|config|steamapi)");
     parser_.addPositionalArgument("command", "Command to be executed", "[command]|help");
 }
 
@@ -57,6 +58,11 @@ QFuture<void> CommandParser::parse(const QStringList &arguments)
     {
         ConfigCommands configCommands(app_);
         command = configCommands.parse(parser_, args, parser_.isSet(help));
+    }
+    else if (category == "steamapi" || category == "steam-api")
+    {
+        SteamAPICommands apiCommands(app_);
+        command = apiCommands.parse(parser_, args, parser_.isSet(help));
     }
     else
     {

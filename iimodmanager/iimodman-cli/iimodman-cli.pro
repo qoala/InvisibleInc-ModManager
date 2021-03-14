@@ -1,4 +1,5 @@
 QT -= gui
+QT += network
 
 CONFIG += c++1z console
 CONFIG -= app_bundle
@@ -25,7 +26,9 @@ SOURCES += \
     configsetcommand.cpp \
     configgetcommand.cpp \
     cachecommands.cpp \
-    cachelistcommand.cpp
+    cachelistcommand.cpp \
+    steamapicommands.cpp \
+    steamapimodinfocommand.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -49,4 +52,6 @@ HEADERS += \
     configsetcommand.h \
     configgetcommand.h \
     cachecommands.h \
-    cachelistcommand.h
+    cachelistcommand.h \
+    steamapicommands.h \
+    steamapimodinfocommand.h
