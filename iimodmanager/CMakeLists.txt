@@ -24,5 +24,8 @@ set(IIMODMAN_CLI_TARGET_NAME iimodman-cli)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Network)
 
+set(QUAZIP_QT_MAJOR_VERSION 6)
+add_subdirectory(quazip)
+
 add_subdirectory(iimodman-cli)
 add_subdirectory(iimodman-lib)

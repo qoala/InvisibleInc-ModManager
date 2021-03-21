@@ -1,9 +1,12 @@
 #include "moddownloader.h"
 
+#include <JlCompress.h>
+#include <QBuffer>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkReply>
+#include <QTemporaryFile>
 #include <QTextStream>
 
 namespace iimodmanager {
@@ -55,10 +58,45 @@ QFuture<SteamModInfo> ModDownloader::fetchModInfo(const QString &id)
 
     QNetworkReply *reply = qnam_.post(request, postData.toUtf8());
     return QtFuture::connect(reply, &QNetworkReply::finished)
-            .then([reply] {
+            .then([reply]
+    {
         reply->deleteLater();
         return reply->readAll();
     }).then(QtFuture::Launch::Async, parseSteamModInfo);
+}
+
+QFuture<QString> ModDownloader::downloadModVersion(const SteamModInfo &info)
+{
+    QNetworkRequest request(info.downloadUrl);
+
+    QTemporaryFile *zipFile = new QTemporaryFile(this);
+    assert(zipFile->open());
+
+    QNetworkReply *reply = qnam_.get(request);
+    connect(reply, &QIODevice::readyRead, [reply, zipFile]
+    {
+        zipFile->write(reply->readAll());
+    });
+
+    return QtFuture::connect(reply, &QNetworkReply::finished)
+            .then([reply, zipFile]
+    {
+        zipFile->write(reply->readAll());
+        reply->deleteLater();
+    }).then(QtFuture::Launch::Async, [this, info, zipFile]
+    {
+        // Folder Structure: {cachePath}/workshop-{id}/{lastUpdated}/
+        // lastUpdated resembles ISO8601, but uses dashes so that folder names are valid on Windows.
+        QDir cacheDir(config_.cachePath());
+        QDir modDir(cacheDir.absoluteFilePath(QString("workshop-%1").arg(info.id)));
+        QDir modVersionDir(modDir.absoluteFilePath(info.lastUpdated.toString("yyyy-MM-ddTHH-mm-ss")));
+
+        zipFile->seek(0);
+        JlCompress::extractDir(zipFile, modVersionDir.absolutePath());
+        zipFile->deleteLater();
+
+        return modVersionDir.absolutePath();
+    });
 }
 
 }  // namespace iimodmanager

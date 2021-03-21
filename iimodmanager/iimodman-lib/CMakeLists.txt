@@ -33,4 +33,5 @@ target_include_directories(${IIMODMAN_LIB_TARGET_NAME} PUBLIC
   )
 target_link_libraries(${IIMODMAN_LIB_TARGET_NAME}
     Qt6::Core Qt6::Network
+    QuaZip::QuaZip
   )

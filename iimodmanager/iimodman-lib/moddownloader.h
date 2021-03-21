@@ -28,6 +28,7 @@ public:
     ModDownloader(const ModManConfig &config, QObject *parent = nullptr);
 
     QFuture<SteamModInfo> fetchModInfo(const QString& id);
+    QFuture<QString> downloadModVersion(const SteamModInfo& info);
 
 private:
     const ModManConfig &config_;
