@@ -17,52 +17,17 @@ ModDownloader::ModDownloader(const ModManConfig &config, QObject *parent)
     : QObject(parent), config_(config)
 {}
 
-SteamModInfo parseSteamModInfo(const QByteArray rawData)
+ModInfoCall *ModDownloader::fetchModInfo(const QString &id)
 {
-        QJsonParseError errors;
-        const QJsonDocument json = QJsonDocument::fromJson(rawData, &errors);
-
-        if (json.isNull())
-        {
-            // TODO: error handling
-            QTextStream cerr(stderr);
-            cerr << "JSON Parse Error: " << errors.errorString() << Qt::endl;
-            cerr << rawData << Qt::endl;
-        }
-
-        assert(!json.isNull());
-        assert(json.isObject());
-
-        const QJsonObject response = json.object().value("response").toObject();
-        assert(response.value("resultcount").toInt(0) >= 1);
-        const QJsonObject fileDetail = response.value("publishedfiledetails").toArray().at(0).toObject();
-
-        SteamModInfo result;
-
-        result.id = fileDetail.value("publishedfileid").toString();
-        result.title = fileDetail.value("title").toString();
-        result.description = fileDetail.value("description").toString();
-        result.downloadUrl = fileDetail.value("file_url").toString();
-        result.lastUpdated = QDateTime::fromSecsSinceEpoch(fileDetail.value("time_updated").toInt());
-
-        return result;
+    ModInfoCall *call = new ModInfoCall(config_, qnam_, this);
+    call->start(id);
+    return call;
 }
 
-QFuture<SteamModInfo> ModDownloader::fetchModInfo(const QString &id)
+ModInfoCall *ModDownloader::modInfoCall()
 {
-    QNetworkRequest request(getPublishedFileDetails);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-    QString postData;
-    postData.append("itemcount=1&");
-    postData.append("publishedfileids[0]=").append(id);
-
-    QNetworkReply *reply = qnam_.post(request, postData.toUtf8());
-    return QtFuture::connect(reply, &QNetworkReply::finished)
-            .then([reply]
-    {
-        reply->deleteLater();
-        return reply->readAll();
-    }).then(QtFuture::Launch::Async, parseSteamModInfo);
+    ModInfoCall *call = new ModInfoCall(config_, qnam_, this);
+    return call;
 }
 
 QFuture<QString> ModDownloader::downloadModVersion(const SteamModInfo &info)
@@ -96,6 +61,58 @@ QFuture<QString> ModDownloader::downloadModVersion(const SteamModInfo &info)
         zipFile->deleteLater();
 
         return modVersionDir.absolutePath();
+    });
+}
+
+SteamModInfo parseSteamModInfo(const QByteArray rawData)
+{
+        QJsonParseError errors;
+        const QJsonDocument json = QJsonDocument::fromJson(rawData, &errors);
+
+        if (json.isNull())
+        {
+            // TODO: error handling
+            QTextStream cerr(stderr);
+            cerr << "JSON Parse Error: " << errors.errorString() << Qt::endl;
+            cerr << rawData << Qt::endl;
+        }
+
+        assert(!json.isNull());
+        assert(json.isObject());
+
+        const QJsonObject response = json.object().value("response").toObject();
+        assert(response.value("resultcount").toInt(0) >= 1);
+        const QJsonObject fileDetail = response.value("publishedfiledetails").toArray().at(0).toObject();
+
+        SteamModInfo result;
+
+        result.id = fileDetail.value("publishedfileid").toString();
+        result.title = fileDetail.value("title").toString();
+        result.description = fileDetail.value("description").toString();
+        result.downloadUrl = fileDetail.value("file_url").toString();
+        result.lastUpdated = QDateTime::fromSecsSinceEpoch(fileDetail.value("time_updated").toInt());
+
+        return result;
+}
+
+ModInfoCall::ModInfoCall(const ModManConfig &config, QNetworkAccessManager &qnam, QObject *parent)
+    : QObject(parent), config_(config), qnam_(qnam)
+{}
+
+void ModInfoCall::start(const QString &id)
+{
+    QNetworkRequest request(getPublishedFileDetails);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    QString postData;
+    postData.append("itemcount=1&");
+    postData.append("publishedfileids[0]=").append(id);
+
+    QNetworkReply *reply = qnam_.post(request, postData.toUtf8());
+    connect(reply, &QNetworkReply::finished, this, [this, reply]
+    {
+       result_ = parseSteamModInfo(reply->readAll());
+       reply->deleteLater();
+       emit finished();
     });
 }
 

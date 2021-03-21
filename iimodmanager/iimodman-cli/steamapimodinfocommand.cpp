@@ -27,7 +27,14 @@ QFuture<void> SteamAPIModInfoCommand::executeCommand(QCommandLineParser &parser,
     const QString workshopId = args.at(2);
 
     ModDownloader *downloader = new ModDownloader(app_.config(), this);
-    return downloader->fetchModInfo(workshopId).then([](SteamModInfo modInfo) {
+    ModInfoCall *call = downloader->fetchModInfo(workshopId);
+
+    return QtFuture::connect(call, &ModInfoCall::finished)
+            .then([call]
+    {
+        call->deleteLater();
+        return call->result();
+    }).then([](SteamModInfo modInfo) {
         QTextStream cout(stdout);
         cout << modInfo.title << " (workshop-" << modInfo.id << ")" << Qt::endl;
         cout << "Updated: " << modInfo.lastUpdated.toString() << Qt::endl;
