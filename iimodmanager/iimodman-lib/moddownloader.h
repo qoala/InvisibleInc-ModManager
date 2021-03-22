@@ -9,6 +9,7 @@
 #include <QObject>
 #include <QNetworkAccessManager>
 #include <QDateTime>
+#include <QTemporaryFile>
 
 namespace iimodmanager {
 
@@ -24,6 +25,7 @@ struct IIMODMANLIBSHARED_EXPORT SteamModInfo
 };
 
 class ModInfoCall;
+class ModDownloadCall;
 
 class IIMODMANLIBSHARED_EXPORT ModDownloader : public QObject
 {
@@ -34,7 +36,8 @@ public:
 
     ModInfoCall *fetchModInfo(const QString& id);
     ModInfoCall *modInfoCall();
-    QFuture<QString> downloadModVersion(const SteamModInfo& info);
+    ModDownloadCall *downloadModVersion(const SteamModInfo& info);
+    ModDownloadCall *modDownloadCall();
 
 private:
     const ModManConfig &config_;
@@ -60,6 +63,27 @@ private:
     const ModManConfig &config_;
     QNetworkAccessManager &qnam_;
     SteamModInfo result_;
+};
+
+class IIMODMANLIBSHARED_EXPORT ModDownloadCall : public QObject
+{
+    Q_OBJECT
+    friend ModDownloader;
+
+public:
+    ModDownloadCall(const ModManConfig &config, QNetworkAccessManager &qnam, QObject *parent);
+
+    void start(const SteamModInfo& info);
+
+    inline const QString &resultPath() { return resultPath_; };
+
+signals:
+    void finished();
+
+private:
+    const ModManConfig &config_;
+    QNetworkAccessManager &qnam_;
+    QString resultPath_;
 };
 
 }  // namespace iimodmanager

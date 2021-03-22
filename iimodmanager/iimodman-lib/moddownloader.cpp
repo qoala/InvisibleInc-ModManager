@@ -31,38 +31,17 @@ ModInfoCall *ModDownloader::modInfoCall()
     return call;
 }
 
-QFuture<QString> ModDownloader::downloadModVersion(const SteamModInfo &info)
+ModDownloadCall *ModDownloader::downloadModVersion(const SteamModInfo &info)
 {
-    QNetworkRequest request(info.downloadUrl);
+    ModDownloadCall *call = new ModDownloadCall(config_, qnam_, this);
+    call->start(info);
+    return call;
+}
 
-    QTemporaryFile *zipFile = new QTemporaryFile(this);
-    assert(zipFile->open());
-
-    QNetworkReply *reply = qnam_.get(request);
-    connect(reply, &QIODevice::readyRead, [reply, zipFile]
-    {
-        zipFile->write(reply->readAll());
-    });
-
-    return QtFuture::connect(reply, &QNetworkReply::finished)
-            .then([reply, zipFile]
-    {
-        zipFile->write(reply->readAll());
-        reply->deleteLater();
-    }).then(QtFuture::Launch::Async, [this, info, zipFile]
-    {
-        // Folder Structure: {cachePath}/workshop-{id}/{lastUpdated}/
-        // lastUpdated resembles ISO8601, but uses dashes so that folder names are valid on Windows.
-        QDir cacheDir(config_.cachePath());
-        QDir modDir(cacheDir.absoluteFilePath(QString("workshop-%1").arg(info.id)));
-        QDir modVersionDir(modDir.absoluteFilePath(info.lastUpdated.toString("yyyy-MM-ddTHH-mm-ss")));
-
-        zipFile->seek(0);
-        JlCompress::extractDir(zipFile, modVersionDir.absolutePath());
-        zipFile->deleteLater();
-
-        return modVersionDir.absolutePath();
-    });
+ModDownloadCall *ModDownloader::modDownloadCall()
+{
+    ModDownloadCall *call = new ModDownloadCall(config_, qnam_, this);
+    return call;
 }
 
 SteamModInfo parseSteamModInfo(const QByteArray rawData)
@@ -115,6 +94,51 @@ void ModInfoCall::start(const QString &id)
         qCDebug(steamAPI).noquote() << callDebugInfo << "Request End";
         result_ = parseSteamModInfo(reply->readAll());
         reply->deleteLater();
+        emit finished();
+    });
+}
+
+ModDownloadCall::ModDownloadCall(const ModManConfig &config, QNetworkAccessManager &qnam, QObject *parent)
+    : QObject(parent), config_(config), qnam_(qnam)
+{}
+
+void ModDownloadCall::start(const SteamModInfo &info)
+{
+    QString callDebugInfo = QString("ModDownload(%1,%2)").arg(info.id, info.lastUpdated.toString());
+
+    // Folder Structure: {cachePath}/workshop-{id}/{lastUpdated}/
+    // lastUpdated resembles ISO8601, but uses dashes so that folder names are valid on Windows.
+    QDir cacheDir(config_.cachePath());
+    QDir modDir(cacheDir.absoluteFilePath(QString("workshop-%1").arg(info.id)));
+    QDir modVersionDir(modDir.absoluteFilePath(info.lastUpdated.toString("yyyy-MM-ddTHH-mm-ss")));
+    resultPath_ = modVersionDir.absolutePath();
+
+    QTemporaryFile *zipFile = new QTemporaryFile(this);
+    assert(zipFile->open());
+
+    qCDebug(steamAPI).noquote() << callDebugInfo << "Request Start";
+    QNetworkRequest request(info.downloadUrl);
+    QNetworkReply *reply = qnam_.get(request);
+    connect(reply, &QIODevice::readyRead, this, [zipFile, callDebugInfo, reply]
+    {
+        QByteArray data = reply->readAll();
+        qCDebug(steamAPI).noquote() << callDebugInfo << "Chunk Update" << data.size() << "bytes";
+        zipFile->write(data);
+    });
+
+    connect(reply, &QNetworkReply::finished, this, [this, info, zipFile, callDebugInfo, reply]
+    {
+        QByteArray data = reply->readAll();
+        qCDebug(steamAPI).noquote() << callDebugInfo << "Request End" << data.size() << "bytes";
+        zipFile->write(reply->readAll());
+        reply->deleteLater();
+
+        qCDebug(steamAPI).noquote() << callDebugInfo << "Unzip Start" << resultPath();
+        zipFile->seek(0);
+        JlCompress::extractDir(zipFile, resultPath());
+        zipFile->deleteLater();
+        qCDebug(steamAPI).noquote() << callDebugInfo << "Unzip End";
+
         emit finished();
     });
 }
