@@ -13,6 +13,7 @@ set(IIMODMAN_CLI_SOURCES
     main.cpp
     modmancliapplication.cpp
     steamapicommands.cpp
+    steamapimoddownloadcommand.cpp
     steamapimodinfocommand.cpp
   )
 

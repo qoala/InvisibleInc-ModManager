@@ -114,7 +114,10 @@ void ModDownloadCall::start(const SteamModInfo &info)
     resultPath_ = modVersionDir.absolutePath();
 
     QTemporaryFile *zipFile = new QTemporaryFile(this);
-    assert(zipFile->open());
+    if (!zipFile->open())
+    {
+        qFatal("%s Failed to create temporary file", callDebugInfo.toUtf8().constData());
+    }
 
     qCDebug(steamAPI).noquote() << callDebugInfo << "Request Start";
     QNetworkRequest request(info.downloadUrl);
