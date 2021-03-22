@@ -5,11 +5,14 @@
 #include "modmanconfig.h"
 
 #include <QFuture>
+#include <QLoggingCategory>
 #include <QObject>
 #include <QNetworkAccessManager>
 #include <QDateTime>
 
 namespace iimodmanager {
+
+Q_DECLARE_LOGGING_CATEGORY(steamAPI)
 
 struct IIMODMANLIBSHARED_EXPORT SteamModInfo
 {

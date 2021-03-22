@@ -17,6 +17,8 @@ int ModManCliApplication::main(int argc, char *argv[])
 {
     ModManCliApplication app(argc, &argv);
 
+    qSetMessagePattern("[%{type} %{time}] %{if-category}%{category}: %{endif}%{message}");
+
     CommandParser parser(app);
     QFuture<void> future = parser.parse(app.arguments());
 

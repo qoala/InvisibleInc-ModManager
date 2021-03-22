@@ -7,9 +7,10 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QTemporaryFile>
-#include <QTextStream>
 
 namespace iimodmanager {
+
+Q_LOGGING_CATEGORY(steamAPI, "steamapi", QtWarningMsg)
 
 const QString getPublishedFileDetails = QStringLiteral("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/");
 
@@ -71,10 +72,8 @@ SteamModInfo parseSteamModInfo(const QByteArray rawData)
 
         if (json.isNull())
         {
-            // TODO: error handling
-            QTextStream cerr(stderr);
-            cerr << "JSON Parse Error: " << errors.errorString() << Qt::endl;
-            cerr << rawData << Qt::endl;
+            qDebug() << rawData;
+            qFatal("JSON Parse Error: %s", errors.errorString().toUtf8().constData());
         }
 
         assert(!json.isNull());
@@ -101,18 +100,22 @@ ModInfoCall::ModInfoCall(const ModManConfig &config, QNetworkAccessManager &qnam
 
 void ModInfoCall::start(const QString &id)
 {
+    QString callDebugInfo = QString("ModInfo(%1)").arg(id);
+
     QNetworkRequest request(getPublishedFileDetails);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     QString postData;
     postData.append("itemcount=1&");
     postData.append("publishedfileids[0]=").append(id);
 
+    qCDebug(steamAPI).noquote() << callDebugInfo << "Request Start";
     QNetworkReply *reply = qnam_.post(request, postData.toUtf8());
-    connect(reply, &QNetworkReply::finished, this, [this, reply]
+    connect(reply, &QNetworkReply::finished, this, [this, callDebugInfo, reply]
     {
-       result_ = parseSteamModInfo(reply->readAll());
-       reply->deleteLater();
-       emit finished();
+        qCDebug(steamAPI).noquote() << callDebugInfo << "Request End";
+        result_ = parseSteamModInfo(reply->readAll());
+        reply->deleteLater();
+        emit finished();
     });
 }
 
