@@ -22,11 +22,7 @@ QFuture<void> CommandParser::parse(const QStringList &arguments)
 
     QTextStream cerr(stderr);
 
-    if (!parser_.parse(arguments))
-    {
-        cerr << app_.applicationName() << ": " << parser_.errorText() << Qt::endl;
-        parser_.showHelp(EXIT_FAILURE);
-    }
+    parser_.parse(arguments);
     QStringList args = parser_.positionalArguments();
     if (args.isEmpty())
     {
@@ -71,6 +67,7 @@ QFuture<void> CommandParser::parse(const QStringList &arguments)
         parser_.showHelp(EXIT_FAILURE);
     }
 
+    command->parse(parser_, arguments);
     return command->execute(parser_, args, parser_.isSet(help));
 }
 

@@ -22,6 +22,8 @@ struct IIMODMANLIBSHARED_EXPORT SteamModInfo
     QString description;
     QString downloadUrl;
     QDateTime lastUpdated;
+
+    inline const QString modId() const { return QStringLiteral("workshop-%1").arg(id); };
 };
 
 class ModInfoCall;
@@ -54,7 +56,7 @@ public:
 
     void start(const QString& id);
 
-    inline const SteamModInfo &result() { return result_; };
+    inline const SteamModInfo &result() const { return result_; };
 
 signals:
     void finished();
@@ -75,7 +77,8 @@ public:
 
     void start(const SteamModInfo& info);
 
-    inline const QString &resultPath() { return resultPath_; };
+    inline const SteamModInfo& modInfo() const { return info_; };
+    inline const QString &resultPath() const { return resultPath_; };
 
 signals:
     void finished();
@@ -83,6 +86,7 @@ signals:
 private:
     const ModManConfig &config_;
     QNetworkAccessManager &qnam_;
+    SteamModInfo info_;
     QString resultPath_;
 };
 

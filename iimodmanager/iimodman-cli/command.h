@@ -14,6 +14,7 @@ class Command : public QObject
 public:
     virtual ~Command();
 
+    void parse(QCommandLineParser &parser, const QStringList &arguments);
     QFuture<void> execute(QCommandLineParser &parser, const QStringList &args, bool isHelpSet);
 protected:
     ModManCliApplication &app_;

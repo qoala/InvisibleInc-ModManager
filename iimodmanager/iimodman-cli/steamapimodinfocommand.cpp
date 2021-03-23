@@ -32,9 +32,9 @@ QFuture<void> SteamAPIModInfoCommand::executeCommand(QCommandLineParser &parser,
     return QtFuture::connect(call, &ModInfoCall::finished)
             .then([call]
     {
+        const SteamModInfo modInfo = call->result();
         call->deleteLater();
-        return call->result();
-    }).then([](SteamModInfo modInfo) {
+
         QTextStream cout(stdout);
         cout << modInfo.title << " (workshop-" << modInfo.id << ")" << Qt::endl;
         cout << "Updated: " << modInfo.lastUpdated.toString() << Qt::endl;

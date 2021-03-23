@@ -104,7 +104,8 @@ ModDownloadCall::ModDownloadCall(const ModManConfig &config, QNetworkAccessManag
 
 void ModDownloadCall::start(const SteamModInfo &info)
 {
-    QString callDebugInfo = QString("ModDownload(%1,%2)").arg(info.id, info.lastUpdated.toString());
+    QString callDebugInfo = QString("ModDownload(%1,%2)").arg(info.id, info.lastUpdated.toString(Qt::ISODate));
+    info_ = info;
 
     // Folder Structure: {cachePath}/workshop-{id}/{lastUpdated}/
     // lastUpdated resembles ISO8601, but uses dashes so that folder names are valid on Windows.

@@ -20,10 +20,16 @@ const Mod Mod::readModInfo(const ModManConfig &config, const QString &id, ModLoc
     const QFileInfo modInfo(modDir, "modinfo.txt");
     assert(modInfo.isFile());
 
+    QFile file(modInfo.absoluteFilePath());
+    return readModInfo(file, id, location);
+}
+
+const Mod Mod::readModInfo(QIODevice &file, const QString &id, ModLocation location)
+{
+
     QString name;
 
-    QFile file(modInfo.absoluteFilePath());
-    if (file.open(QIODevice::ReadOnly))
+    if (file.isOpen() || file.open(QIODevice::ReadOnly))
     {
         const QRegularExpression linePattern("^\\s*(\\w+)\\s*=\\s*(.*)$");
         QTextStream in(&file);
@@ -40,6 +46,5 @@ const Mod Mod::readModInfo(const ModManConfig &config, const QString &id, ModLoc
 
     return Mod(id, location, name);
 }
-
 
 }  // namespace iimodmanager
