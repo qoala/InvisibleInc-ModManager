@@ -7,8 +7,8 @@
 
 namespace iimodmanager {
 
-Mod::Mod(const QString &id, ModLocation location, const QString &name)
-    : id_(id), location_(location), name_(name)
+Mod::Mod(const QString &id, const QString &name)
+    : id_(id), name_(name)
 {}
 
 const Mod Mod::readModInfo(const ModManConfig &config, const QString &id, ModLocation location)
@@ -21,10 +21,10 @@ const Mod Mod::readModInfo(const ModManConfig &config, const QString &id, ModLoc
     assert(modInfo.isFile());
 
     QFile file(modInfo.absoluteFilePath());
-    return readModInfo(file, id, location);
+    return readModInfo(file, id);
 }
 
-const Mod Mod::readModInfo(QIODevice &file, const QString &id, ModLocation location)
+const Mod Mod::readModInfo(QIODevice &file, const QString &id)
 {
 
     QString name;
@@ -44,7 +44,7 @@ const Mod Mod::readModInfo(QIODevice &file, const QString &id, ModLocation locat
         }
     }
 
-    return Mod(id, location, name);
+    return Mod(id, name);
 }
 
 }  // namespace iimodmanager

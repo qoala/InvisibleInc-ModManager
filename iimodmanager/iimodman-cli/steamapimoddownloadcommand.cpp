@@ -51,7 +51,7 @@ QFuture<void> SteamAPIDownloadModCommand::executeCommand(QCommandLineParser &par
         {
             QTextStream cerr(stderr);
             QFile modInfoFile = QFile(modVersionDir.absoluteFilePath("modinfo.txt"));
-            Mod mod = Mod::readModInfo(modInfoFile, info.modId(), CACHED);
+            Mod mod = Mod::readModInfo(modInfoFile, info.modId());
             cerr << mod.toString() << " already up to date" << Qt::endl;
 
             result.finish();
@@ -68,7 +68,7 @@ QFuture<void> SteamAPIDownloadModCommand::executeCommand(QCommandLineParser &par
 
         QTextStream cerr(stderr);
         QFile modInfoFile = QFile(modVersionDir.absoluteFilePath("modinfo.txt"));
-        Mod mod = Mod::readModInfo(modInfoFile, downloadCall->modInfo().modId(), CACHED);
+        Mod mod = Mod::readModInfo(modInfoFile, downloadCall->modInfo().modId());
         cerr << mod.toString() << " updated" << Qt::endl;
 
         downloadCall->deleteLater();
