@@ -113,6 +113,11 @@ void ModDownloadCall::start(const SteamModInfo &info)
     QDir modVersionDir(modDir.absoluteFilePath(info.lastUpdated.toString("yyyy-MM-ddTHH-mm-ss")));
     resultPath_ = modVersionDir.absolutePath();
 
+    if (modVersionDir.exists() && !modVersionDir.isEmpty())
+    {
+        qCWarning(steamAPI).noquote() << callDebugInfo << "Mod version folder is not empty. Will replace existing.";
+    }
+
     QTemporaryFile *zipFile = new QTemporaryFile(this);
     if (!zipFile->open())
     {
@@ -136,9 +141,25 @@ void ModDownloadCall::start(const SteamModInfo &info)
         zipFile->write(reply->readAll());
         reply->deleteLater();
 
-        qCDebug(steamAPI).noquote() << callDebugInfo << "Unzip Start" << resultPath();
+        QDir outputDir(resultPath());
+        if (outputDir.exists() && !outputDir.isEmpty())
+        {
+            if (outputDir.exists("modinfo.txt"))
+            {
+                qCDebug(steamAPI).noquote() << callDebugInfo << "Deleting existing" << outputDir.absolutePath();
+                outputDir.removeRecursively();
+            }
+            else
+            {
+                qFatal("%s Output directory non-empty and not a mod folder: %s",
+                       callDebugInfo.toUtf8().constData(),
+                       outputDir.absolutePath().toUtf8().constData());
+            }
+        }
+
+        qCDebug(steamAPI).noquote() << callDebugInfo << "Unzip Start" << outputDir.absolutePath();
         zipFile->seek(0);
-        JlCompress::extractDir(zipFile, resultPath());
+        JlCompress::extractDir(zipFile, outputDir.absolutePath());
         zipFile->deleteLater();
         qCDebug(steamAPI).noquote() << callDebugInfo << "Unzip End";
 
