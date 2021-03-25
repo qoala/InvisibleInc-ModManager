@@ -10,27 +10,30 @@
 namespace iimodmanager {
 
 SteamAPIDownloadModCommand::SteamAPIDownloadModCommand(ModManCliApplication &app)
-    : Command(app), forceOption(QStringList() << "f" << "force", "Overwrite even if the latest version is already downloaded.")
+    : Command(app)
 {}
 
 void SteamAPIDownloadModCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
     parser.addPositionalArgument("moddl", "Command: Download the latest version of the specified mod");
-    parser.addPositionalArgument("id", "Steam workshop ID (e.g. '2151835746')", "[id]");
-    parser.addOption(forceOption);
+    parser.addOptions({
+                    {{"id", "steam-id"}, "REQUIRED: Steam workshop ID (e.g. '2151835746')", "id"},
+                    {{"f","force"}, "Overwrite even if the latest version is already downloaded."},
+                });
 }
 
 QFuture<void> SteamAPIDownloadModCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
 {
-    if (args.size() < 3)
+    Q_UNUSED(args);
+    if (!parser.isSet("steam-id"))
     {
         QTextStream cerr(stderr);
-        cerr << app_.applicationName() << ": Missing worskhop ID" << Qt::endl;
+        cerr << app_.applicationName() << ": Missing steam-id" << Qt::endl;
         parser.showHelp(EXIT_FAILURE);
     }
 
-    const QString workshopId = args.at(2);
-    const bool isForceSet = parser.isSet(forceOption);
+    const QString workshopId = parser.value("steam-id");
+    const bool isForceSet = parser.isSet("force");
 
     ModDownloader *downloader = new ModDownloader(app_.config(), this);
 

@@ -13,7 +13,6 @@ public:
     SteamAPIDownloadModCommand(ModManCliApplication &app);
 
 private:
-    QCommandLineOption forceOption;
     QPromise<void> result;
 
     // Command interface
