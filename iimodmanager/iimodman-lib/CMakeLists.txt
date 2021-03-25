@@ -11,6 +11,7 @@ set(IIMODMAN_LIB_HEADERS
   )
 set(IIMODMAN_LIB_SOURCES
     mod.cpp
+    modcache.cpp
     moddownloader.cpp
     modlist.cpp
     modmanconfig.cpp

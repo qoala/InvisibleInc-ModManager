@@ -17,10 +17,12 @@ enum IIMODMANLIBSHARED_EXPORT ModLocation {
 class IIMODMANLIBSHARED_EXPORT Mod
 {
 public:
-    Mod(const QString &id, const QString &name = QString());
+    Mod();
+    Mod(const QString &id);
 
     inline const QString &id() const { return id_; }
     inline const QString &name() const { return name_; }
+    inline const QString &version() const { return version_; }
 
     inline bool isSteam() const { return id_.startsWith("workshop-"); }
     inline const QString toString() const { return QStringLiteral("%1 [%2]").arg(name_, id_); }
@@ -29,8 +31,9 @@ public:
     static const Mod readModInfo(QIODevice &file, const QString &id);
 
 private:
-    const QString id_;
+    QString id_;
     QString name_;
+    QString version_;
 };
 
 }  // namespace iimodmanager

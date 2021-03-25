@@ -3,7 +3,7 @@
 #include <QPromise>
 #include <QTextStream>
 #include <mod.h>
-#include <modlist.h>
+#include <modcache.h>
 
 namespace iimodmanager {
 
@@ -21,11 +21,12 @@ QFuture<void> CacheListCommand::executeCommand(QCommandLineParser &parser, const
     Q_UNUSED(parser);
     Q_UNUSED(args);
 
-    ModList mods = ModList::readCurrent(app_.config(), CACHED);
+    ModCache cache(app_.config());
+    cache.refresh();
 
     QTextStream cout(stdout);
-    for (auto const& mod : mods.list()) {
-        cout << mod.id() << ":" << mod.name() << Qt::endl;
+    for (auto mod : cache.mods()) {
+        cout << mod.id() << ":" << mod.info().name() << Qt::endl;
     }
 
     QPromise<void> promise;

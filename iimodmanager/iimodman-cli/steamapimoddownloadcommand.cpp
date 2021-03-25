@@ -1,4 +1,5 @@
 #include "mod.h"
+#include "modcache.h"
 #include "moddownloader.h"
 #include "steamapimoddownloadcommand.h"
 
@@ -43,9 +44,7 @@ QFuture<void> SteamAPIDownloadModCommand::executeCommand(QCommandLineParser &par
         const SteamModInfo info = infoCall->result();
         infoCall->deleteLater();
 
-        QDir cacheDir(app_.config().cachePath());
-        QDir modDir(cacheDir.absoluteFilePath(QString("workshop-%1").arg(info.id)));
-        QDir modVersionDir(modDir.absoluteFilePath(info.lastUpdated.toString("yyyy-MM-ddTHH-mm-ss")));
+        QDir modVersionDir(ModCache::modPath(app_.config(), info.modId(), info.lastUpdated));
 
         if (!isForceSet && modVersionDir.exists() && modVersionDir.exists("modinfo.txt"))
         {

@@ -1,4 +1,5 @@
 #include "moddownloader.h"
+#include "modcache.h"
 
 #include <JlCompress.h>
 #include <QBuffer>
@@ -68,7 +69,7 @@ SteamModInfo parseSteamModInfo(const QByteArray rawData)
         result.title = fileDetail.value("title").toString();
         result.description = fileDetail.value("description").toString();
         result.downloadUrl = fileDetail.value("file_url").toString();
-        result.lastUpdated = QDateTime::fromSecsSinceEpoch(fileDetail.value("time_updated").toInt());
+        result.lastUpdated = QDateTime::fromSecsSinceEpoch(fileDetail.value("time_updated").toInt(), Qt::UTC);
 
         return result;
 }
@@ -107,12 +108,8 @@ void ModDownloadCall::start(const SteamModInfo &info)
     QString callDebugInfo = QString("ModDownload(%1,%2)").arg(info.id, info.lastUpdated.toString(Qt::ISODate));
     info_ = info;
 
-    // Folder Structure: {cachePath}/workshop-{id}/{lastUpdated}/
-    // lastUpdated resembles ISO8601, but uses dashes so that folder names are valid on Windows.
-    QDir cacheDir(config_.cachePath());
-    QDir modDir(cacheDir.absoluteFilePath(QString("workshop-%1").arg(info.id)));
-    QDir modVersionDir(modDir.absoluteFilePath(info.lastUpdated.toString("yyyy-MM-ddTHH-mm-ss")));
-    resultPath_ = modVersionDir.absolutePath();
+    resultPath_ = ModCache::modPath(config_, info.modId(), info.lastUpdated);
+    QDir modVersionDir(resultPath());
 
     if (modVersionDir.exists() && !modVersionDir.isEmpty())
     {

@@ -7,8 +7,11 @@
 
 namespace iimodmanager {
 
-Mod::Mod(const QString &id, const QString &name)
-    : id_(id), name_(name)
+Mod::Mod()
+{}
+
+Mod::Mod(const QString &id)
+    : id_(id)
 {}
 
 const Mod Mod::readModInfo(const ModManConfig &config, const QString &id, ModLocation location)
@@ -27,7 +30,7 @@ const Mod Mod::readModInfo(const ModManConfig &config, const QString &id, ModLoc
 const Mod Mod::readModInfo(QIODevice &file, const QString &id)
 {
 
-    QString name;
+    Mod mod(id);
 
     if (file.isOpen() || file.open(QIODevice::ReadOnly))
     {
@@ -37,14 +40,22 @@ const Mod Mod::readModInfo(QIODevice &file, const QString &id)
         {
             QString line = in.readLine();
             QRegularExpressionMatch match = linePattern.match(line);
-            if (match.hasMatch() && match.captured(1) == "name")
+            if (match.hasMatch())
             {
-                name = match.captured(2);
+                QString key = match.captured(1);
+                if (key == "name")
+                {
+                    mod.name_ = match.captured(2);
+                }
+                else if (key == "version")
+                {
+                    mod.version_ = match.captured(2);
+                }
             }
         }
     }
 
-    return Mod(id, name);
+    return mod;
 }
 
 }  // namespace iimodmanager
