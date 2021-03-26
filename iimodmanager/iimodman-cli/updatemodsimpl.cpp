@@ -1,12 +1,15 @@
 #include "updatemodsimpl.h"
 
+#include <iostream>
 #include <QDir>
 #include <QTimer>
 
 namespace iimodmanager {
 
 UpdateModsImpl::UpdateModsImpl(ModManCliApplication &app, QObject *parent)
-    : QObject(parent), app(app), cache_(app.config()), downloader(app.config())
+    : QObject(parent), app(app), cache_(app.config()), downloader(app.config()),
+      alreadyLatestVersionBehavior(SKIP),
+      confirmBeforeDownloading(true)
 {
     cache_.refresh();
 }
@@ -25,16 +28,7 @@ void UpdateModsImpl::start(const QStringList &modIds)
         });
     }
 
-    steamInfos.clear();
-    steamInfos.reserve(workshopIds.size());
-    steamInfoCall = downloader.modInfoCall();
-    steamDownloadCall = downloader.modDownloadCall();
-
-    loopIndex = 0;
-    steamInfoCall->start(workshopIds.first());
-
-    connect(steamInfoCall, &ModInfoCall::finished, this, &UpdateModsImpl::steamInfoFinished);
-    connect(steamDownloadCall, &ModDownloadCall::finished, this, &UpdateModsImpl::steamDownloadFinished);
+    startInfos();
 }
 
 QStringList UpdateModsImpl::checkModIds(const QStringList &modIds)
@@ -65,10 +59,55 @@ QString UpdateModsImpl::checkModId(const QString &modId)
         if (!cachedInfo.isSteam())
         {
             QTextStream cerr(stderr);
-            cerr << QString("Mod %1 is not from Steam. Skipping.").arg(cachedInfo.toString()) << Qt::endl;
             return QString();
         }
         return cachedInfo.steamId();
+}
+
+void UpdateModsImpl::startInfos()
+{
+    steamInfoCall = downloader.modInfoCall();
+    connect(steamInfoCall, &ModInfoCall::finished, this, &UpdateModsImpl::steamInfoFinished);
+
+    steamInfos.clear();
+    steamInfos.reserve(workshopIds.size());
+
+    loopIndex = 0;
+    steamInfoCall->start(workshopIds.first());
+}
+
+void UpdateModsImpl::confirmDownloads()
+{
+    QTextStream cerr(stderr);
+    cerr << "The following mods will be downloaded:" << Qt::endl << "  ";
+    for (auto steamInfo : steamInfos)
+    {
+        cerr << QString("\"%1\" [%2] ").arg(steamInfo.title, steamInfo.modId());
+    }
+    cerr << Qt::endl;
+    cerr << "Do you want to continue? [Y/n] " << Qt::flush;
+
+    std::string line;
+    std::getline(std::cin, line);
+    QString response = QString::fromStdString(line).toLower();
+    if (response.isEmpty() || response == "y" || response == "yes")
+    {
+        startDownloads();
+    }
+    else
+    {
+        cerr << "Abort." << Qt::endl;
+        emit finished();
+    }
+}
+
+void UpdateModsImpl::startDownloads()
+{
+    steamDownloadCall = downloader.modDownloadCall();
+    connect(steamDownloadCall, &ModDownloadCall::finished, this, &UpdateModsImpl::steamDownloadFinished);
+
+    loopIndex = 0;
+    steamDownloadCall->start(steamInfos.first());
 }
 
 void UpdateModsImpl::steamInfoFinished()
@@ -96,8 +135,6 @@ void UpdateModsImpl::steamInfoFinished()
         // No downloads needed.
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
-        steamDownloadCall->deleteLater();
-        steamDownloadCall = nullptr;
         emit finished();
     }
     else
@@ -105,8 +142,10 @@ void UpdateModsImpl::steamInfoFinished()
         // Begin downloading.
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
-        loopIndex = 0;
-        steamDownloadCall->start(steamInfos.first());
+        if (confirmBeforeDownloading)
+            confirmDownloads();
+        else
+            startDownloads();
     }
 }
 

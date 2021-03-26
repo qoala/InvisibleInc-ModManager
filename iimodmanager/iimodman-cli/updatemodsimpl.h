@@ -27,6 +27,7 @@ public:
     const ModCache &cache() const { return cache_; };
 
     void setAlreadyLatestVersionBehavior(AlreadyLatestVersionBehavior behavior);
+    void setConfirmBeforeDownloading(bool behavior);
 
     void start(const QStringList &modIds);
 
@@ -38,6 +39,7 @@ private:
     ModCache cache_;
     ModDownloader downloader;
     AlreadyLatestVersionBehavior alreadyLatestVersionBehavior;
+    bool confirmBeforeDownloading;
 
     ModInfoCall *steamInfoCall;
     ModDownloadCall *steamDownloadCall;
@@ -47,6 +49,9 @@ private:
 
     QStringList checkModIds(const QStringList &modIds);
     QString checkModId(const QString &modId);
+    void startInfos();
+    void confirmDownloads();
+    void startDownloads();
 
     void steamInfoFinished();
     void steamDownloadFinished();
@@ -55,6 +60,11 @@ private:
 inline void UpdateModsImpl::setAlreadyLatestVersionBehavior(AlreadyLatestVersionBehavior behavior)
 {
     alreadyLatestVersionBehavior = behavior;
+}
+
+inline void UpdateModsImpl::setConfirmBeforeDownloading(bool behavior)
+{
+    confirmBeforeDownloading = behavior;
 }
 
 } // namespace iimodmanager

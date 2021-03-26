@@ -11,8 +11,9 @@ void CacheUpdateCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
     parser.addPositionalArgument("update", "Command: Update downloaded mods currently in the cache");
     parser.addOptions({
-                    {{"m", "mod-id"}, "Update mods by ID (e.g. 'workshop-2151835746'), may be repeated", "id"},
-                    {"all", "Update all mods registered in the cache"},
+                    {{"m", "mod-id"}, "Update mods by ID (e.g. 'workshop-2151835746'), may be repeated.", "id"},
+                    {"all", "Update all mods registered in the cache."},
+                    {{"y","yes"}, "Automatic yes to all prompts."},
                     {{"f","force"}, "Overwrite even if the latest version is already downloaded."},
                 });
 }
@@ -23,7 +24,8 @@ QFuture<void> CacheUpdateCommand::executeCommand(QCommandLineParser &parser, con
     QStringList modIds;
     impl = new UpdateModsImpl(app_, this);
 
-    const bool isForceSet = parser.isSet("force");
+    impl->setAlreadyLatestVersionBehavior(parser.isSet("force") ? FORCE_UPDATE : SKIP);
+    impl->setConfirmBeforeDownloading(!parser.isSet("yes"));
 
     if (parser.isSet("mod-id"))
     {
@@ -40,7 +42,6 @@ QFuture<void> CacheUpdateCommand::executeCommand(QCommandLineParser &parser, con
     }
     modIds.removeDuplicates();
 
-    impl->setAlreadyLatestVersionBehavior(isForceSet ? FORCE_UPDATE : SKIP);
 
     impl->start(modIds);
 
