@@ -11,7 +11,7 @@ void CacheUpdateCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
     parser.addPositionalArgument("update", "Command: Update downloaded mods currently in the cache");
     parser.addOptions({
-                    {{"m", "mod-id"}, "mod ID (e.g. 'workshop-2151835746')", "id"},
+                    {{"m", "mod-id"}, "mod ID (e.g. 'workshop-2151835746'), may be repeated", "id"},
                     {{"f","force"}, "Overwrite even if the latest version is already downloaded."},
                 });
 }
@@ -25,7 +25,7 @@ QFuture<void> CacheUpdateCommand::executeCommand(QCommandLineParser &parser, con
 
     if (parser.isSet("mod-id"))
     {
-        modIds.append(parser.value("mod-id"));
+        modIds.append(parser.values("mod-id"));
     }
     else
     {

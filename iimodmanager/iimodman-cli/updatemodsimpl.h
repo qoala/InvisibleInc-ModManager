@@ -41,6 +41,15 @@ private:
 
     ModInfoCall *steamInfoCall;
     ModDownloadCall *steamDownloadCall;
+    QStringList workshopIds;
+    QList<SteamModInfo> steamInfos;
+    qsizetype loopIndex;
+
+    QStringList checkModIds(const QStringList &modIds);
+    QString checkModId(const QString &modId);
+
+    void steamInfoFinished();
+    void steamDownloadFinished();
 };
 
 inline void UpdateModsImpl::setAlreadyLatestVersionBehavior(AlreadyLatestVersionBehavior behavior)

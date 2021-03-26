@@ -76,15 +76,20 @@ void ModCache::refresh()
         mods_.removeLast();
     }
 
-    // Build an index by mod ID.
+    refreshIndex();
+
+    qCDebug(modcache).noquote().nospace() << "cache:refresh() End mods:" << mods_.size();
+}
+
+void ModCache::refreshIndex()
+{
     modIds_.clear();
     for (qsizetype i = 0; i < mods_.size(); ++i)
     {
-        const CachedMod &mod = mods_.at(0);
-        modIds_[mod.id()] = i;
+        const CachedMod &mod = mods_.at(i);
+        const QString &modId = mod.id();
+        modIds_[modId] = i;
     }
-
-    qCDebug(modcache).noquote().nospace() << "cache:refresh() End mods:" << mods_.size();
 }
 
 bool CachedMod::refresh(const QString &modPath)

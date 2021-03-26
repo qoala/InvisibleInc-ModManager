@@ -1,6 +1,7 @@
 #include "updatemodsimpl.h"
 
 #include <QDir>
+#include <QTimer>
 
 namespace iimodmanager {
 
@@ -12,62 +13,124 @@ UpdateModsImpl::UpdateModsImpl(ModManCliApplication &app, QObject *parent)
 
 void UpdateModsImpl::start(const QStringList &modIds)
 {
+    workshopIds = checkModIds(modIds);
+    if (workshopIds.empty())
+    {
+        QTextStream cerr(stderr);
+        cerr << QString("No mods to update.") << Qt::endl;
+
+        // Use a single-shot timer in case the event loop hasn't started yet.
+        QTimer::singleShot(0, this, [this]{
+            emit finished();
+        });
+    }
+
+    steamInfos.clear();
+    steamInfos.reserve(workshopIds.size());
     steamInfoCall = downloader.modInfoCall();
     steamDownloadCall = downloader.modDownloadCall();
 
-    const QString &modId = modIds.first();
-    if (!cache_.contains(modId))
+    loopIndex = 0;
+    steamInfoCall->start(workshopIds.first());
+
+    connect(steamInfoCall, &ModInfoCall::finished, this, &UpdateModsImpl::steamInfoFinished);
+    connect(steamDownloadCall, &ModDownloadCall::finished, this, &UpdateModsImpl::steamDownloadFinished);
+}
+
+QStringList UpdateModsImpl::checkModIds(const QStringList &modIds)
+{
+    QStringList workshopIds;
+    workshopIds.reserve(modIds.size());
+    for (auto modId : modIds)
     {
-        QTextStream cerr(stderr);
-        cerr << QString("Mod %1 is not in the cache. Run 'cache add --id %1' first.").arg(modId) << Qt::endl;
-        exit(EXIT_FAILURE);
+        QString workshopId = checkModId(modId);
+        if (!workshopId.isEmpty())
+        {
+            workshopIds.append(workshopId);
+        }
     }
-    const CachedMod *cachedMod = &cache_.mod(modId);
-    const Mod &cachedInfo = cachedMod->info();
-    if (!cachedInfo.isSteam())
-    {
-        QTextStream cerr(stderr);
-        cerr << QString("Mod %1 is not from Steam.").arg(cachedInfo.toString()) << Qt::endl;
-        exit(EXIT_FAILURE);
-    }
-    const QString workshopId = cachedInfo.steamId();
+    return workshopIds;
+}
 
-    steamInfoCall->start(workshopId);
-
-    connect(steamInfoCall, &ModInfoCall::finished, this, [this, cachedMod]
-    {
-        const SteamModInfo steamInfo = steamInfoCall->result();
-        steamInfoCall->deleteLater();
-        steamInfoCall = nullptr;
-
-        if (alreadyLatestVersionBehavior == SKIP && cachedMod->containsVersion(steamInfo.lastUpdated))
+QString UpdateModsImpl::checkModId(const QString &modId)
+{
+        if (!cache_.contains(modId))
         {
             QTextStream cerr(stderr);
-            cerr << cachedMod->info().toString() << " already up to date" << Qt::endl;
-
-            steamDownloadCall->deleteLater();
-            steamDownloadCall = nullptr;
-            emit finished();
+            cerr << QString("Mod %1 is not in the cache. Run 'cache add --id %1' first.").arg(modId) << Qt::endl;
+            return QString();
         }
-        else
+        const CachedMod &cachedMod = cache_.mod(modId);
+        const Mod &cachedInfo = cachedMod.info();
+        if (!cachedInfo.isSteam())
         {
-            steamDownloadCall->start(steamInfo);
+            QTextStream cerr(stderr);
+            cerr << QString("Mod %1 is not from Steam.").arg(cachedInfo.toString()) << Qt::endl;
+            return QString();
         }
-    });
+        return cachedInfo.steamId();
+}
 
-    connect(steamDownloadCall, &ModDownloadCall::finished, this, [this]
+void UpdateModsImpl::steamInfoFinished()
+{
+    const SteamModInfo steamInfo = steamInfoCall->result();
+
+    const CachedMod &cachedMod = cache().mod(steamInfo.modId());
+    if (alreadyLatestVersionBehavior == SKIP && cachedMod.containsVersion(steamInfo.lastUpdated))
     {
-        QDir modVersionDir(steamDownloadCall->resultPath());
-
         QTextStream cerr(stderr);
-        QFile modInfoFile = QFile(modVersionDir.absoluteFilePath("modinfo.txt"));
-        Mod mod = Mod::readModInfo(modInfoFile, steamDownloadCall->modInfo().modId());
-        cerr << mod.toString() << " updated" << Qt::endl;
+        cerr << cachedMod.info().toString() << " already up to date" << Qt::endl;
+    }
+    else
+    {
+        steamInfos.append(steamInfo);
+    }
 
+    if (++loopIndex < workshopIds.size())
+    {
+        // Next steamInfo
+        steamInfoCall->start(workshopIds.at(loopIndex));
+    }
+    else if (steamInfos.empty())
+    {
+        // No downloads needed.
+        steamInfoCall->deleteLater();
+        steamInfoCall = nullptr;
         steamDownloadCall->deleteLater();
         steamDownloadCall = nullptr;
         emit finished();
-    });
+    }
+    else
+    {
+        // Begin downloading.
+        steamInfoCall->deleteLater();
+        steamInfoCall = nullptr;
+        loopIndex = 0;
+        steamDownloadCall->start(steamInfos.first());
+    }
+}
+
+void UpdateModsImpl::steamDownloadFinished()
+{
+    QDir modVersionDir(steamDownloadCall->resultPath());
+
+    QTextStream cerr(stderr);
+    QFile modInfoFile = QFile(modVersionDir.absoluteFilePath("modinfo.txt"));
+    Mod mod = Mod::readModInfo(modInfoFile, steamDownloadCall->modInfo().modId());
+    cerr << mod.toString() << " updated" << Qt::endl;
+
+    if (++loopIndex < steamInfos.size())
+    {
+        // Next download.
+        steamDownloadCall->start(steamInfos.at(loopIndex));
+    }
+    else
+    {
+        // Finished.
+        steamDownloadCall->deleteLater();
+        steamDownloadCall = nullptr;
+        emit finished();
+    }
 }
 
 } // namespace iimodmanager

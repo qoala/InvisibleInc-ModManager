@@ -66,8 +66,12 @@ public:
 
 private:
     const ModManConfig &config_;
+    //! All cached mods.
     QList<CachedMod> mods_;
+    //! Index of mods by mod ID.
     QMap<QString, qsizetype> modIds_;
+
+    void refreshIndex();
 };
 
 inline bool ModCache::contains(const QString &id) const
