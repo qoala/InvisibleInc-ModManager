@@ -3,6 +3,7 @@ project(IIModManager_CLI VERSION ${IIMODMAN_VERSION})
 set(IIMODMAN_CLI_SOURCES
     cachecommands.cpp
     cachelistcommand.cpp
+    cacheupdatecommand.cpp
     command.cpp
     commandcategory.cpp
     commandparser.cpp
@@ -15,6 +16,7 @@ set(IIMODMAN_CLI_SOURCES
     steamapicommands.cpp
     steamapimoddownloadcommand.cpp
     steamapimodinfocommand.cpp
+    updatemodsimpl.cpp
   )
 
 add_executable(${IIMODMAN_CLI_TARGET_NAME} ${IIMODMAN_CLI_SOURCES})

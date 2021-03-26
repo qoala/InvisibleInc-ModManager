@@ -67,7 +67,7 @@ public:
 private:
     const ModManConfig &config_;
     QList<CachedMod> mods_;
-    QMap<QString, CachedMod*> modIds_;
+    QMap<QString, qsizetype> modIds_;
 };
 
 inline bool ModCache::contains(const QString &id) const
@@ -77,7 +77,7 @@ inline bool ModCache::contains(const QString &id) const
 
 inline const CachedMod &ModCache::mod(const QString &id) const
 {
-    return *modIds_.value(id);
+    return mods_.at(modIds_.value(id));
 }
 
 } // namespace iimodmanager

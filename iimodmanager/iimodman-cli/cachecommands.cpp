@@ -1,5 +1,6 @@
 #include "cachecommands.h"
 #include "cachelistcommand.h"
+#include "cacheupdatecommand.h"
 
 namespace iimodmanager {
 
@@ -14,7 +15,7 @@ void CacheCommands::addArgs(QCommandLineParser &parser) const
 
 void CacheCommands::addTerminalArgs(QCommandLineParser &parser) const
 {
-    parser.addPositionalArgument("command", "Command to be executed (list)", "list||help");
+    parser.addPositionalArgument("command", "Command to be executed (list|update)", "list|update||help");
 }
 
 Command *CacheCommands::parseCommands(const QString command) const
@@ -22,6 +23,10 @@ Command *CacheCommands::parseCommands(const QString command) const
     if (command == "list")
     {
         return new CacheListCommand(app_);
+    }
+    else if (command == "update")
+    {
+        return new CacheUpdateCommand(app_);
     }
     return nullptr;
 }

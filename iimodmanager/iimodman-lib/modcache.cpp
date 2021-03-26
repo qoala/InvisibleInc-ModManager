@@ -78,9 +78,10 @@ void ModCache::refresh()
 
     // Build an index by mod ID.
     modIds_.clear();
-    for (auto mod : mods_)
+    for (qsizetype i = 0; i < mods_.size(); ++i)
     {
-        modIds_[mod.id()] = &mod;
+        const CachedMod &mod = mods_.at(0);
+        modIds_[mod.id()] = i;
     }
 
     qCDebug(modcache).noquote().nospace() << "cache:refresh() End mods:" << mods_.size();

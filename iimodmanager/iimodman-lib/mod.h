@@ -25,6 +25,8 @@ public:
     inline const QString &version() const { return version_; }
 
     inline bool isSteam() const { return id_.startsWith("workshop-"); }
+    QString steamId() const { return id_.sliced(9); }
+
     inline const QString toString() const { return QStringLiteral("%1 [%2]").arg(name_, id_); }
 
     static const Mod readModInfo(const ModManConfig &config, const QString &id, ModLocation location);
