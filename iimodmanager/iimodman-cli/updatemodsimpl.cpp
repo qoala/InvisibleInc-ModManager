@@ -57,7 +57,7 @@ QString UpdateModsImpl::checkModId(const QString &modId)
         if (!cache_.contains(modId))
         {
             QTextStream cerr(stderr);
-            cerr << QString("Mod %1 is not in the cache. Run 'cache add --id %1' first.").arg(modId) << Qt::endl;
+            cerr << QString("Mod %1 is not in the cache. Skipping.").arg(modId) << Qt::endl;
             return QString();
         }
         const CachedMod &cachedMod = cache_.mod(modId);
@@ -65,7 +65,7 @@ QString UpdateModsImpl::checkModId(const QString &modId)
         if (!cachedInfo.isSteam())
         {
             QTextStream cerr(stderr);
-            cerr << QString("Mod %1 is not from Steam.").arg(cachedInfo.toString()) << Qt::endl;
+            cerr << QString("Mod %1 is not from Steam. Skipping.").arg(cachedInfo.toString()) << Qt::endl;
             return QString();
         }
         return cachedInfo.steamId();

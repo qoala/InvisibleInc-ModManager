@@ -11,7 +11,8 @@ void CacheUpdateCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
     parser.addPositionalArgument("update", "Command: Update downloaded mods currently in the cache");
     parser.addOptions({
-                    {{"m", "mod-id"}, "mod ID (e.g. 'workshop-2151835746'), may be repeated", "id"},
+                    {{"m", "mod-id"}, "Update mods by ID (e.g. 'workshop-2151835746'), may be repeated", "id"},
+                    {"all", "Update all mods registered in the cache"},
                     {{"f","force"}, "Overwrite even if the latest version is already downloaded."},
                 });
 }
@@ -20,6 +21,7 @@ QFuture<void> CacheUpdateCommand::executeCommand(QCommandLineParser &parser, con
 {
     Q_UNUSED(args);
     QStringList modIds;
+    impl = new UpdateModsImpl(app_, this);
 
     const bool isForceSet = parser.isSet("force");
 
@@ -27,14 +29,17 @@ QFuture<void> CacheUpdateCommand::executeCommand(QCommandLineParser &parser, con
     {
         modIds.append(parser.values("mod-id"));
     }
-    else
+    if(parser.isSet("all"))
     {
-        QTextStream cerr(stderr);
-        cerr << app_.applicationName() << ": Missing mod-id" << Qt::endl;
-        parser.showHelp(EXIT_FAILURE);
+        const QList<CachedMod> &mods = impl->cache().mods();
+        modIds.reserve(modIds.size() + mods.size());
+        for (auto mod : impl->cache().mods())
+        {
+            modIds.append(mod.id());
+        }
     }
+    modIds.removeDuplicates();
 
-    impl = new UpdateModsImpl(app_, this);
     impl->setAlreadyLatestVersionBehavior(isForceSet ? FORCE_UPDATE : SKIP);
 
     impl->start(modIds);
