@@ -1,7 +1,8 @@
 #ifndef IIMODMANAGER_MODCACHE_H
 #define IIMODMANAGER_MODCACHE_H
 
-# include "modinfo.h"
+#include "moddownloader.h"
+#include "modinfo.h"
 
 #include <QDateTime>
 #include <QList>
@@ -34,6 +35,8 @@ private:
 class IIMODMANLIBSHARED_EXPORT CachedMod
 {
 public:
+    CachedMod(const ModCache &cache);
+
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
     inline bool downloaded() const { return !versions_.empty(); };
@@ -42,9 +45,13 @@ public:
     bool containsVersion(const QString &id) const;
     bool containsVersion(const QDateTime &versionTime) const;
 
+    bool updateFromSteam(const SteamModInfo &steamInfo);
     bool refresh(const QString &modPath);
 
+    CachedMod &operator = (const CachedMod &);
+
 private:
+    const ModCache &cache;
     QString id_;
     QList<CachedVersion> versions_;
     ModInfo info_;
@@ -62,11 +69,14 @@ public:
     bool contains(const QString &id) const;
     const CachedMod &mod(const QString &id) const;
 
-    inline QString modVersionPath(const QString &modId, const QString &versionId) { return modVersionPath(config_, modId, versionId); };
-    inline QString modVersionPath(const QString &modId, const QDateTime &versionTime) { return modVersionPath(config_, modId, versionTime); };
+    inline QString modPath(const QString &modId) const { return modPath(config_, modId); };
+    inline QString modVersionPath(const QString &modId, const QString &versionId) const { return modVersionPath(config_, modId, versionId); };
+    inline QString modVersionPath(const QString &modId, const QDateTime &versionTime) const { return modVersionPath(config_, modId, versionTime); };
+    static QString modPath(const ModManConfig &config, const QString &modId);
     static QString modVersionPath(const ModManConfig &config, const QString &modId, const QString &versionId);
     static QString modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime);
 
+    const CachedMod &addUnloaded(const SteamModInfo &steamInfo);
     void refresh();
 
 private:
@@ -78,6 +88,14 @@ private:
 
     void refreshIndex();
 };
+
+inline CachedMod &CachedMod::operator =(const CachedMod &o)
+{
+   id_ = o.id_;
+   versions_ = o.versions_;
+   info_ = o.info_;
+   return *this;
+}
 
 inline bool ModCache::contains(const QString &id) const
 {

@@ -11,9 +11,14 @@
 
 namespace iimodmanager {
 
-enum AlreadyLatestVersionBehavior {
-    SKIP,
-    FORCE_UPDATE
+enum MissingCacheAction {
+    CACHE_SKIP,
+    CACHE_ADD,
+};
+
+enum AlreadyLatestVersionAction {
+    LATEST_SKIP,
+    LATEST_FORCE
 };
 
 //! Shared implementation for commands that update the mod cache.
@@ -26,7 +31,8 @@ public:
 
     const ModCache &cache() const { return cache_; };
 
-    void setAlreadyLatestVersionBehavior(AlreadyLatestVersionBehavior behavior);
+    void setMissingCacheAction(MissingCacheAction action);
+    void setAlreadyLatestVersionBehavior(AlreadyLatestVersionAction behavior);
     void setConfirmBeforeDownloading(bool behavior);
 
     void start(const QStringList &modIds);
@@ -38,7 +44,8 @@ private:
     ModManCliApplication &app;
     ModCache cache_;
     ModDownloader downloader;
-    AlreadyLatestVersionBehavior alreadyLatestVersionBehavior;
+    MissingCacheAction missingCacheAction;
+    AlreadyLatestVersionAction alreadyLatestVersionAction;
     bool confirmBeforeDownloading;
 
     ModInfoCall *steamInfoCall;
@@ -57,9 +64,14 @@ private:
     void steamDownloadFinished();
 };
 
-inline void UpdateModsImpl::setAlreadyLatestVersionBehavior(AlreadyLatestVersionBehavior behavior)
+inline void UpdateModsImpl::setMissingCacheAction(MissingCacheAction action)
 {
-    alreadyLatestVersionBehavior = behavior;
+    missingCacheAction = action;
+}
+
+inline void UpdateModsImpl::setAlreadyLatestVersionBehavior(AlreadyLatestVersionAction behavior)
+{
+    alreadyLatestVersionAction = behavior;
 }
 
 inline void UpdateModsImpl::setConfirmBeforeDownloading(bool behavior)

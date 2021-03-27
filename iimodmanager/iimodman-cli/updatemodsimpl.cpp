@@ -9,7 +9,8 @@ namespace iimodmanager {
 
 UpdateModsImpl::UpdateModsImpl(ModManCliApplication &app, QObject *parent)
     : QObject(parent), app(app), cache_(app.config()), downloader(app.config()),
-      alreadyLatestVersionBehavior(SKIP),
+      missingCacheAction(CACHE_SKIP),
+      alreadyLatestVersionAction(LATEST_SKIP),
       confirmBeforeDownloading(true)
 {
     cache_.refresh();
@@ -28,8 +29,10 @@ void UpdateModsImpl::start(const QStringList &modIds)
             emit finished();
         });
     }
-
-    startInfos();
+    else
+    {
+        startInfos();
+    }
 }
 
 QStringList UpdateModsImpl::checkModIds(const QStringList &modIds)
@@ -49,20 +52,29 @@ QStringList UpdateModsImpl::checkModIds(const QStringList &modIds)
 
 QString UpdateModsImpl::checkModId(const QString &modId)
 {
-        if (!cache_.contains(modId))
-        {
-            QTextStream cerr(stderr);
-            cerr << QString("Mod %1 is not in the cache. Skipping.").arg(modId) << Qt::endl;
-            return QString();
-        }
-        const CachedMod &cachedMod = cache_.mod(modId);
-        const ModInfo &cachedInfo = cachedMod.info();
-        if (!cachedInfo.isSteam())
-        {
-            QTextStream cerr(stderr);
-            return QString();
-        }
-        return cachedInfo.steamId();
+    ModInfo cachedInfo;
+    if (cache_.contains(modId))
+    {
+        cachedInfo = cache_.mod(modId).info();
+    }
+    else if (missingCacheAction == CACHE_ADD)
+    {
+        cachedInfo = ModInfo(modId);
+    }
+    else
+    {
+        QTextStream cerr(stderr);
+        cerr << QString("Mod %1 is not in the cache. Skipping.").arg(modId) << Qt::endl;
+        return QString();
+    }
+
+    if (!cachedInfo.isSteam())
+    {
+        QTextStream cerr(stderr);
+        cerr << QString("Mod %1 is not a steam workshop ID. Skipping.").arg(modId) << Qt::endl;
+        return QString();
+    }
+    return cachedInfo.steamId();
 }
 
 void UpdateModsImpl::startInfos()
@@ -119,8 +131,9 @@ void UpdateModsImpl::steamInfoFinished()
 {
     const SteamModInfo steamInfo = steamInfoCall->result();
 
-    const CachedMod &cachedMod = cache().mod(steamInfo.modId());
-    if (alreadyLatestVersionBehavior == SKIP && cachedMod.containsVersion(steamInfo.lastUpdated))
+    const QString modId = steamInfo.modId();
+    const CachedMod &cachedMod = cache().contains(modId) ? cache().mod(modId) : cache_.addUnloaded(steamInfo);
+    if (alreadyLatestVersionAction == LATEST_SKIP && cachedMod.containsVersion(steamInfo.lastUpdated))
     {
         QTextStream cerr(stderr);
         cerr << cachedMod.info().toString() << " already up to date" << Qt::endl;

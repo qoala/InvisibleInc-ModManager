@@ -19,7 +19,7 @@ class IIMODMANLIBSHARED_EXPORT ModInfo
 {
 public:
     ModInfo();
-    ModInfo(const QString &id, const QString &name);
+    ModInfo(const QString &id, const QString &name = QString());
 
     inline const QString &id() const { return id_; }
     inline const QString &name() const { return name_; }

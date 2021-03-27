@@ -13,8 +13,9 @@ void CacheUpdateCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addOptions({
                     {{"m", "mod-id"}, "Update mods by ID (e.g. 'workshop-2151835746'), may be repeated.", "id"},
                     {"all", "Update all mods registered in the cache."},
-                    {{"y","yes"}, "Automatic yes to all prompts."},
+                    {{"a","add"}, "Automatically add missing mods to the cache."},
                     {{"f","force"}, "Overwrite even if the latest version is already downloaded."},
+                    {{"y","yes"}, "Automatic yes to all prompts."},
                 });
 }
 
@@ -24,7 +25,8 @@ QFuture<void> CacheUpdateCommand::executeCommand(QCommandLineParser &parser, con
     QStringList modIds;
     impl = new UpdateModsImpl(app_, this);
 
-    impl->setAlreadyLatestVersionBehavior(parser.isSet("force") ? FORCE_UPDATE : SKIP);
+    impl->setMissingCacheAction(parser.isSet("add") ? CACHE_ADD : CACHE_SKIP);
+    impl->setAlreadyLatestVersionBehavior(parser.isSet("force") ? LATEST_FORCE : LATEST_SKIP);
     impl->setConfirmBeforeDownloading(!parser.isSet("yes"));
 
     if (parser.isSet("mod-id"))

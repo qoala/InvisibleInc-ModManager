@@ -21,6 +21,10 @@ const QDateTime parseVersionTime(const QString &versionId)
     return QDateTime::fromString(QString(versionId).replace('_', ':'), Qt::ISODate);
 }
 
+CachedMod::CachedMod(const ModCache &cache)
+    : cache(cache)
+{}
+
 bool CachedMod::containsVersion(const QString &id) const
 {
     for (auto version : versions_)
@@ -36,6 +40,25 @@ bool CachedMod::containsVersion(const QString &id) const
 bool CachedMod::containsVersion(const QDateTime &versionTime) const
 {
     return containsVersion(formatVersionTime(versionTime));
+}
+
+bool CachedMod::updateFromSteam(const SteamModInfo &steamInfo)
+{
+    bool changed = false;
+    if (versions_.empty())
+    {
+        changed = true;
+        id_ = steamInfo.modId();
+        info_ = ModInfo(id_, steamInfo.title);
+    }
+
+    if (changed)
+    {
+        QDir modDir(cache.modPath(id_));
+        QFile modManFile(modDir.filePath("modman.json"));
+        writeModManFile(modManFile);
+    }
+    return changed;
 }
 
 const QJsonDocument readJSON(QIODevice &file)
@@ -93,6 +116,12 @@ ModCache::ModCache(const ModManConfig &config, QObject *parent)
     : QObject(parent), config_(config)
 {}
 
+QString ModCache::modPath(const ModManConfig &config, const QString &modId)
+{
+    QDir cacheDir(config.cachePath());
+    return cacheDir.absoluteFilePath(modId);
+}
+
 QString ModCache::modVersionPath(const ModManConfig &config, const QString &modId, const QString &versionId)
 {
     QDir cacheDir(config.cachePath());
@@ -103,6 +132,16 @@ QString ModCache::modVersionPath(const ModManConfig &config, const QString &modI
 QString ModCache::modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime)
 {
     return modVersionPath(config, modId, formatVersionTime(versionTime));
+}
+
+const CachedMod &ModCache::addUnloaded(const SteamModInfo &steamInfo)
+{
+    const qsizetype position = mods_.size();
+    CachedMod &mod = mods_.emplaceBack(*this);
+    mod.updateFromSteam(steamInfo);
+
+    modIds_[mod.id()] = position;
+    return mod;
 }
 
 void ModCache::refresh()
@@ -121,7 +160,7 @@ void ModCache::refresh()
     {
         if (lastValid)
         {
-            mod = &mods_.emplaceBack();
+            mod = &mods_.emplaceBack(*this);
         }
         lastValid = mod->refresh(modPath.filePath());
     }
