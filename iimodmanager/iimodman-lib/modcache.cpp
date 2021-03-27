@@ -36,126 +36,6 @@ const QJsonDocument readJSON(QIODevice &file)
     return json;
 }
 
-CachedVersion::CachedVersion(const ModCache &cache, const QString &modId, const QString &versionId)
-    : cache(cache), modId(modId), id_(versionId)
-{}
-
-const QString CachedVersion::toString() const
-{
-    if (version().has_value())
-        return "v" + *version();
-    else if (timestamp().has_value())
-        return timestamp()->toString();
-    else
-        return id();
-
-}
-
-CachedVersion &CachedVersion::operator =(const CachedVersion &o)
-{
-   assert(&cache == &o.cache);
-   id_ = o.id_;
-   info_ = o.info_;
-   timestamp_ = o.timestamp_;
-   version_ = o.version_;
-   return *this;
-}
-
-CachedMod::CachedMod(const ModCache &cache, const QString &id)
-    : cache(cache), id_(id)
-{}
-
-bool CachedMod::containsVersion(const QString &id) const
-{
-    for (auto version : versions_)
-    {
-        if (version.id() == id)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool CachedMod::containsVersion(const QDateTime &versionTime) const
-{
-    return containsVersion(formatVersionTime(versionTime));
-}
-
-bool CachedMod::updateFromSteam(const SteamModInfo &steamInfo)
-{
-    bool changed = false;
-    if (versions_.empty())
-    {
-        changed = true;
-        info_ = ModInfo(id_, steamInfo.title);
-    }
-
-    if (changed)
-    {
-        QDir modDir(cache.modPath(id_));
-        if (modDir.mkpath("."))
-        {
-            QFile modManFile(modDir.filePath("modman.json"));
-            qCDebug(modcache).noquote() << QString("updateMod(%1)").arg(id_) << "Writing to" << modDir.filePath("modman.json");
-            if (!writeModManFile(modManFile))
-            {
-                qCWarning(modcache).noquote() << QString("updateMod(%1)").arg(id_) << "Couldn't write" << modDir.filePath("modman.json");
-            }
-        }
-        else
-        {
-            qCWarning(modcache).noquote() << QString("updateMod(%1)").arg(id_) << "Couldn't create directory" << modDir.path();
-        }
-    }
-    return changed;
-}
-
-bool CachedMod::readModManFile(QIODevice &file)
-{
-    if (file.isOpen() || file.open(QIODevice::ReadOnly))
-    {
-        const QJsonDocument json = readJSON(file);
-        if (json.isNull())
-            return false;
-
-        const QJsonObject root = json.object();
-
-        QString name;
-        const QJsonValue nameJson = root.value("modName");
-        if (!nameJson.isUndefined())
-            name = root.value("modName").toString();
-
-        info_ = ModInfo(id_, name);
-        return true;
-    }
-    return false;
-}
-
-bool CachedMod::writeModManFile(QIODevice &file)
-{
-    QJsonObject root;
-    root["modId"] = id_;
-    root["modName"] = info().name();
-    QJsonDocument json(root);
-
-    if ((file.isOpen() && file.isWritable()) || file.open(QIODevice::WriteOnly))
-    {
-        file.write(json.toJson());
-        return true;
-    }
-    return false;
-}
-
-CachedMod &CachedMod::operator =(const CachedMod &o)
-{
-   assert(&cache == &o.cache);
-   id_ = o.id_;
-   versions_ = o.versions_;
-   info_ = o.info_;
-   return *this;
-}
-
 ModCache::ModCache(const ModManConfig &config, QObject *parent)
     : QObject(parent), config_(config)
 {}
@@ -221,6 +101,27 @@ void ModCache::refreshIndex()
     }
 }
 
+CachedMod::CachedMod(const ModCache &cache, const QString &id)
+    : cache(cache), id_(id)
+{}
+
+bool CachedMod::containsVersion(const QString &id) const
+{
+    for (auto version : versions_)
+    {
+        if (version.id() == id)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CachedMod::containsVersion(const QDateTime &versionTime) const
+{
+    return containsVersion(formatVersionTime(versionTime));
+}
+
 bool CachedMod::refresh(RefreshLevel level)
 {
     QDir modDir(cache.modPath(id_));
@@ -261,6 +162,95 @@ bool CachedMod::refresh(RefreshLevel level)
     return false;
 }
 
+bool CachedMod::updateFromSteam(const SteamModInfo &steamInfo)
+{
+    bool changed = false;
+    if (versions_.empty())
+    {
+        changed = true;
+        info_ = ModInfo(id_, steamInfo.title);
+    }
+
+    if (changed)
+    {
+        QDir modDir(cache.modPath(id_));
+        if (modDir.mkpath("."))
+        {
+            QFile modManFile(modDir.filePath("modman.json"));
+            qCDebug(modcache).noquote() << QString("updateMod(%1)").arg(id_) << "Writing to" << modDir.filePath("modman.json");
+            if (!writeModManFile(modManFile))
+            {
+                qCWarning(modcache).noquote() << QString("updateMod(%1)").arg(id_) << "Couldn't write" << modDir.filePath("modman.json");
+            }
+        }
+        else
+        {
+            qCWarning(modcache).noquote() << QString("updateMod(%1)").arg(id_) << "Couldn't create directory" << modDir.path();
+        }
+    }
+    return changed;
+}
+
+CachedMod &CachedMod::operator =(const CachedMod &o)
+{
+   assert(&cache == &o.cache);
+   id_ = o.id_;
+   versions_ = o.versions_;
+   info_ = o.info_;
+   return *this;
+}
+
+bool CachedMod::readModManFile(QIODevice &file)
+{
+    if (file.isOpen() || file.open(QIODevice::ReadOnly))
+    {
+        const QJsonDocument json = readJSON(file);
+        if (json.isNull())
+            return false;
+
+        const QJsonObject root = json.object();
+
+        QString name;
+        const QJsonValue nameJson = root.value("modName");
+        if (!nameJson.isUndefined())
+            name = root.value("modName").toString();
+
+        info_ = ModInfo(id_, name);
+        return true;
+    }
+    return false;
+}
+
+bool CachedMod::writeModManFile(QIODevice &file)
+{
+    QJsonObject root;
+    root["modId"] = id_;
+    root["modName"] = info().name();
+    QJsonDocument json(root);
+
+    if ((file.isOpen() && file.isWritable()) || file.open(QIODevice::WriteOnly))
+    {
+        file.write(json.toJson());
+        return true;
+    }
+    return false;
+}
+
+CachedVersion::CachedVersion(const ModCache &cache, const QString &modId, const QString &versionId)
+    : cache(cache), modId(modId), id_(versionId)
+{}
+
+const QString CachedVersion::toString() const
+{
+    if (version().has_value())
+        return "v" + *version();
+    else if (timestamp().has_value())
+        return timestamp()->toString();
+    else
+        return id();
+
+}
+
 bool CachedVersion::refresh(RefreshLevel level)
 {
     QDir modVersionDir(cache.modVersionPath(modId, id_));
@@ -294,6 +284,16 @@ bool CachedVersion::refresh(RefreshLevel level)
 
     qCDebug(modcache).noquote().nospace() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << " version=" << (version_.has_value() ? *version_ : "");
     return true;
+}
+
+CachedVersion &CachedVersion::operator =(const CachedVersion &o)
+{
+   assert(&cache == &o.cache);
+   id_ = o.id_;
+   info_ = o.info_;
+   timestamp_ = o.timestamp_;
+   version_ = o.version_;
+   return *this;
 }
 
 } // namespace iimodmanager

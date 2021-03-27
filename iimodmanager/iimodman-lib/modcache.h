@@ -13,67 +13,14 @@ namespace iimodmanager {
 
 Q_DECLARE_LOGGING_CATEGORY(modcache)
 
-class ModCache;
+class CachedMod;
+class CachedVersion;
 
 enum RefreshLevel
 {
     REFRESH_FULL,
     REFRESH_ID_ONLY,
     REFRESH_LATEST,
-};
-
-class IIMODMANLIBSHARED_EXPORT CachedVersion
-{
-public:
-    CachedVersion(const ModCache &cache, const QString &modId, const QString &versionId);
-
-    inline const QString &id() const { return id_; };
-    inline const ModInfo &info() const { return info_; };
-    inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
-    inline const std::optional<QString> version() const { return version_; };
-
-    const QString toString() const;
-
-    bool refresh(RefreshLevel = REFRESH_FULL);
-
-    CachedVersion &operator = (const CachedVersion &);
-
-private:
-    const ModCache &cache;
-    const QString modId;
-    QString id_;
-    ModInfo info_;
-    std::optional<QDateTime> timestamp_;
-    std::optional<QString> version_;
-};
-
-class IIMODMANLIBSHARED_EXPORT CachedMod
-{
-public:
-    CachedMod(const ModCache &cache, const QString &id);
-
-    inline const QString &id() const { return id_; };
-    inline const ModInfo &info() const { return info_; };
-    inline bool downloaded() const { return !versions_.empty(); };
-
-    inline const QList<CachedVersion> &versions() const { return versions_; };
-    const CachedVersion &latest() const { return versions_.first(); };
-    bool containsVersion(const QString &id) const;
-    bool containsVersion(const QDateTime &versionTime) const;
-
-    bool updateFromSteam(const SteamModInfo &steamInfo);
-    bool refresh(RefreshLevel = REFRESH_FULL);
-
-    CachedMod &operator = (const CachedMod &);
-
-private:
-    const ModCache &cache;
-    QString id_;
-    QList<CachedVersion> versions_;
-    ModInfo info_;
-
-    bool readModManFile(QIODevice &file);
-    bool writeModManFile(QIODevice &file);
 };
 
 class IIMODMANLIBSHARED_EXPORT ModCache : public QObject
@@ -103,6 +50,60 @@ private:
     QMap<QString, qsizetype> modIds_;
 
     void refreshIndex();
+};
+
+class IIMODMANLIBSHARED_EXPORT CachedMod
+{
+public:
+    CachedMod(const ModCache &cache, const QString &id);
+
+    inline const QString &id() const { return id_; };
+    inline const ModInfo &info() const { return info_; };
+    inline bool downloaded() const { return !versions_.empty(); };
+
+    inline const QList<CachedVersion> &versions() const { return versions_; };
+    const CachedVersion &latest() const { return versions_.first(); };
+    bool containsVersion(const QString &id) const;
+    bool containsVersion(const QDateTime &versionTime) const;
+
+    bool refresh(RefreshLevel = REFRESH_FULL);
+    bool updateFromSteam(const SteamModInfo &steamInfo);
+
+    CachedMod &operator = (const CachedMod &);
+
+private:
+    const ModCache &cache;
+    QString id_;
+    QList<CachedVersion> versions_;
+    ModInfo info_;
+
+    bool readModManFile(QIODevice &file);
+    bool writeModManFile(QIODevice &file);
+};
+
+class IIMODMANLIBSHARED_EXPORT CachedVersion
+{
+public:
+    CachedVersion(const ModCache &cache, const QString &modId, const QString &versionId);
+
+    inline const QString &id() const { return id_; };
+    inline const ModInfo &info() const { return info_; };
+    inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
+    inline const std::optional<QString> version() const { return version_; };
+
+    const QString toString() const;
+
+    bool refresh(RefreshLevel = REFRESH_FULL);
+
+    CachedVersion &operator = (const CachedVersion &);
+
+private:
+    const ModCache &cache;
+    const QString modId;
+    QString id_;
+    ModInfo info_;
+    std::optional<QDateTime> timestamp_;
+    std::optional<QString> version_;
 };
 
 inline bool ModCache::contains(const QString &id) const
