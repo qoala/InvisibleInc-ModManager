@@ -47,7 +47,7 @@ QFuture<void> SteamAPIDownloadModCommand::executeCommand(QCommandLineParser &par
         const SteamModInfo info = infoCall->result();
         infoCall->deleteLater();
 
-        QDir modVersionDir(ModCache::modPath(app_.config(), info.modId(), info.lastUpdated));
+        QDir modVersionDir(ModCache::modVersionPath(app_.config(), info.modId(), info.lastUpdated));
 
         if (!isForceSet && modVersionDir.exists() && modVersionDir.exists("modinfo.txt"))
         {

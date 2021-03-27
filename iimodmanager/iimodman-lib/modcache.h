@@ -62,10 +62,10 @@ public:
     bool contains(const QString &id) const;
     const CachedMod &mod(const QString &id) const;
 
-    inline QString modPath(const QString &modId, const QString &versionId) { return modPath(config_, modId, versionId); };
-    inline QString modPath(const QString &modId, const QDateTime &versionTime) { return modPath(config_, modId, versionTime); };
-    static QString modPath(const ModManConfig &config, const QString &modId, const QString &versionId);
-    static QString modPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime);
+    inline QString modVersionPath(const QString &modId, const QString &versionId) { return modVersionPath(config_, modId, versionId); };
+    inline QString modVersionPath(const QString &modId, const QDateTime &versionTime) { return modVersionPath(config_, modId, versionTime); };
+    static QString modVersionPath(const ModManConfig &config, const QString &modId, const QString &versionId);
+    static QString modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime);
 
     void refresh();
 

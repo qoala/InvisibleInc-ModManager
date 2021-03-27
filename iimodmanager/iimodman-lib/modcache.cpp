@@ -93,16 +93,16 @@ ModCache::ModCache(const ModManConfig &config, QObject *parent)
     : QObject(parent), config_(config)
 {}
 
-QString ModCache::modPath(const ModManConfig &config, const QString &modId, const QString &versionId)
+QString ModCache::modVersionPath(const ModManConfig &config, const QString &modId, const QString &versionId)
 {
     QDir cacheDir(config.cachePath());
     QDir modDir(cacheDir.absoluteFilePath(modId));
     return modDir.absoluteFilePath(versionId);
 }
 
-QString ModCache::modPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime)
+QString ModCache::modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime)
 {
-    return modPath(config, modId, formatVersionTime(versionTime));
+    return modVersionPath(config, modId, formatVersionTime(versionTime));
 }
 
 void ModCache::refresh()

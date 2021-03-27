@@ -108,7 +108,7 @@ void ModDownloadCall::start(const SteamModInfo &info)
     QString callDebugInfo = QString("ModDownload(%1,%2)").arg(info.id, info.lastUpdated.toString(Qt::ISODate));
     info_ = info;
 
-    resultPath_ = ModCache::modPath(config_, info.modId(), info.lastUpdated);
+    resultPath_ = ModCache::modVersionPath(config_, info.modId(), info.lastUpdated);
     QDir modVersionDir(resultPath());
 
     if (modVersionDir.exists() && !modVersionDir.isEmpty())
