@@ -119,7 +119,12 @@ bool CachedMod::refresh(const QString &modPath)
 
     qCDebug(modcache).noquote().nospace() << QString("mod:refresh(%1)").arg(id_) << " versions:" << versions_.size();
 
-    return versions_.size() > 0;
+    if (versions_.size() > 0)
+    {
+        info_ = versions_.first().info();
+        return true;
+    }
+    return false;
 }
 
 bool CachedVersion::refresh(const QString &modVersionPath, const QString &modId)

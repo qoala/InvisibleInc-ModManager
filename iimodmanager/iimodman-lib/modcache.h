@@ -35,7 +35,8 @@ class IIMODMANLIBSHARED_EXPORT CachedMod
 {
 public:
     inline const QString &id() const { return id_; };
-    inline const ModInfo &info() const { return versions_.last().info(); };
+    inline const ModInfo &info() const { return info_; };
+    inline bool downloaded() const { return !versions_.empty(); };
 
     inline const QList<CachedVersion> &versions() const { return versions_; };
     bool containsVersion(const QString &id) const;
@@ -46,6 +47,7 @@ public:
 private:
     QString id_;
     QList<CachedVersion> versions_;
+    ModInfo info_;
 };
 
 class IIMODMANLIBSHARED_EXPORT ModCache : public QObject
