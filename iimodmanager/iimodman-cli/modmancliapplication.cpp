@@ -9,8 +9,8 @@ namespace iimodmanager {
 ModManCliApplication::ModManCliApplication(int &argc, char **argv[])
     : QCoreApplication(argc, *argv), config_()
 {
-    setApplicationName(ModManConfig::organizationName);
-    setOrganizationName(ModManConfig::applicationName);
+    setApplicationName(ModManConfig::applicationName);
+    setOrganizationName(ModManConfig::organizationName);
 }
 
 int ModManCliApplication::main(int argc, char *argv[])
