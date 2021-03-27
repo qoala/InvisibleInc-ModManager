@@ -4,6 +4,7 @@ include(GNUInstallDirs) # configurable CMAKE_INSTALL_*DIR
 
 set(IIMODMAN_LIB_HEADERS
     iimodman-lib_global.h
+    modcache.h
     modinfo.h
     moddownloader.h
     modlist.h

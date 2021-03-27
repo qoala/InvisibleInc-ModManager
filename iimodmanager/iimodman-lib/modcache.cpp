@@ -21,6 +21,21 @@ const QDateTime parseVersionTime(const QString &versionId)
     return QDateTime::fromString(QString(versionId).replace('_', ':'), Qt::ISODate);
 }
 
+const QJsonDocument readJSON(QIODevice &file)
+{
+    QByteArray rawData = file.readAll();
+    file.close();
+    QJsonParseError errors;
+    const QJsonDocument json = QJsonDocument::fromJson(rawData, &errors);
+
+    if (json.isNull())
+    {
+        qCWarning(modcache) << "JSON Parse Error:", errors.errorString();
+        qCDebug(modcache) << rawData;
+    }
+    return json;
+}
+
 const QString CachedVersion::toString() const
 {
     if (version().has_value())
@@ -83,21 +98,6 @@ bool CachedMod::updateFromSteam(const SteamModInfo &steamInfo)
     return changed;
 }
 
-const QJsonDocument readJSON(QIODevice &file)
-{
-    QByteArray rawData = file.readAll();
-    file.close();
-    QJsonParseError errors;
-    const QJsonDocument json = QJsonDocument::fromJson(rawData, &errors);
-
-    if (json.isNull())
-    {
-        qCWarning(modcache) << "JSON Parse Error:", errors.errorString();
-        qCDebug(modcache) << rawData;
-    }
-    return json;
-}
-
 bool CachedMod::readModManFile(QIODevice &file)
 {
     if (file.isOpen() || file.open(QIODevice::ReadOnly))
@@ -132,6 +132,14 @@ bool CachedMod::writeModManFile(QIODevice &file)
         return true;
     }
     return false;
+}
+
+CachedMod &CachedMod::operator =(const CachedMod &o)
+{
+   id_ = o.id_;
+   versions_ = o.versions_;
+   info_ = o.info_;
+   return *this;
 }
 
 ModCache::ModCache(const ModManConfig &config, QObject *parent)

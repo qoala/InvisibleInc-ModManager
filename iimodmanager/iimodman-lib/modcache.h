@@ -92,14 +92,6 @@ private:
     void refreshIndex();
 };
 
-inline CachedMod &CachedMod::operator =(const CachedMod &o)
-{
-   id_ = o.id_;
-   versions_ = o.versions_;
-   info_ = o.info_;
-   return *this;
-}
-
 inline bool ModCache::contains(const QString &id) const
 {
     return modIds_.contains(id);
