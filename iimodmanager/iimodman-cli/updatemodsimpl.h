@@ -3,10 +3,8 @@
 
 #include "modmancliapplication.h"
 
-#include <QPromise>
 #include <modcache.h>
 #include <moddownloader.h>
-
 
 
 namespace iimodmanager {
@@ -21,7 +19,7 @@ enum AlreadyLatestVersionAction {
     LATEST_FORCE
 };
 
-//! Shared implementation for commands that update the mod cache.
+//! Shared implementation for commands that update mods in the mod cache.
 class UpdateModsImpl : public QObject
 {
     Q_OBJECT

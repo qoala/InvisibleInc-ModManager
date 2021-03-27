@@ -44,7 +44,6 @@ QFuture<void> CacheUpdateCommand::executeCommand(QCommandLineParser &parser, con
     }
     modIds.removeDuplicates();
 
-
     impl->start(modIds);
 
     return QtFuture::connect(impl, &UpdateModsImpl::finished);

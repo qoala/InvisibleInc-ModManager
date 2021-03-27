@@ -1,7 +1,9 @@
 project(IIModManager_CLI VERSION ${IIMODMAN_VERSION})
 
 set(IIMODMAN_CLI_SOURCES
+    addmodsimpl.cpp
     cachecommands.cpp
+    cacheaddcommand.cpp
     cachelistcommand.cpp
     cacheupdatecommand.cpp
     command.cpp
