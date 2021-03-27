@@ -21,6 +21,17 @@ const QDateTime parseVersionTime(const QString &versionId)
     return QDateTime::fromString(QString(versionId).replace('_', ':'), Qt::ISODate);
 }
 
+const QString CachedVersion::toString() const
+{
+    if (version().has_value())
+        return "v" + *version();
+    else if (timestamp().has_value())
+        return timestamp()->toString();
+    else
+        return id();
+
+}
+
 CachedMod::CachedMod(const ModCache &cache)
     : cache(cache)
 {}

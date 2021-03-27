@@ -23,6 +23,8 @@ public:
     inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
     inline const std::optional<QString> version() const { return version_; };
 
+    const QString toString() const;
+
     bool refresh(const QString &modVersionPath, const QString &modId);
 
 private:
@@ -42,6 +44,7 @@ public:
     inline bool downloaded() const { return !versions_.empty(); };
 
     inline const QList<CachedVersion> &versions() const { return versions_; };
+    const CachedVersion &latest() const { return versions_.first(); };
     bool containsVersion(const QString &id) const;
     bool containsVersion(const QDateTime &versionTime) const;
 

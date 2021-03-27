@@ -24,9 +24,22 @@ QFuture<void> CacheListCommand::executeCommand(QCommandLineParser &parser, const
     ModCache cache(app_.config());
     cache.refresh();
 
+    int maxWidth = 0;
+    for (auto mod : cache.mods()) {
+        const int width = mod.id().size() + mod.info().name().size();
+        if (width > maxWidth)
+            maxWidth = width;
+    }
+
     QTextStream cout(stdout);
     for (auto mod : cache.mods()) {
-        cout << mod.id() << ":" << mod.info().name() << Qt::endl;
+        const QString &modId = mod.id();
+        const QString &modName = mod.info().name();
+        const int width = modId.size() + modName.size();
+        cout << modId << ":" << modName;
+        cout << QString(maxWidth - width, ' ') << "  ::";
+        cout << (mod.downloaded() ? mod.latest().toString() : "(not downloaded)" );
+        cout << Qt::endl;
     }
 
     QPromise<void> promise;
