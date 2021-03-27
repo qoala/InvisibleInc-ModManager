@@ -1,7 +1,7 @@
 #ifndef IIMODMANAGER_MODCACHE_H
 #define IIMODMANAGER_MODCACHE_H
 
-# include "mod.h"
+# include "modinfo.h"
 
 #include <QDateTime>
 #include <QList>
@@ -18,7 +18,7 @@ class IIMODMANLIBSHARED_EXPORT CachedVersion
 {
 public:
     inline const QString &id() const { return id_; };
-    inline const Mod &info() const { return info_; };
+    inline const ModInfo &info() const { return info_; };
     inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
     inline const std::optional<QString> version() const { return version_; };
 
@@ -26,7 +26,7 @@ public:
 
 private:
     QString id_;
-    Mod info_;
+    ModInfo info_;
     std::optional<QDateTime> timestamp_;
     std::optional<QString> version_;
 };
@@ -35,7 +35,7 @@ class IIMODMANLIBSHARED_EXPORT CachedMod
 {
 public:
     inline const QString &id() const { return id_; };
-    inline const Mod &info() const { return versions_.last().info(); };
+    inline const ModInfo &info() const { return versions_.last().info(); };
 
     inline const QList<CachedVersion> &versions() const { return versions_; };
     bool containsVersion(const QString &id) const;

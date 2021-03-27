@@ -2,7 +2,7 @@
 
 #include <QPromise>
 #include <QTextStream>
-#include <mod.h>
+#include <modinfo.h>
 #include <modcache.h>
 
 namespace iimodmanager {

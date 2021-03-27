@@ -15,6 +15,7 @@ namespace iimodmanager {
 
 Q_DECLARE_LOGGING_CATEGORY(steamAPI)
 
+//! Details about a mod from the Steam API.
 struct IIMODMANLIBSHARED_EXPORT SteamModInfo
 {
     QString id;

@@ -1,5 +1,5 @@
-#ifndef MOD_H
-#define MOD_H
+#ifndef MODINFO_H
+#define MODINFO_H
 
 #include <QIODevice>
 #include <QString>
@@ -14,11 +14,12 @@ enum IIMODMANLIBSHARED_EXPORT ModLocation {
     INSTALLED
 };
 
-class IIMODMANLIBSHARED_EXPORT Mod
+//! The contents of a mod's modinfo.txt.
+class IIMODMANLIBSHARED_EXPORT ModInfo
 {
 public:
-    Mod();
-    Mod(const QString &id);
+    ModInfo();
+    ModInfo(const QString &id);
 
     inline const QString &id() const { return id_; }
     inline const QString &name() const { return name_; }
@@ -29,8 +30,8 @@ public:
 
     inline const QString toString() const { return QStringLiteral("%1 [%2]").arg(name_, id_); }
 
-    static const Mod readModInfo(const ModManConfig &config, const QString &id, ModLocation location);
-    static const Mod readModInfo(QIODevice &file, const QString &id);
+    static const ModInfo readModInfo(const ModManConfig &config, const QString &id, ModLocation location);
+    static const ModInfo readModInfo(QIODevice &file, const QString &id);
 
 private:
     QString id_;
@@ -40,4 +41,4 @@ private:
 
 }  // namespace iimodmanager
 
-#endif // MOD_H
+#endif // MODINFO_H

@@ -1,4 +1,4 @@
-#include "mod.h"
+#include "modinfo.h"
 
 #include <QDir>
 #include <QRegularExpression>
@@ -7,14 +7,14 @@
 
 namespace iimodmanager {
 
-Mod::Mod()
+ModInfo::ModInfo()
 {}
 
-Mod::Mod(const QString &id)
+ModInfo::ModInfo(const QString &id)
     : id_(id)
 {}
 
-const Mod Mod::readModInfo(const ModManConfig &config, const QString &id, ModLocation location)
+const ModInfo ModInfo::readModInfo(const ModManConfig &config, const QString &id, ModLocation location)
 {
     const QDir modsDir(location == CACHED ? config.cachePath() : config.installPath());
     assert(modsDir.exists());
@@ -27,10 +27,10 @@ const Mod Mod::readModInfo(const ModManConfig &config, const QString &id, ModLoc
     return readModInfo(file, id);
 }
 
-const Mod Mod::readModInfo(QIODevice &file, const QString &id)
+const ModInfo ModInfo::readModInfo(QIODevice &file, const QString &id)
 {
 
-    Mod mod(id);
+    ModInfo mod(id);
 
     if (file.isOpen() || file.open(QIODevice::ReadOnly))
     {

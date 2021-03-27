@@ -55,7 +55,7 @@ QString UpdateModsImpl::checkModId(const QString &modId)
             return QString();
         }
         const CachedMod &cachedMod = cache_.mod(modId);
-        const Mod &cachedInfo = cachedMod.info();
+        const ModInfo &cachedInfo = cachedMod.info();
         if (!cachedInfo.isSteam())
         {
             QTextStream cerr(stderr);
@@ -155,7 +155,7 @@ void UpdateModsImpl::steamDownloadFinished()
 
     QTextStream cerr(stderr);
     QFile modInfoFile = QFile(modVersionDir.absoluteFilePath("modinfo.txt"));
-    Mod mod = Mod::readModInfo(modInfoFile, steamDownloadCall->modInfo().modId());
+    ModInfo mod = ModInfo::readModInfo(modInfoFile, steamDownloadCall->modInfo().modId());
     cerr << mod.toString() << " updated" << Qt::endl;
 
     if (++loopIndex < steamInfos.size())

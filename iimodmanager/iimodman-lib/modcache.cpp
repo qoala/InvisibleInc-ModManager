@@ -134,7 +134,7 @@ bool CachedVersion::refresh(const QString &modVersionPath, const QString &modId)
     }
 
     QFile infoFile = QFile(modVersionDir.filePath("modinfo.txt"));
-    info_ = Mod::readModInfo(infoFile, modId);
+    info_ = ModInfo::readModInfo(infoFile, modId);
     infoFile.close();
     if (!info().version().isEmpty())
     {

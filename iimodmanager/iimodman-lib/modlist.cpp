@@ -1,17 +1,17 @@
-#include "mod.h"
 #include "modlist.h"
+#include "modinfo.h"
 
 #include <QDir>
 
 namespace iimodmanager {
 
-ModList::ModList(const std::list<Mod> &mods, ModLocation location)
+ModList::ModList(const std::list<ModInfo> &mods, ModLocation location)
     : location_(location), mods_(mods)
 {}
 
 ModList ModList::readCurrent(const ModManConfig &config, ModLocation location)
 {
-    std::list<Mod> mods;
+    std::list<ModInfo> mods;
 
     QDir modsDir(location == CACHED ? config.cachePath() : config.installPath());
     assert(modsDir.exists());
@@ -25,7 +25,7 @@ ModList ModList::readCurrent(const ModManConfig &config, ModLocation location)
         QFileInfo modInfo(modDir, "modinfo.txt");
         if (modInfo.isFile()) {
 
-            mods.push_back(Mod::readModInfo(config, modDir.dirName(), location));
+            mods.push_back(ModInfo::readModInfo(config, modDir.dirName(), location));
         }
     }
 
