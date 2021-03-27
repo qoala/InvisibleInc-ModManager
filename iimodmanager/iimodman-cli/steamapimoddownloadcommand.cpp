@@ -2,6 +2,7 @@
 #include "modcache.h"
 #include "moddownloader.h"
 #include "steamapimoddownloadcommand.h"
+#include "updatemodsimpl.h"
 
 #include <QDir>
 #include <QFutureWatcher>
@@ -32,51 +33,15 @@ QFuture<void> SteamAPIDownloadModCommand::executeCommand(QCommandLineParser &par
         parser.showHelp(EXIT_FAILURE);
     }
 
-    const QString workshopId = parser.value("steam-id");
-    const bool isForceSet = parser.isSet("force");
+    impl = new UpdateModsImpl(app_, this);
+    impl->setMissingCacheAction(CACHE_ADD);
+    impl->setAlreadyLatestVersionBehavior(parser.isSet("force") ? LATEST_FORCE : LATEST_SKIP);
+    impl->setConfirmBeforeDownloading(false);
 
-    ModDownloader *downloader = new ModDownloader(app_.config(), this);
+    QStringList modIds("workshop-" + parser.value("steam-id"));
+    impl->start(modIds);
 
-    ModInfoCall *infoCall = downloader->modInfoCall();
-    ModDownloadCall *downloadCall = downloader->modDownloadCall();
-
-    infoCall->start(workshopId);
-
-    connect(infoCall, &ModInfoCall::finished, this, [this, isForceSet, infoCall, downloadCall]
-    {
-        const SteamModInfo info = infoCall->result();
-        infoCall->deleteLater();
-
-        QDir modVersionDir(ModCache::modVersionPath(app_.config(), info.modId(), info.lastUpdated));
-
-        if (!isForceSet && modVersionDir.exists() && modVersionDir.exists("modinfo.txt"))
-        {
-            QTextStream cerr(stderr);
-            QFile modInfoFile = QFile(modVersionDir.absoluteFilePath("modinfo.txt"));
-            ModInfo mod = ModInfo::readModInfo(modInfoFile, info.modId());
-            cerr << mod.toString() << " already up to date" << Qt::endl;
-
-            result.finish();
-        }
-        else
-        {
-            downloadCall->start(info);
-        }
-    });
-
-    connect(downloadCall, &ModDownloadCall::finished, this, [this, downloadCall]
-    {
-        QDir modVersionDir(downloadCall->resultPath());
-
-        QTextStream cerr(stderr);
-        QFile modInfoFile = QFile(modVersionDir.absoluteFilePath("modinfo.txt"));
-        ModInfo mod = ModInfo::readModInfo(modInfoFile, downloadCall->modInfo().modId());
-        cerr << mod.toString() << " updated" << Qt::endl;
-
-        downloadCall->deleteLater();
-        result.finish();
-    });
-    return result.future();
+    return QtFuture::connect(impl, &UpdateModsImpl::finished);
 }
 
 

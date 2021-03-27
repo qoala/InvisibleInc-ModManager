@@ -7,18 +7,20 @@
 
 namespace iimodmanager {
 
+class UpdateModsImpl;
+
 class SteamAPIDownloadModCommand : public Command
 {
 public:
     SteamAPIDownloadModCommand(ModManCliApplication &app);
 
-private:
-    QPromise<void> result;
-
     // Command interface
 protected:
     void addTerminalArgs(QCommandLineParser &parser) const;
     QFuture<void> executeCommand(QCommandLineParser &parser, const QStringList &args);
+
+private:
+    UpdateModsImpl *impl;
 };
 
 } // namespace iimodmanager
