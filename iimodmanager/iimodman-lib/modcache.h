@@ -48,6 +48,9 @@ private:
     QString id_;
     QList<CachedVersion> versions_;
     ModInfo info_;
+
+    bool readModManFile(QIODevice &file);
+    bool writeModManFile(QIODevice &file);
 };
 
 class IIMODMANLIBSHARED_EXPORT ModCache : public QObject

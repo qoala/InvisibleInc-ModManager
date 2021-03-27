@@ -10,8 +10,8 @@ namespace iimodmanager {
 ModInfo::ModInfo()
 {}
 
-ModInfo::ModInfo(const QString &id)
-    : id_(id)
+ModInfo::ModInfo(const QString &id, const QString &name)
+    : id_(id), name_(name)
 {}
 
 const ModInfo ModInfo::readModInfo(const ModManConfig &config, const QString &id, ModLocation location)
@@ -30,7 +30,8 @@ const ModInfo ModInfo::readModInfo(const ModManConfig &config, const QString &id
 const ModInfo ModInfo::readModInfo(QIODevice &file, const QString &id)
 {
 
-    ModInfo mod(id);
+    ModInfo mod;
+    mod.id_ = id;
 
     if (file.isOpen() || file.open(QIODevice::ReadOnly))
     {

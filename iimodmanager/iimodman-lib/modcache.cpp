@@ -1,6 +1,9 @@
 #include "modcache.h"
 
 #include <QDir>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 
 namespace iimodmanager {
 
@@ -33,6 +36,57 @@ bool CachedMod::containsVersion(const QString &id) const
 bool CachedMod::containsVersion(const QDateTime &versionTime) const
 {
     return containsVersion(formatVersionTime(versionTime));
+}
+
+const QJsonDocument readJSON(QIODevice &file)
+{
+    QByteArray rawData = file.readAll();
+    file.close();
+    QJsonParseError errors;
+    const QJsonDocument json = QJsonDocument::fromJson(rawData, &errors);
+
+    if (json.isNull())
+    {
+        qCWarning(modcache) << "JSON Parse Error:", errors.errorString();
+        qCDebug(modcache) << rawData;
+    }
+    return json;
+}
+
+bool CachedMod::readModManFile(QIODevice &file)
+{
+    if (file.isOpen() || file.open(QIODevice::ReadOnly))
+    {
+        const QJsonDocument json = readJSON(file);
+        if (json.isNull())
+            return false;
+
+        const QJsonObject root = json.object();
+
+        QString name;
+        const QJsonValue nameJson = root.value("modName");
+        if (!nameJson.isUndefined())
+            name = root.value("modName").toString();
+
+        info_ = ModInfo(id_, name);
+        return true;
+    }
+    return false;
+}
+
+bool CachedMod::writeModManFile(QIODevice &file)
+{
+    QJsonObject root;
+    root["modId"] = id_;
+    root["modName"] = info().name();
+    QJsonDocument json(root);
+
+    if ((file.isOpen() && file.isWritable()) || file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+        file.write(json.toJson());
+        return true;
+    }
+    return false;
 }
 
 ModCache::ModCache(const ModManConfig &config, QObject *parent)
@@ -97,6 +151,13 @@ bool CachedMod::refresh(const QString &modPath)
     QDir modDir(modPath);
     id_ = modDir.dirName();
 
+    bool hasModManFile = false;
+    if (modDir.exists("modman.json"))
+    {
+        QFile modManFile(modDir.filePath("modman.json"));
+        hasModManFile = readModManFile(modManFile);
+    }
+
     modDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     modDir.setSorting(QDir::Name | QDir::Reversed);
     QFileInfoList versionPaths = modDir.entryInfoList();
@@ -124,7 +185,8 @@ bool CachedMod::refresh(const QString &modPath)
         info_ = versions_.first().info();
         return true;
     }
-    return false;
+    // A modman.json file is sufficient to describe a mod, even without any downloaded versions.
+    return hasModManFile;
 }
 
 bool CachedVersion::refresh(const QString &modVersionPath, const QString &modId)
