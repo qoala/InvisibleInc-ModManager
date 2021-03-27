@@ -55,8 +55,19 @@ bool CachedMod::updateFromSteam(const SteamModInfo &steamInfo)
     if (changed)
     {
         QDir modDir(cache.modPath(id_));
-        QFile modManFile(modDir.filePath("modman.json"));
-        writeModManFile(modManFile);
+        if (modDir.mkpath("."))
+        {
+            QFile modManFile(modDir.filePath("modman.json"));
+            qCDebug(modcache).noquote() << QString("updateMod(%1)").arg(id_) << "Writing to" << modDir.filePath("modman.json");
+            if (!writeModManFile(modManFile))
+            {
+                qCWarning(modcache).noquote() << QString("updateMod(%1)").arg(id_) << "Couldn't write" << modDir.filePath("modman.json");
+            }
+        }
+        else
+        {
+            qCWarning(modcache).noquote() << QString("updateMod(%1)").arg(id_) << "Couldn't create directory" << modDir.path();
+        }
     }
     return changed;
 }
@@ -104,7 +115,7 @@ bool CachedMod::writeModManFile(QIODevice &file)
     root["modName"] = info().name();
     QJsonDocument json(root);
 
-    if ((file.isOpen() && file.isWritable()) || file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    if ((file.isOpen() && file.isWritable()) || file.open(QIODevice::WriteOnly))
     {
         file.write(json.toJson());
         return true;
