@@ -201,13 +201,6 @@ bool CachedMod::refresh(const QString &modPath)
     QDir modDir(modPath);
     id_ = modDir.dirName();
 
-    bool hasModManFile = false;
-    if (modDir.exists("modman.json"))
-    {
-        QFile modManFile(modDir.filePath("modman.json"));
-        hasModManFile = readModManFile(modManFile);
-    }
-
     modDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     modDir.setSorting(QDir::Name | QDir::Reversed);
     QFileInfoList versionPaths = modDir.entryInfoList();
@@ -235,8 +228,13 @@ bool CachedMod::refresh(const QString &modPath)
         info_ = versions_.first().info();
         return true;
     }
-    // A modman.json file is sufficient to describe a mod, even without any downloaded versions.
-    return hasModManFile;
+    else if (modDir.exists("modman.json"))
+    {
+        // A modman.json file is sufficient to describe a mod, even without any downloaded versions.
+        QFile modManFile(modDir.filePath("modman.json"));
+        return readModManFile(modManFile);
+    }
+    return false;
 }
 
 bool CachedVersion::refresh(const QString &modVersionPath, const QString &modId)
