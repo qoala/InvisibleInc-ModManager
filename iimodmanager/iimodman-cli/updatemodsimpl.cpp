@@ -13,7 +13,7 @@ UpdateModsImpl::UpdateModsImpl(ModManCliApplication &app, QObject *parent)
       alreadyLatestVersionAction(LATEST_SKIP),
       confirmBeforeDownloading(true)
 {
-    cache_.refresh();
+    cache_.refresh(REFRESH_LATEST);
 }
 
 void UpdateModsImpl::start(const QStringList &modIds)

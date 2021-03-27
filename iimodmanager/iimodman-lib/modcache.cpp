@@ -188,7 +188,7 @@ const CachedMod &ModCache::addUnloaded(const SteamModInfo &steamInfo)
     return mod;
 }
 
-void ModCache::refresh()
+void ModCache::refresh(RefreshLevel level)
 {
     QDir cacheDir(config_.cachePath());
     qCDebug(modcache).noquote() << "cache:refresh() Start" << cacheDir.path();
@@ -201,7 +201,7 @@ void ModCache::refresh()
     for (auto modId : modIds)
     {
         CachedMod &mod = mods_.emplaceBack(*this, modId);
-        if (!mod.refresh())
+        if (!mod.refresh(level))
             mods_.removeLast();
     }
 
@@ -221,7 +221,7 @@ void ModCache::refreshIndex()
     }
 }
 
-bool CachedMod::refresh()
+bool CachedMod::refresh(RefreshLevel level)
 {
     QDir modDir(cache.modPath(id_));
 
@@ -230,11 +230,19 @@ bool CachedMod::refresh()
     QFileInfoList versionPaths = modDir.entryInfoList();
     versions_.clear();
     versions_.reserve(versionPaths.size());
+    RefreshLevel versionLevel = level == REFRESH_LATEST ? REFRESH_FULL : level;
     for (auto versionPath : versionPaths)
     {
         CachedVersion &version = versions_.emplaceBack(cache, id(), versionPath.fileName());
-        if (!version.refresh())
+        if (version.refresh(versionLevel))
+        {
+            if (level == REFRESH_LATEST)
+                versionLevel = REFRESH_ID_ONLY;
+        }
+        else
+        {
             versions_.removeLast();
+        }
     }
 
     qCDebug(modcache).noquote().nospace() << QString("mod:refresh(%1)").arg(id_) << " versions:" << versions_.size();
@@ -253,7 +261,7 @@ bool CachedMod::refresh()
     return false;
 }
 
-bool CachedVersion::refresh()
+bool CachedVersion::refresh(RefreshLevel level)
 {
     QDir modVersionDir(cache.modVersionPath(modId, id_));
 
@@ -262,6 +270,9 @@ bool CachedVersion::refresh()
         qCDebug(modcache).noquote() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << "skipped: No modinfo.txt";
         return false;
     }
+
+    if (level == REFRESH_ID_ONLY)
+        return true;
 
     QFile infoFile = QFile(modVersionDir.filePath("modinfo.txt"));
     info_ = ModInfo::readModInfo(infoFile, modId);

@@ -22,7 +22,7 @@ QFuture<void> CacheListCommand::executeCommand(QCommandLineParser &parser, const
     Q_UNUSED(args);
 
     ModCache cache(app_.config());
-    cache.refresh();
+    cache.refresh(REFRESH_LATEST);
 
     int maxWidth = 0;
     for (auto mod : cache.mods()) {

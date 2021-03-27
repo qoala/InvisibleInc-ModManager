@@ -7,7 +7,7 @@ namespace iimodmanager {
 AddModsImpl::AddModsImpl(ModManCliApplication &app, QObject *parent)
     : QObject(parent), app(app), cache_(app.config()), downloader(app.config())
 {
-    cache_.refresh();
+    cache_.refresh(REFRESH_LATEST);
 }
 
 void AddModsImpl::start(const QStringList &modIds)
