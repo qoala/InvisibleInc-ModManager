@@ -3,6 +3,7 @@
 #include <iostream>
 #include <QDir>
 #include <QTimer>
+#include <QThreadPool>
 
 namespace iimodmanager {
 
@@ -78,27 +79,31 @@ void UpdateModsImpl::startInfos()
 
 void UpdateModsImpl::confirmDownloads()
 {
-    QTextStream cerr(stderr);
-    cerr << "The following mods will be downloaded:" << Qt::endl << "  ";
-    for (auto steamInfo : steamInfos)
-    {
+    // Run on another thread, as std::getline blocks.
+    QThreadPool::globalInstance()->start([this]{
+        QTextStream cerr(stderr);
+        cerr << "The following mods will be downloaded:" << Qt::endl << "  ";
+        for (auto steamInfo : steamInfos)
+        {
         cerr << QString("\"%1\" [%2] ").arg(steamInfo.title, steamInfo.modId());
-    }
-    cerr << Qt::endl;
-    cerr << "Do you want to continue? [Y/n] " << Qt::flush;
+        }
+        cerr << Qt::endl;
+        cerr << "Do you want to continue? [Y/n] " << Qt::flush;
 
-    std::string line;
-    std::getline(std::cin, line);
-    QString response = QString::fromStdString(line).toLower();
-    if (response.isEmpty() || response == "y" || response == "yes")
-    {
-        startDownloads();
-    }
-    else
-    {
-        cerr << "Abort." << Qt::endl;
-        emit finished();
-    }
+        std::string line;
+        std::getline(std::cin, line);
+        QString response = QString::fromStdString(line).toLower();
+        if (response.isEmpty() || response == "y" || response == "yes")
+        {
+            // Start downloads on the main thread.
+            QTimer::singleShot(0, this, &UpdateModsImpl::startDownloads);
+        }
+        else
+        {
+            cerr << "Abort." << Qt::endl;
+            emit finished();
+        }
+    });
 }
 
 void UpdateModsImpl::startDownloads()
