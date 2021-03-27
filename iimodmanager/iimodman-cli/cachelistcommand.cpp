@@ -33,7 +33,7 @@ QFuture<void> CacheListCommand::executeCommand(QCommandLineParser &parser, const
     }
 
     ModCache cache(app_.config());
-    cache.refresh(versionSetting == ALL ? REFRESH_FULL : REFRESH_LATEST);
+    cache.refresh(versionSetting == ALL ? ModCache::FULL : ModCache::LATEST_ONLY);
 
     if (format == TEXT)
     {

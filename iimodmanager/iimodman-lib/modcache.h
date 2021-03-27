@@ -16,16 +16,16 @@ Q_DECLARE_LOGGING_CATEGORY(modcache)
 class CachedMod;
 class CachedVersion;
 
-enum RefreshLevel
-{
-    REFRESH_FULL,
-    REFRESH_ID_ONLY,
-    REFRESH_LATEST,
-};
-
 class IIMODMANLIBSHARED_EXPORT ModCache : public QObject
 {
 public:
+    enum RefreshLevel
+    {
+        FULL,
+        ID_ONLY,
+        LATEST_ONLY,
+    };
+
     ModCache(const ModManConfig &config, QObject *parent = nullptr);
 
     inline const QList<CachedMod> mods() const { return mods_; };
@@ -40,7 +40,7 @@ public:
     static QString modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime);
 
     const CachedMod &addUnloaded(const SteamModInfo &steamInfo);
-    void refresh(RefreshLevel = REFRESH_FULL);
+    void refresh(RefreshLevel = FULL);
 
 private:
     const ModManConfig &config_;
@@ -66,7 +66,7 @@ public:
     bool containsVersion(const QString &id) const;
     bool containsVersion(const QDateTime &versionTime) const;
 
-    bool refresh(RefreshLevel = REFRESH_FULL);
+    bool refresh(ModCache::RefreshLevel = ModCache::FULL);
     bool updateFromSteam(const SteamModInfo &steamInfo);
 
     CachedMod &operator = (const CachedMod &);
@@ -93,7 +93,7 @@ public:
 
     const QString toString() const;
 
-    bool refresh(RefreshLevel = REFRESH_FULL);
+    bool refresh(ModCache::RefreshLevel = ModCache::FULL);
 
     CachedVersion &operator = (const CachedVersion &);
 

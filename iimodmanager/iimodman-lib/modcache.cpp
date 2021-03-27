@@ -122,7 +122,7 @@ bool CachedMod::containsVersion(const QDateTime &versionTime) const
     return containsVersion(formatVersionTime(versionTime));
 }
 
-bool CachedMod::refresh(RefreshLevel level)
+bool CachedMod::refresh(ModCache::RefreshLevel level)
 {
     QDir modDir(cache.modPath(id_));
 
@@ -131,14 +131,14 @@ bool CachedMod::refresh(RefreshLevel level)
     QFileInfoList versionPaths = modDir.entryInfoList();
     versions_.clear();
     versions_.reserve(versionPaths.size());
-    RefreshLevel versionLevel = level == REFRESH_LATEST ? REFRESH_FULL : level;
+    ModCache::RefreshLevel versionLevel = level == ModCache::LATEST_ONLY ? ModCache::FULL : level;
     for (auto versionPath : versionPaths)
     {
         CachedVersion &version = versions_.emplaceBack(cache, id(), versionPath.fileName());
         if (version.refresh(versionLevel))
         {
-            if (level == REFRESH_LATEST)
-                versionLevel = REFRESH_ID_ONLY;
+            if (level == ModCache::LATEST_ONLY)
+                versionLevel = ModCache::ID_ONLY;
         }
         else
         {
@@ -251,7 +251,7 @@ const QString CachedVersion::toString() const
 
 }
 
-bool CachedVersion::refresh(RefreshLevel level)
+bool CachedVersion::refresh(ModCache::RefreshLevel level)
 {
     QDir modVersionDir(cache.modVersionPath(modId, id_));
 
@@ -261,7 +261,7 @@ bool CachedVersion::refresh(RefreshLevel level)
         return false;
     }
 
-    if (level == REFRESH_ID_ONLY)
+    if (level == ModCache::ID_ONLY)
         return true;
 
     QFile infoFile = QFile(modVersionDir.filePath("modinfo.txt"));
