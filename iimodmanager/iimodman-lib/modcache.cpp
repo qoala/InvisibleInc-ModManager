@@ -36,6 +36,10 @@ const QJsonDocument readJSON(QIODevice &file)
     return json;
 }
 
+CachedVersion::CachedVersion(const ModCache &cache, const QString &modId, const QString &versionId)
+    : cache(cache), modId(modId), id_(versionId)
+{}
+
 const QString CachedVersion::toString() const
 {
     if (version().has_value())
@@ -47,8 +51,18 @@ const QString CachedVersion::toString() const
 
 }
 
-CachedMod::CachedMod(const ModCache &cache)
-    : cache(cache)
+CachedVersion &CachedVersion::operator =(const CachedVersion &o)
+{
+   assert(&cache == &o.cache);
+   id_ = o.id_;
+   info_ = o.info_;
+   timestamp_ = o.timestamp_;
+   version_ = o.version_;
+   return *this;
+}
+
+CachedMod::CachedMod(const ModCache &cache, const QString &id)
+    : cache(cache), id_(id)
 {}
 
 bool CachedMod::containsVersion(const QString &id) const
@@ -74,7 +88,6 @@ bool CachedMod::updateFromSteam(const SteamModInfo &steamInfo)
     if (versions_.empty())
     {
         changed = true;
-        id_ = steamInfo.modId();
         info_ = ModInfo(id_, steamInfo.title);
     }
 
@@ -136,6 +149,7 @@ bool CachedMod::writeModManFile(QIODevice &file)
 
 CachedMod &CachedMod::operator =(const CachedMod &o)
 {
+   assert(&cache == &o.cache);
    id_ = o.id_;
    versions_ = o.versions_;
    info_ = o.info_;
@@ -167,7 +181,7 @@ QString ModCache::modVersionPath(const ModManConfig &config, const QString &modI
 const CachedMod &ModCache::addUnloaded(const SteamModInfo &steamInfo)
 {
     const qsizetype position = mods_.size();
-    CachedMod &mod = mods_.emplaceBack(*this);
+    CachedMod &mod = mods_.emplaceBack(*this, steamInfo.modId());
     mod.updateFromSteam(steamInfo);
 
     modIds_[mod.id()] = position;
@@ -181,22 +195,14 @@ void ModCache::refresh()
 
     cacheDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     cacheDir.setSorting(QDir::Name);
-    QFileInfoList modPaths = cacheDir.entryInfoList();
+    QStringList modIds = cacheDir.entryList();
     mods_.clear();
-    mods_.reserve(modPaths.size());
-    CachedMod *mod;
-    bool lastValid = true;
-    for (auto modPath : modPaths)
+    mods_.reserve(modIds.size());
+    for (auto modId : modIds)
     {
-        if (lastValid)
-        {
-            mod = &mods_.emplaceBack(*this);
-        }
-        lastValid = mod->refresh(modPath.filePath());
-    }
-    if (!lastValid)
-    {
-        mods_.removeLast();
+        CachedMod &mod = mods_.emplaceBack(*this, modId);
+        if (!mod.refresh())
+            mods_.removeLast();
     }
 
     refreshIndex();
@@ -215,29 +221,20 @@ void ModCache::refreshIndex()
     }
 }
 
-bool CachedMod::refresh(const QString &modPath)
+bool CachedMod::refresh()
 {
-    QDir modDir(modPath);
-    id_ = modDir.dirName();
+    QDir modDir(cache.modPath(id_));
 
     modDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     modDir.setSorting(QDir::Name | QDir::Reversed);
     QFileInfoList versionPaths = modDir.entryInfoList();
     versions_.clear();
     versions_.reserve(versionPaths.size());
-    CachedVersion *version;
-    bool lastValid = true;
     for (auto versionPath : versionPaths)
     {
-        if (lastValid)
-        {
-            version = &versions_.emplaceBack();
-        }
-        lastValid = version->refresh(versionPath.filePath(), id_);
-    }
-    if (!lastValid)
-    {
-        versions_.removeLast();
+        CachedVersion &version = versions_.emplaceBack(cache, id(), versionPath.fileName());
+        if (!version.refresh())
+            versions_.removeLast();
     }
 
     qCDebug(modcache).noquote().nospace() << QString("mod:refresh(%1)").arg(id_) << " versions:" << versions_.size();
@@ -256,10 +253,9 @@ bool CachedMod::refresh(const QString &modPath)
     return false;
 }
 
-bool CachedVersion::refresh(const QString &modVersionPath, const QString &modId)
+bool CachedVersion::refresh()
 {
-    QDir modVersionDir(modVersionPath);
-    id_ = modVersionDir.dirName();
+    QDir modVersionDir(cache.modVersionPath(modId, id_));
 
     if (!modVersionDir.exists("modinfo.txt"))
     {

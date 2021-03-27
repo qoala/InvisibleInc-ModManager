@@ -18,6 +18,8 @@ class ModCache;
 class IIMODMANLIBSHARED_EXPORT CachedVersion
 {
 public:
+    CachedVersion(const ModCache &cache, const QString &modId, const QString &versionId);
+
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
     inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
@@ -25,9 +27,13 @@ public:
 
     const QString toString() const;
 
-    bool refresh(const QString &modVersionPath, const QString &modId);
+    bool refresh();
+
+    CachedVersion &operator = (const CachedVersion &);
 
 private:
+    const ModCache &cache;
+    const QString modId;
     QString id_;
     ModInfo info_;
     std::optional<QDateTime> timestamp_;
@@ -37,7 +43,7 @@ private:
 class IIMODMANLIBSHARED_EXPORT CachedMod
 {
 public:
-    CachedMod(const ModCache &cache);
+    CachedMod(const ModCache &cache, const QString &id);
 
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
@@ -49,7 +55,7 @@ public:
     bool containsVersion(const QDateTime &versionTime) const;
 
     bool updateFromSteam(const SteamModInfo &steamInfo);
-    bool refresh(const QString &modPath);
+    bool refresh();
 
     CachedMod &operator = (const CachedMod &);
 
