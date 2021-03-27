@@ -23,5 +23,7 @@ add_executable(${IIMODMAN_CLI_TARGET_NAME} ${IIMODMAN_CLI_SOURCES})
 target_compile_definitions(${IIMODMAN_CLI_TARGET_NAME} PRIVATE
     QT_DEPRECATED_WARNINGS
   )
-target_link_libraries(${IIMODMAN_CLI_TARGET_NAME} ${IIMODMAN_LIB_TARGET_NAME})
+target_link_libraries(${IIMODMAN_CLI_TARGET_NAME}
+    ${IIMODMAN_LIB_TARGET_NAME}
+    Qt6::Core)
 

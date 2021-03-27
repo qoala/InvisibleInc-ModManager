@@ -22,7 +22,7 @@ set(IIMODMAN_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(IIMODMAN_LIB_TARGET_NAME iimodman)
 set(IIMODMAN_CLI_TARGET_NAME iimodman-cli)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Network REQUIRED)
 
 set(QUAZIP_QT_MAJOR_VERSION 6)
 add_subdirectory(quazip)
