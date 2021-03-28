@@ -26,8 +26,9 @@ class UpdateModsImpl : public QObject
 
 public:
     UpdateModsImpl(ModManCliApplication &app, QObject *parent = nullptr);
+    UpdateModsImpl(ModManCliApplication &app, ModCache *cache, ModDownloader *downloader, QObject *parent = nullptr);
 
-    const ModCache &cache() const { return cache_; };
+    const ModCache &cache() const { return *cache_; };
 
     void setMissingCacheAction(MissingCacheAction action);
     void setAlreadyLatestVersionBehavior(AlreadyLatestVersionAction behavior);
@@ -40,8 +41,8 @@ signals:
 
 private:
     ModManCliApplication &app;
-    ModCache cache_;
-    ModDownloader downloader;
+    ModCache *cache_;
+    ModDownloader *downloader;
     MissingCacheAction missingCacheAction;
     AlreadyLatestVersionAction alreadyLatestVersionAction;
     bool confirmBeforeDownloading;

@@ -5,9 +5,16 @@
 namespace iimodmanager {
 
 AddModsImpl::AddModsImpl(ModManCliApplication &app, QObject *parent)
-    : QObject(parent), app(app), cache_(app.config()), downloader(app.config())
+    : AddModsImpl(app, nullptr, nullptr, parent)
+{}
+
+AddModsImpl::AddModsImpl(ModManCliApplication &app, ModCache *cache, ModDownloader *downloader, QObject *parent)
+    : QObject(parent), app(app),
+      cache_(cache ? cache : new ModCache(app.config(), this)),
+      downloader(downloader ? downloader : new ModDownloader(app.config(), this))
 {
-    cache_.refresh(ModCache::LATEST_ONLY);
+    if (!cache)
+        cache_->refresh(ModCache::LATEST_ONLY);
 }
 
 void AddModsImpl::start(const QStringList &modIds)
@@ -46,7 +53,7 @@ QStringList AddModsImpl::checkModIds(const QStringList &modIds)
 
 QString AddModsImpl::checkModId(const QString &modId)
 {
-    if (cache_.contains(modId))
+    if (cache().contains(modId))
     {
         QTextStream cerr(stderr);
         cerr << QString("Mod %1 is already in the cache. Skipping.").arg(modId) << Qt::endl;
@@ -65,7 +72,7 @@ QString AddModsImpl::checkModId(const QString &modId)
 
 void AddModsImpl::startInfos()
 {
-    steamInfoCall = downloader.modInfoCall();
+    steamInfoCall = downloader->modInfoCall();
     connect(steamInfoCall, &ModInfoCall::finished, this, &AddModsImpl::steamInfoFinished);
 
     loopIndex = 0;
@@ -77,7 +84,7 @@ void AddModsImpl::steamInfoFinished()
     const SteamModInfo steamInfo = steamInfoCall->result();
 
     const QString modId = steamInfo.modId();
-    const CachedMod &cachedMod = cache_.addUnloaded(steamInfo);
+    const CachedMod &cachedMod = cache_->addUnloaded(steamInfo);
     QTextStream cerr(stderr);
     cerr << cachedMod.info().toString() << " registered to cache" << Qt::endl;
 

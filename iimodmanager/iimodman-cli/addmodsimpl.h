@@ -15,8 +15,9 @@ class AddModsImpl : public QObject
     Q_OBJECT
 public:
     AddModsImpl(ModManCliApplication &app, QObject *parent = nullptr);
+    AddModsImpl(ModManCliApplication &app, ModCache *cache, ModDownloader *downloader, QObject *parent = nullptr);
 
-    const ModCache &cache() const { return cache_; };
+    const ModCache &cache() const { return *cache_; };
 
     void start(const QStringList &modIds);
 
@@ -25,8 +26,8 @@ signals:
 
 private:
     ModManCliApplication &app;
-    ModCache cache_;
-    ModDownloader downloader;
+    ModCache *cache_;
+    ModDownloader *downloader;
 
     ModInfoCall *steamInfoCall;
     QStringList workshopIds;
