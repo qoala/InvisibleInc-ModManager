@@ -90,6 +90,7 @@ public:
     inline const ModInfo &info() const { return info_; };
     inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
     inline const std::optional<QString> version() const { return version_; };
+    const QString &hash() const;
 
     const QString toString() const;
 
@@ -104,6 +105,7 @@ private:
     ModInfo info_;
     std::optional<QDateTime> timestamp_;
     std::optional<QString> version_;
+    mutable QString hash_;
 };
 
 inline bool ModCache::contains(const QString &id) const

@@ -5,17 +5,18 @@ include(GNUInstallDirs) # configurable CMAKE_INSTALL_*DIR
 set(IIMODMAN_LIB_HEADERS
     iimodman-lib_global.h
     modcache.h
-    modinfo.h
     moddownloader.h
+    modinfo.h
     modlist.h
     modmanconfig.h
   )
 set(IIMODMAN_LIB_SOURCES
-    modinfo.cpp
     modcache.cpp
     moddownloader.cpp
+    modinfo.cpp
     modlist.cpp
     modmanconfig.cpp
+    modsignature.cpp
   )
 
 add_library(${IIMODMAN_LIB_TARGET_NAME} ${IIMODMAN_LIB_SOURCES})

@@ -1,4 +1,5 @@
 #include "modcache.h"
+#include "modsignature.h"
 
 #include <QDir>
 #include <QJsonDocument>
@@ -240,6 +241,13 @@ CachedVersion::CachedVersion(const ModCache &cache, const QString &modId, const 
     : cache(cache), modId(modId), id_(versionId)
 {}
 
+const QString &CachedVersion::hash() const
+{
+    if (hash_.isEmpty())
+        hash_ = ModSignature::hashModPath(cache.modVersionPath(modId, id_));
+    return hash_;
+}
+
 const QString CachedVersion::toString() const
 {
     if (version().has_value())
@@ -254,12 +262,13 @@ const QString CachedVersion::toString() const
 bool CachedVersion::refresh(ModCache::RefreshLevel level)
 {
     QDir modVersionDir(cache.modVersionPath(modId, id_));
-
     if (!modVersionDir.exists("modinfo.txt"))
     {
         qCDebug(modcache).noquote() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << "skipped: No modinfo.txt";
         return false;
     }
+
+    hash_.clear();
 
     if (level == ModCache::ID_ONLY)
         return true;
