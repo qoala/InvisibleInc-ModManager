@@ -22,11 +22,14 @@ QFuture<void> ModsListCommand::executeCommand(QCommandLineParser &parser, const 
 
     format = parser.isSet("spec") ? MODSPEC : TEXT;
 
-    ModList modList(app_.config());
-    modList.refresh();
+    ModCache cache(app_.config());
+    ModList modList(app_.config(), &cache);
 
     if (format == TEXT)
     {
+        cache.refresh();
+        modList.refresh();
+
         maxWidth = 0;
         for (auto mod : modList.mods()) {
         const int width = mod.id().size() + mod.info().name().size();
@@ -41,6 +44,8 @@ QFuture<void> ModsListCommand::executeCommand(QCommandLineParser &parser, const 
     }
     else if (format == MODSPEC)
     {
+        modList.refresh(ModList::CONTENT_ONLY);
+
         QTextStream cout(stdout);
         for (auto mod : modList.mods()) {
             writeSpecMod(cout, mod);
@@ -64,8 +69,9 @@ void ModsListCommand::writeTextMod(QTextStream &cout, const InstalledMod &mod)
 
     cout << info.toString();
     cout << QString(maxWidth - width, ' ') << "  ::";
-    if (!info.version().isEmpty())
-        cout << "v" << info.version();
+    cout << mod.versionString();
+    if (!mod.hasCacheVersion())
+        cout << " (not in cache)";
     cout << Qt::endl;
 }
 

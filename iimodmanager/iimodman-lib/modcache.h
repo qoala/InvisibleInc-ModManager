@@ -63,8 +63,9 @@ public:
     inline bool downloaded() const { return !versions_.empty(); };
 
     inline const QList<CachedVersion> &versions() const { return versions_; };
+    const CachedVersion *version(const QString &versionId) const;
     const CachedVersion &latest() const { return versions_.first(); };
-    bool containsVersion(const QString &id) const;
+    bool containsVersion(const QString &versionId) const;
     bool containsVersion(const QDateTime &versionTime) const;
 
     bool refresh(ModCache::RefreshLevel = ModCache::FULL);

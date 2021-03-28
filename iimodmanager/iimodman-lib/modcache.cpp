@@ -106,14 +106,22 @@ CachedMod::CachedMod(const ModCache &cache, const QString &id)
     : cache(cache), id_(id)
 {}
 
-bool CachedMod::containsVersion(const QString &id) const
+const CachedVersion *CachedMod::version(const QString &versionId) const
+{
+    for (const CachedVersion &version : versions_)
+    {
+        if (version.id() == versionId)
+            return &version;
+    }
+    return nullptr;
+}
+
+bool CachedMod::containsVersion(const QString &versionId) const
 {
     for (auto version : versions_)
     {
-        if (version.id() == id)
-        {
+        if (version.id() == versionId)
             return true;
-        }
     }
     return false;
 }
