@@ -88,9 +88,9 @@ void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
         const QList<CachedVersion> &versions = mod.versions();
         for (auto it = versions.rbegin(); it != versions.rend() ; ++it)
         {
-        if (it != versions.rbegin())
-            cout << ", ";
-        cout << it->toString();
+            if (it != versions.rbegin())
+                cout << ", ";
+            cout << it->toString();
         }
     }
 

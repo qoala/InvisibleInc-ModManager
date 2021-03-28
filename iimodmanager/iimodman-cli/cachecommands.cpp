@@ -16,7 +16,7 @@ void CacheCommands::addArgs(QCommandLineParser &parser) const
 
 void CacheCommands::addTerminalArgs(QCommandLineParser &parser) const
 {
-    parser.addPositionalArgument("command", "Command to be executed (add|list|update)", "add|list|update||help");
+    parser.addPositionalArgument("command", "Command to be executed (add|list|update)", "add|list|update|help");
 }
 
 Command *CacheCommands::parseCommands(const QString command) const
