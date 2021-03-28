@@ -81,7 +81,7 @@ void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
     }
     else if (versionSetting == LATEST)
     {
-        cout << mod.latest().toString();
+        cout << mod.latest()->toString();
     }
     else if (versionSetting == ALL)
     {

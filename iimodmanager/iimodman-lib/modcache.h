@@ -31,7 +31,8 @@ public:
 
     inline const QList<CachedMod> mods() const { return mods_; };
     bool contains(const QString &id) const;
-    const CachedMod &mod(const QString &id) const;
+    //! The mod with the given ID, or nullptr if it isn't in the cache.
+    const CachedMod *mod(const QString &id) const;
 
     inline QString modPath(const QString &modId) const { return modPath(config_, modId); };
     inline QString modVersionPath(const QString &modId, const QString &versionId) const { return modVersionPath(config_, modId, versionId); };
@@ -40,7 +41,10 @@ public:
     static QString modVersionPath(const ModManConfig &config, const QString &modId, const QString &versionId);
     static QString modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime);
 
-    const CachedMod &addUnloaded(const SteamModInfo &steamInfo);
+    //! Add a CachedMod for the given Steam Workshop details.
+    //! Returns the mod if successful, or nullptr otherwise.
+    //! If the mod is already in the cache, returns nullptr as the result wouldn't be a non-downloaded mod.
+    const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
     void refresh(RefreshLevel = FULL);
 
 private:
@@ -63,10 +67,12 @@ public:
     inline bool downloaded() const { return !versions_.empty(); };
 
     inline const QList<CachedVersion> &versions() const { return versions_; };
-    const CachedVersion *version(const QString &versionId) const;
-    const CachedVersion &latest() const { return versions_.first(); };
     bool containsVersion(const QString &versionId) const;
     bool containsVersion(const QDateTime &versionTime) const;
+    //! The version with the given ID, or nullptr if it isn't in the cache.
+    const CachedVersion *version(const QString &versionId) const;
+    //! The latest version, or nullptr if no versions are available.
+    const CachedVersion *latest() const;
 
     bool refresh(ModCache::RefreshLevel = ModCache::FULL);
     bool updateFromSteam(const SteamModInfo &steamInfo);
@@ -109,16 +115,6 @@ private:
     std::optional<QString> version_;
     mutable QString hash_;
 };
-
-inline bool ModCache::contains(const QString &id) const
-{
-    return modIds_.contains(id);
-}
-
-inline const CachedMod &ModCache::mod(const QString &id) const
-{
-    return mods_.at(modIds_.value(id));
-}
 
 } // namespace iimodmanager
 

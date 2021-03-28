@@ -45,13 +45,13 @@ InstalledMod::InstalledMod(const ModList &parent, const QString &id)
 const CachedVersion *InstalledMod::cacheVersion() const
 {
     if (!cacheVersionId_.isEmpty())
-        return parent.cache()->mod(id_).version(cacheVersionId_);
+        return parent.cache()->mod(id_)->version(cacheVersionId_);
     return nullptr;
 }
 
 QString InstalledMod::versionString() const
 {
-    const CachedVersion *cachedVersion = parent.cache()->mod(id_).version(cacheVersionId_);
+    const CachedVersion *cachedVersion = cacheVersion();
     if (cachedVersion)
     {
         return cachedVersion->toString();
@@ -91,11 +91,11 @@ bool InstalledMod::refresh(ModList::RefreshLevel level)
     }
 
     assert(parent.cache());
-    if (parent.cache()->contains(id_))
+    const CachedMod *cachedMod = parent.cache()->mod(id_);
+    if (cachedMod)
     {
         hash_ = ModSignature::hashModPath(modDir.path());
-        const CachedMod &cachedMod = parent.cache()->mod(id_);
-        for (auto version : cachedMod.versions())
+        for (auto version : cachedMod->versions())
         {
             if (version.hash() == hash_)
             {

@@ -60,9 +60,9 @@ QStringList UpdateModsImpl::checkModIds(const QStringList &modIds)
 QString UpdateModsImpl::checkModId(const QString &modId)
 {
     ModInfo cachedInfo;
-    if (cache().contains(modId))
+    if (const CachedMod *cachedMod = cache().mod(modId))
     {
-        cachedInfo = cache().mod(modId).info();
+        cachedInfo = cachedMod->info();
     }
     else if (missingCacheAction == CACHE_ADD)
     {
@@ -139,11 +139,16 @@ void UpdateModsImpl::steamInfoFinished()
     const SteamModInfo steamInfo = steamInfoCall->result();
 
     const QString modId = steamInfo.modId();
-    const CachedMod &cachedMod = cache().contains(modId) ? cache().mod(modId) : cache_->addUnloaded(steamInfo);
-    if (alreadyLatestVersionAction == LATEST_SKIP && cachedMod.containsVersion(steamInfo.lastUpdated))
+    const CachedMod *cachedMod = cache().contains(modId) ? cache().mod(modId) : cache_->addUnloaded(steamInfo);
+    if (!cachedMod)
     {
         QTextStream cerr(stderr);
-        cerr << cachedMod.info().toString() << " already up to date" << Qt::endl;
+        cerr << modId << " couldn't be added to cache. Skipping." << Qt::endl;
+    }
+    else if (alreadyLatestVersionAction == LATEST_SKIP && cachedMod->containsVersion(steamInfo.lastUpdated))
+    {
+        QTextStream cerr(stderr);
+        cerr << cachedMod->info().toString() << " already up to date" << Qt::endl;
     }
     else
     {

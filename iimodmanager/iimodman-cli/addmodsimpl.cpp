@@ -83,10 +83,12 @@ void AddModsImpl::steamInfoFinished()
 {
     const SteamModInfo steamInfo = steamInfoCall->result();
 
-    const QString modId = steamInfo.modId();
-    const CachedMod &cachedMod = cache_->addUnloaded(steamInfo);
+    const CachedMod *cachedMod = cache_->addUnloaded(steamInfo);
     QTextStream cerr(stderr);
-    cerr << cachedMod.info().toString() << " registered to cache" << Qt::endl;
+    if (cachedMod)
+        cerr << cachedMod->info().toString() << " registered to cache" << Qt::endl;
+    else
+        cerr << steamInfo.modId() << " couldn't be added to cache. Skipping." << Qt::endl;
 
     if (++loopIndex < workshopIds.size())
     {

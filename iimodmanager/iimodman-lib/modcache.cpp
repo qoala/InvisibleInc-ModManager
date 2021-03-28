@@ -41,6 +41,18 @@ ModCache::ModCache(const ModManConfig &config, QObject *parent)
     : QObject(parent), config_(config)
 {}
 
+bool ModCache::contains(const QString &id) const
+{
+    return modIds_.contains(id);
+}
+
+const CachedMod *ModCache::mod(const QString &id) const
+{
+    if (modIds_.contains(id))
+        return &mods_.at(modIds_[id]);
+    return nullptr;
+}
+
 QString ModCache::modPath(const ModManConfig &config, const QString &modId)
 {
     QDir cacheDir(config.cachePath());
@@ -59,14 +71,27 @@ QString ModCache::modVersionPath(const ModManConfig &config, const QString &modI
     return modVersionPath(config, modId, formatVersionTime(versionTime));
 }
 
-const CachedMod &ModCache::addUnloaded(const SteamModInfo &steamInfo)
+const CachedMod *ModCache::addUnloaded(const SteamModInfo &steamInfo)
 {
-    const qsizetype position = mods_.size();
-    CachedMod &mod = mods_.emplaceBack(*this, steamInfo.modId());
-    mod.updateFromSteam(steamInfo);
+    if (steamInfo.id.isEmpty())
+        return nullptr;
 
-    modIds_[mod.id()] = position;
-    return mod;
+    QString modId = steamInfo.modId();
+    if (modIds_.contains(modId))
+        return nullptr;
+
+    const qsizetype position = mods_.size();
+    CachedMod &mod = mods_.emplaceBack(*this, modId);
+    if (mod.updateFromSteam(steamInfo))
+    {
+        modIds_[mod.id()] = position;
+        return &mod;
+    }
+    else
+    {
+        mods_.removeLast();
+        return nullptr;
+    }
 }
 
 void ModCache::refresh(RefreshLevel level)
@@ -106,16 +131,6 @@ CachedMod::CachedMod(const ModCache &cache, const QString &id)
     : cache(cache), id_(id)
 {}
 
-const CachedVersion *CachedMod::version(const QString &versionId) const
-{
-    for (const CachedVersion &version : versions_)
-    {
-        if (version.id() == versionId)
-            return &version;
-    }
-    return nullptr;
-}
-
 bool CachedMod::containsVersion(const QString &versionId) const
 {
     for (auto version : versions_)
@@ -129,6 +144,23 @@ bool CachedMod::containsVersion(const QString &versionId) const
 bool CachedMod::containsVersion(const QDateTime &versionTime) const
 {
     return containsVersion(formatVersionTime(versionTime));
+}
+
+const CachedVersion *CachedMod::version(const QString &versionId) const
+{
+    for (const CachedVersion &version : versions_)
+    {
+        if (version.id() == versionId)
+            return &version;
+    }
+    return nullptr;
+}
+
+const CachedVersion *CachedMod::latest() const
+{
+    if (versions_.isEmpty())
+        return nullptr;
+    return &versions_.first();
 }
 
 bool CachedMod::refresh(ModCache::RefreshLevel level)
