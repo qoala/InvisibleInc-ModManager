@@ -3,6 +3,7 @@
 #include "commandcategory.h"
 #include "cachecommands.h"
 #include "steamapicommands.h"
+#include "modscommands.h"
 
 #include <QTextStream>
 
@@ -54,6 +55,11 @@ QFuture<void> CommandParser::parse(const QStringList &arguments)
     {
         ConfigCommands configCommands(app_);
         command = configCommands.parse(parser_, args, parser_.isSet(help));
+    }
+    else if (category == "mods")
+    {
+        ModsCommands modsCommands(app_);
+        command = modsCommands.parse(parser_, args, parser_.isSet(help));
     }
     else if (category == "steamapi" || category == "steam-api")
     {

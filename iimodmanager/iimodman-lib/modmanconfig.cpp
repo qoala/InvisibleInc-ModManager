@@ -1,5 +1,6 @@
 #include "modmanconfig.h"
 
+#include <QDir>
 #include <QString>
 
 namespace iimodmanager {
@@ -49,13 +50,13 @@ void ModManConfig::setSteamApiKey(const QString &value)
 const QString ModManConfig::defaultCachePath()
 {
     // Linux default.
-    return QStringLiteral("~/.local/share/Steam/steamapps/common/InvisibleInc/mods-cache");
+    return QDir::homePath() +  "/.local/share/Steam/steamapps/common/InvisibleInc/mods-cache";
 }
 
 const QString ModManConfig::defaultInstallPath()
 {
     // Linux default.
-    return QStringLiteral("~/.local/share/Steam/steamapps/common/InvisibleInc/mods");
+    return QDir::homePath() +  "/.local/share/Steam/steamapps/common/InvisibleInc/mods";
     // TODO: Detect platform and define other reasonable defaults.
 }
 
