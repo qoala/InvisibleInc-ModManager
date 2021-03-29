@@ -11,13 +11,32 @@ void CacheUpdateCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
     parser.addPositionalArgument("update", "Command: Update downloaded mods currently in the cache");
     parser.addOptions({
-                    {{"m", "mod-id"}, "Update mods by ID (e.g. 'workshop-2151835746'), may be repeated.", "id"},
+                    {{"m", "mod-id"}, "Update mods by ID (e.g. 'workshop-2151835746'),\nmay be repeated.", "id"},
                     {"all", "Update all mods registered in the cache."},
-                    {"downloaded", "Update all currently downloaded mods in the cache."},
+                    {"downloaded", "Update all currently downloaded mods in the cache.\n(default if no mods specified)"},
                     {{"a","add"}, "Automatically add missing mods to the cache."},
                     {{"f","force"}, "Overwrite even if the latest version is already downloaded."},
                     {{"y","yes"}, "Automatic yes to all prompts."},
                 });
+}
+
+void addDownloaded(QStringList &modIds, const ModCache &cache)
+{
+    const QList<CachedMod> &mods = cache.mods();
+    modIds.reserve(modIds.size() + mods.size());
+    for (auto mod : mods)
+    {
+        if (mod.downloaded())
+            modIds.append(mod.id());
+    }
+}
+
+void addAllCached(QStringList &modIds, const ModCache &cache)
+{
+    const QList<CachedMod> &mods = cache.mods();
+    modIds.reserve(modIds.size() + mods.size());
+    for (auto mod : mods)
+        modIds.append(mod.id());
 }
 
 QFuture<void> CacheUpdateCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
@@ -36,24 +55,17 @@ QFuture<void> CacheUpdateCommand::executeCommand(QCommandLineParser &parser, con
     }
     if(parser.isSet("downloaded"))
     {
-        const QList<CachedMod> &mods = impl->cache().mods();
-        modIds.reserve(modIds.size() + mods.size());
-        for (auto mod : impl->cache().mods())
-        {
-            if (mod.downloaded())
-                modIds.append(mod.id());
-        }
+        addDownloaded(modIds, impl->cache());
     }
     if(parser.isSet("all"))
     {
-        const QList<CachedMod> &mods = impl->cache().mods();
-        modIds.reserve(modIds.size() + mods.size());
-        for (auto mod : impl->cache().mods())
-        {
-            modIds.append(mod.id());
-        }
+        addAllCached(modIds, impl->cache());
     }
     modIds.removeDuplicates();
+
+    // --downloaded by default
+    if (modIds.isEmpty())
+        addDownloaded(modIds, impl->cache());
 
     impl->start(modIds);
 
