@@ -145,13 +145,15 @@ InstalledMod::Impl::Impl(const ModList::Impl &parent, const QString &id)
 
 bool InstalledMod::Impl::hasCacheVersion() const
 {
-    return !cacheVersionId_.isEmpty();
+    if (auto cachedMod = parent.cache()->mod(id_))
+        return cachedMod->installedVersion();
+    return false;
 }
 
 const CachedVersion *InstalledMod::Impl::cacheVersion() const
 {
-    if (!cacheVersionId_.isEmpty())
-        return parent.cache()->mod(id_)->version(cacheVersionId_);
+    if (auto cachedMod = parent.cache()->mod(id_))
+        return cachedMod->installedVersion();
     return nullptr;
 }
 

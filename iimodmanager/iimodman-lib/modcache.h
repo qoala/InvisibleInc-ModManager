@@ -75,7 +75,10 @@ public:
     //! The version with the given ID, or nullptr if it isn't in the cache.
     const CachedVersion *version(const QString &versionId) const;
     //! The latest version, or nullptr if no versions are available.
-    const CachedVersion *latest() const;
+    const CachedVersion *latestVersion() const;
+    //! The currently installed version, or nullptr if no versions is installed.
+    //! Will also be nullptr if a ModList hasn't refreshed on this ModCache.
+    const CachedVersion *installedVersion() const;
 
 private:
     friend ModCache;
@@ -100,6 +103,7 @@ public:
     const ModInfo &info() const;
     const std::optional<QDateTime> timestamp() const;
     const std::optional<QString> version() const;
+    bool installed() const;
     const QString &hash() const;
 
     const QString toString() const;

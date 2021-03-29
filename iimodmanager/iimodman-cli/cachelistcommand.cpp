@@ -77,7 +77,7 @@ void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
     {
         const int width = info.id().size() + info.name().size();
         cout << QString(maxWidth - width, ' ') << "  ::";
-        cout << (mod.downloaded() ? mod.latest()->toString() : "(not downloaded)");
+        cout << (mod.downloaded() ? mod.latestVersion()->toString() : "(not downloaded)");
     }
     else if (versionSetting == ALL)
     {

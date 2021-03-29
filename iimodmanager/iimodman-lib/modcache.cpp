@@ -50,8 +50,11 @@ public:
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
     inline const QList<CachedVersion> &versions() const { return versions_; };
+    inline const CachedVersion *installedVersion() const { return installedVersion_; };
 
 // file-visibility:
+    CachedVersion *version(const QString &versionId);
+
     bool refresh(ModCache::RefreshLevel = ModCache::FULL);
     bool updateFromSteam(const SteamModInfo &steamInfo);
     const CachedVersion *markInstalledVersion(const QString &hash, const QString expectedVersionId);
@@ -61,6 +64,8 @@ private:
     QString id_;
     QList<CachedVersion> versions_;
     ModInfo info_;
+
+    CachedVersion *installedVersion_;
 
     CachedVersion *findVersionByHash(const QString &hash, const QString expectedVersionId);
 
@@ -79,9 +84,11 @@ public:
     inline const ModInfo &info() const { return info_; };
     inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
     inline const std::optional<QString> version() const { return version_; };
+    inline bool installed() const { return installed_; };
     const QString &hash() const;
 
 // file-visibility:
+    void setInstalled(bool value) { installed_ = value; };
     bool refresh(ModCache::RefreshLevel = ModCache::FULL);
 
 private:
@@ -92,6 +99,7 @@ private:
     std::optional<QDateTime> timestamp_;
     std::optional<QString> version_;
 
+    bool installed_;
     mutable QString hash_;
 };
 
@@ -286,9 +294,9 @@ bool CachedMod::downloaded() const
 
 bool CachedMod::containsVersion(const QString &versionId) const
 {
-    for (auto version : impl()->versions())
+    for (auto cachedVersion : impl()->versions())
     {
-        if (version.id() == versionId)
+        if (cachedVersion.id() == versionId)
             return true;
     }
     return false;
@@ -301,15 +309,15 @@ bool CachedMod::containsVersion(const QDateTime &versionTime) const
 
 const CachedVersion *CachedMod::version(const QString &versionId) const
 {
-    for (const CachedVersion &version : impl()->versions())
+    for (const CachedVersion &cachedVersion : impl()->versions())
     {
-        if (version.id() == versionId)
-            return &version;
+        if (cachedVersion.id() == versionId)
+            return &cachedVersion;
     }
     return nullptr;
 }
 
-const CachedVersion *CachedMod::latest() const
+const CachedVersion *CachedMod::latestVersion() const
 {
     auto versions = impl()->versions();
     if (versions.isEmpty())
@@ -317,13 +325,30 @@ const CachedVersion *CachedMod::latest() const
     return &versions.first();
 }
 
+const CachedVersion *CachedMod::installedVersion() const
+{
+    return impl()->installedVersion();
+}
+
 CachedMod::Impl::Impl(const ModCache::Impl &cache, const QString &id)
-    : cache(cache), id_(id)
+    : cache(cache), id_(id), installedVersion_(nullptr)
 {}
+
+CachedVersion *CachedMod::Impl::version(const QString &versionId)
+{
+    for (CachedVersion &cachedVersion : versions_)
+    {
+        if (cachedVersion.id() == versionId)
+            return &cachedVersion;
+    }
+    return nullptr;
+}
 
 bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
 {
     QDir modDir(cache.modPath(id_));
+
+    QString installedVersionId = installedVersion_ ? installedVersion_->id() : QString();
 
     modDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     modDir.setSorting(QDir::Name | QDir::Reversed);
@@ -333,8 +358,8 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
     ModCache::RefreshLevel versionLevel = level == ModCache::LATEST_ONLY ? ModCache::FULL : level;
     for (auto versionPath : versionPaths)
     {
-        CachedVersion &version = versions_.emplaceBack(cache, id(), versionPath.fileName());
-        if (version.impl()->refresh(versionLevel))
+        CachedVersion &cachedVersion = versions_.emplaceBack(cache, id(), versionPath.fileName());
+        if (cachedVersion.impl()->refresh(versionLevel))
         {
             if (level == ModCache::LATEST_ONLY)
                 versionLevel = ModCache::ID_ONLY;
@@ -346,6 +371,13 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
     }
 
     qCDebug(modcache).noquote().nospace() << QString("mod:refresh(%1)").arg(id_) << " versions:" << versions_.size();
+
+    if (!installedVersionId.isEmpty())
+    {
+        installedVersion_ = version(installedVersionId);
+        if (!installedVersion_)
+            qCWarning(modcache) << info_.toString() << "no longer contains installed version after refresh:" << installedVersionId;
+    }
 
     if (versions_.size() > 0)
     {
@@ -392,9 +424,22 @@ bool CachedMod::Impl::updateFromSteam(const SteamModInfo &steamInfo)
 
 const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, const QString expectedVersionId)
 {
-    CachedVersion *installedVersion = findVersionByHash(hash, expectedVersionId);
+    CachedVersion *cachedVersion = findVersionByHash(hash, expectedVersionId);
 
-    return installedVersion;
+    if (!cachedVersion)
+        return nullptr;
+
+    // Clear flags on any previously installed version.
+    if (installedVersion_)
+        installedVersion_->impl()->setInstalled(false);
+
+    // Ensure the version's modinfo is available, in case this isn't latest.
+    if (cachedVersion->info().id().isEmpty())
+        cachedVersion->impl()->refresh();
+
+    cachedVersion->impl()->setInstalled(true);
+    installedVersion_ = cachedVersion;
+    return cachedVersion;
 }
 
 CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QString expectedVersionId)
@@ -402,15 +447,9 @@ CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QSt
     // Check the expected version first, to avoid hashing folders unnecessarily.
     if (!expectedVersionId.isEmpty())
     {
-        for (CachedVersion &version : versions_)
-        {
-            if (version.id() == expectedVersionId)
-            {
-                if (version.hash() == hash)
-                    return &version;
-                break;
-            }
-        }
+        CachedVersion *expectedVersion = version(expectedVersionId);
+        if (expectedVersion && expectedVersion->hash() == hash)
+            return expectedVersion;
     }
 
     for (CachedVersion &version : versions_)
@@ -479,6 +518,11 @@ const std::optional<QDateTime> CachedVersion::timestamp() const
 const std::optional<QString> CachedVersion::version() const
 {
     return impl()->version();
+}
+
+bool CachedVersion::installed() const
+{
+    return impl()->installed();
 }
 
 const QString &CachedVersion::hash() const
