@@ -55,6 +55,7 @@ QFuture<void> CacheListCommand::executeCommand(QCommandLineParser &parser, const
         }
 
         QTextStream cout(stdout);
+        cout.setFieldAlignment(QTextStream::AlignLeft);
         for (auto mod : cache.mods()) {
             writeTextMod(cout, mod);
         }
@@ -81,12 +82,11 @@ void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
 {
     const ModInfo &info = mod.info();
 
-    cout << info.toString();
+    cout << qSetFieldWidth(maxWidth) <<  info.toString() << qSetFieldWidth(0);
 
     if (versionSetting == LATEST)
     {
-        const qsizetype width = info.id().size() + info.name().size() + 3;
-        cout << QString(maxWidth - width, ' ') << "  ::";
+        cout << "  ";
         cout << (mod.downloaded() ? mod.latestVersion()->toString() : "(not downloaded)");
     }
     else if (versionSetting == ALL)
@@ -94,20 +94,17 @@ void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
         if (mod.downloaded())
         {
             const QList<CachedVersion> &versions = mod.versions();
+            const qsizetype fieldWidth = std::max<qsizetype>(maxWidth - 2, 0);
             for (auto it = versions.rbegin(); it != versions.rend() ; ++it)
             {
-                QString versionString = it->toString();
-                cout << Qt::endl << "  " << versionString;
+                cout << Qt::endl << "  " << qSetFieldWidth(fieldWidth) << it->toString() << qSetFieldWidth(0);
                 if (it->installed())
-                {
-                    const qsizetype sepWidth = std::max<qsizetype>(maxWidth - versionString.size() - 2, 0);
-                    cout << QString(sepWidth, ' ') << "  (installed)";
-                }
+                    cout << "  (installed)";
             }
         }
         else
         {
-            cout << Qt::endl << "  (not downloaded)";
+            cout << Qt::endl << QString(maxWidth, ' ') << "  (not downloaded)";
         }
     }
 

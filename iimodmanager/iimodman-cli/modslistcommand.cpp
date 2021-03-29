@@ -32,12 +32,13 @@ QFuture<void> ModsListCommand::executeCommand(QCommandLineParser &parser, const 
 
         maxWidth = 0;
         for (auto mod : modList.mods()) {
-        const int width = mod.id().size() + mod.info().name().size();
+        const int width = mod.id().size() + mod.info().name().size() + 3;
         if (width > maxWidth)
             maxWidth = width;
         }
 
         QTextStream cout(stdout);
+        cout.setFieldAlignment(QTextStream::AlignLeft);
         for (auto mod : modList.mods()) {
             writeTextMod(cout, mod);
         }
@@ -65,11 +66,9 @@ void ModsListCommand::writeSpecMod(QTextStream &cout, const InstalledMod &mod)
 void ModsListCommand::writeTextMod(QTextStream &cout, const InstalledMod &mod)
 {
     const ModInfo &info = mod.info();
-    const int width = info.id().size() + info.name().size();
 
-    cout << info.toString();
-    cout << QString(maxWidth - width, ' ') << "  ::";
-    cout << mod.versionString();
+    cout << qSetFieldWidth(maxWidth) << info.toString() << qSetFieldWidth(0) << "  ";
+    cout << qSetFieldWidth(29) << mod.versionString() << qSetFieldWidth(0);
     if (!mod.hasCacheVersion())
         cout << " (not in cache)";
     cout << Qt::endl;
