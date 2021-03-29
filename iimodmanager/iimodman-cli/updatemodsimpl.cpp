@@ -109,9 +109,8 @@ void UpdateModsImpl::confirmDownloads()
         cerr << Qt::endl;
         cerr << "Do you want to continue? [Y/n] " << Qt::flush;
 
-        std::string line;
-        std::getline(std::cin, line);
-        QString response = QString::fromStdString(line).toLower();
+        QTextStream cin(stdin);
+        QString response = cin.readLine();
         if (response.isEmpty() || response == "y" || response == "yes")
         {
             // Start downloads on the main thread.
