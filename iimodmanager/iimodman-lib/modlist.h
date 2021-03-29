@@ -43,27 +43,27 @@ private:
 class IIMODMANLIBSHARED_EXPORT InstalledMod
 {
 public:
+    //! Private implementation. Only accessible to classes in this file.
+    class Impl;
+
     InstalledMod(const ModList::Impl &parent, const QString &id);
 
-    inline const QString &id() const { return id_; };
-    inline const ModInfo &info() const { return info_; };
+    const QString &id() const;
+    const ModInfo &info() const;
 
-    inline bool hasCacheVersion() const { return !cacheVersionId_.isEmpty(); };
+    bool hasCacheVersion() const;
     //! The cached version matching the currently installed mod, or nullptr if there is no match.
     const CachedVersion *cacheVersion() const;
 
     QString versionString() const;
 
-    bool refresh(ModList::RefreshLevel level = ModList::FULL);
-
-    InstalledMod &operator =(const InstalledMod&);
-
 private:
-    const ModList::Impl &parent;
-    QString id_;
-    ModInfo info_;
-    QString hash_;
-    QString cacheVersionId_;
+    friend ModList;
+    std::shared_ptr<Impl> impl_;
+
+    // Wrap the pointer manually, to preserve CopyConstructable/CopyAssignable.
+    inline const Impl *impl() const { return impl_.get(); };
+    inline Impl *impl() { return impl_.get(); };
 };
 
 }  // namespace iimodmanager

@@ -31,6 +31,30 @@ private:
     QList<InstalledMod> mods_;
 };
 
+//! Private implementation of InstalledMod.
+//! Additionally exposes mutators called by its parent ModList;
+class InstalledMod::Impl
+{
+public:
+    Impl(const ModList::Impl &parent, const QString &id);
+
+    inline const QString &id() const { return id_; };
+    inline const ModInfo &info() const { return info_; };
+
+    bool hasCacheVersion() const;
+    const CachedVersion *cacheVersion() const;
+
+// file-visibility:
+    bool refresh(ModList::RefreshLevel level = ModList::FULL);
+
+private:
+    const ModList::Impl &parent;
+    QString id_;
+    ModInfo info_;
+    QString hash_;
+    QString cacheVersionId_;
+};
+
 ModList::ModList(const ModManConfig &config, ModCache *cache, QObject *parent)
     : QObject(parent), impl{std::make_unique<Impl>(config, cache)}
 {}
@@ -64,7 +88,7 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
     for (auto modId : modIds)
     {
         InstalledMod &mod = mods_.emplaceBack(*this, modId);
-        if (!mod.refresh(level))
+        if (!mod.impl()->refresh(level))
             mods_.removeLast();
     }
 }
@@ -76,14 +100,27 @@ QString ModList::Impl::modPath(const QString &modId) const
 }
 
 InstalledMod::InstalledMod(const ModList::Impl &parent, const QString &id)
-    : parent(parent), id_(id)
+    : impl_{std::make_shared<Impl>(parent, id)}
 {}
+
+const QString &InstalledMod::id() const
+{
+    return impl()->id();
+}
+
+const ModInfo &InstalledMod::info() const
+{
+    return impl()->info();
+}
+
+bool InstalledMod::hasCacheVersion() const
+{
+    return impl()->hasCacheVersion();
+}
 
 const CachedVersion *InstalledMod::cacheVersion() const
 {
-    if (!cacheVersionId_.isEmpty())
-        return parent.cache()->mod(id_)->version(cacheVersionId_);
-    return nullptr;
+    return impl()->cacheVersion();
 }
 
 QString InstalledMod::versionString() const
@@ -95,14 +132,30 @@ QString InstalledMod::versionString() const
     }
     else
     {
-        const QString &version = info_.version();
+        const QString &version = impl()->info().version();
         if (!version.isEmpty())
             return "v" + version;
     }
     return QString();
 }
 
-bool InstalledMod::refresh(ModList::RefreshLevel level)
+InstalledMod::Impl::Impl(const ModList::Impl &parent, const QString &id)
+    : parent(parent), id_(id)
+{}
+
+bool InstalledMod::Impl::hasCacheVersion() const
+{
+    return !cacheVersionId_.isEmpty();
+}
+
+const CachedVersion *InstalledMod::Impl::cacheVersion() const
+{
+    if (!cacheVersionId_.isEmpty())
+        return parent.cache()->mod(id_)->version(cacheVersionId_);
+    return nullptr;
+}
+
+bool InstalledMod::Impl::refresh(ModList::RefreshLevel level)
 {
     QDir modDir(parent.modPath(id_));
     if (!modDir.exists("modinfo.txt"))
@@ -110,10 +163,10 @@ bool InstalledMod::refresh(ModList::RefreshLevel level)
         qCDebug(modlist).noquote() << QString("installedmod:refresh(%1)").arg(id_) << "skipped: No modinfo.txt";
         return false;
     }
+    qCDebug(modlist).noquote().nospace() << QString("installedmod:refresh(%1)").arg(id_);
 
     if (level == ModList::ID_ONLY)
     {
-        qCDebug(modlist).noquote().nospace() << QString("installedmod:refresh(%1)").arg(id_);
         return true;
     }
 
@@ -123,7 +176,6 @@ bool InstalledMod::refresh(ModList::RefreshLevel level)
 
     if (level == ModList::CONTENT_ONLY)
     {
-        qCDebug(modlist).noquote().nospace() << QString("installedmod:refresh(%1)").arg(id_) << " version=" << versionString();
         return true;
     }
 
@@ -142,16 +194,7 @@ bool InstalledMod::refresh(ModList::RefreshLevel level)
         }
     }
 
-    qCDebug(modlist).noquote().nospace() << QString("installedmod:refresh(%1)").arg(id_) << " version=" << versionString();
     return true;
-}
-
-InstalledMod &InstalledMod::operator =(const InstalledMod &o)
-{
-   assert(&parent == &o.parent);
-   id_ = o.id_;
-   info_ = o.info_;
-   return *this;
 }
 
 }  // namespace iimodmanager
