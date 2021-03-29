@@ -22,7 +22,7 @@ public:
     void refresh(RefreshLevel level = FULL);
 
 // file-visibility:
-    inline const ModCache *cache() const { return cache_; }
+    inline ModCache *cache() const { return cache_; }
     QString modPath(const QString &modId) const;
 
 private:
@@ -179,19 +179,14 @@ bool InstalledMod::Impl::refresh(ModList::RefreshLevel level)
         return true;
     }
 
-    assert(parent.cache());
-    const CachedMod *cachedMod = parent.cache()->mod(id_);
-    if (cachedMod)
+    ModCache *cache = parent.cache();
+    assert(cache);
+    if (cache->contains(id_))
     {
         hash_ = ModSignature::hashModPath(modDir.path());
-        for (auto version : cachedMod->versions())
-        {
-            if (version.hash() == hash_)
-            {
-                cacheVersionId_ = version.id();
-                break;
-            }
-        }
+        const CachedVersion *version = cache->markInstalledVersion(id_, hash_);
+        if (version)
+            cacheVersionId_ = version->id();
     }
 
     return true;

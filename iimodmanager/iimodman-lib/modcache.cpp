@@ -21,6 +21,8 @@ public:
     bool contains(const QString &id) const;
     const CachedMod *mod(const QString &id) const;
 
+    CachedMod *mod(const QString &id);
+
     const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
     void refresh(RefreshLevel = FULL);
 
@@ -52,12 +54,15 @@ public:
 // file-visibility:
     bool refresh(ModCache::RefreshLevel = ModCache::FULL);
     bool updateFromSteam(const SteamModInfo &steamInfo);
+    const CachedVersion *markInstalledVersion(const QString &hash, const QString expectedVersionId);
 
 private:
     const ModCache::Impl &cache;
     QString id_;
     QList<CachedVersion> versions_;
     ModInfo info_;
+
+    CachedVersion *findVersionByHash(const QString &hash, const QString expectedVersionId);
 
     bool readModManFile(QIODevice &file);
     bool writeModManFile(QIODevice &file);
@@ -153,6 +158,14 @@ void ModCache::refresh(ModCache::RefreshLevel level)
     impl->refresh(level);
 }
 
+const CachedVersion *ModCache::markInstalledVersion(const QString &modId, const QString &hash, const QString expectedVersionId)
+{
+    CachedMod *mod = impl->mod(modId);
+    if (mod)
+        return mod->impl()->markInstalledVersion(hash, expectedVersionId);
+    return nullptr;
+}
+
 ModCache::~ModCache() = default;
 
 ModCache::Impl::Impl(const ModManConfig &config)
@@ -168,6 +181,13 @@ const CachedMod *ModCache::Impl::mod(const QString &id) const
 {
     if (modIds_.contains(id))
         return &mods_.at(modIds_[id]);
+    return nullptr;
+}
+
+CachedMod *ModCache::Impl::mod(const QString &id)
+{
+    if (modIds_.contains(id))
+        return &mods_[modIds_[id]];
     return nullptr;
 }
 
@@ -368,6 +388,37 @@ bool CachedMod::Impl::updateFromSteam(const SteamModInfo &steamInfo)
         }
     }
     return changed;
+}
+
+const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, const QString expectedVersionId)
+{
+    CachedVersion *installedVersion = findVersionByHash(hash, expectedVersionId);
+
+    return installedVersion;
+}
+
+CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QString expectedVersionId)
+{
+    // Check the expected version first, to avoid hashing folders unnecessarily.
+    if (!expectedVersionId.isEmpty())
+    {
+        for (CachedVersion &version : versions_)
+        {
+            if (version.id() == expectedVersionId)
+            {
+                if (version.hash() == hash)
+                    return &version;
+                break;
+            }
+        }
+    }
+
+    for (CachedVersion &version : versions_)
+    {
+        if (version.hash() == hash)
+            return &version;
+    }
+    return nullptr;
 }
 
 bool CachedMod::Impl::readModManFile(QIODevice &file)

@@ -45,6 +45,11 @@ public:
     const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
     void refresh(RefreshLevel level = FULL);
 
+    //! Find the currently installed version by hash and set its installed flag.
+    //! Returns the version, or nullptr if there is no match in the cache.
+    //! If an expected version ID is provided, that version is compared first.
+    const CachedVersion *markInstalledVersion(const QString &modId, const QString &hash, const QString expectedVersionId = QString());
+
     ~ModCache();
 private:
     std::experimental::propagate_const<std::unique_ptr<Impl>> impl;
