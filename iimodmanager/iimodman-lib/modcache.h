@@ -8,6 +8,7 @@
 #include <QList>
 #include <QLoggingCategory>
 #include <QMap>
+#include <experimental/propagate_const>
 
 namespace iimodmanager {
 
@@ -20,6 +21,8 @@ class CachedVersion;
 class IIMODMANLIBSHARED_EXPORT ModCache : public QObject
 {
 public:
+    //! Private implementation. Only accessible to classes in this file.
+    class Impl;
     enum RefreshLevel
     {
         FULL,
@@ -29,38 +32,28 @@ public:
 
     ModCache(const ModManConfig &config, QObject *parent = nullptr);
 
-    inline const QList<CachedMod> mods() const { return mods_; };
+    const QList<CachedMod> mods() const;
     bool contains(const QString &id) const;
     //! The mod with the given ID, or nullptr if it isn't in the cache.
     const CachedMod *mod(const QString &id) const;
 
-    inline QString modPath(const QString &modId) const { return modPath(config_, modId); };
-    inline QString modVersionPath(const QString &modId, const QString &versionId) const { return modVersionPath(config_, modId, versionId); };
-    inline QString modVersionPath(const QString &modId, const QDateTime &versionTime) const { return modVersionPath(config_, modId, versionTime); };
-    static QString modPath(const ModManConfig &config, const QString &modId);
-    static QString modVersionPath(const ModManConfig &config, const QString &modId, const QString &versionId);
     static QString modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime);
 
     //! Add a CachedMod for the given Steam Workshop details.
     //! Returns the mod if successful, or nullptr otherwise.
     //! If the mod is already in the cache, returns nullptr as the result wouldn't be a non-downloaded mod.
     const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
-    void refresh(RefreshLevel = FULL);
+    void refresh(RefreshLevel level = FULL);
 
+    ~ModCache();
 private:
-    const ModManConfig &config_;
-    //! All cached mods.
-    QList<CachedMod> mods_;
-    //! Index of mods by mod ID.
-    QMap<QString, qsizetype> modIds_;
-
-    void refreshIndex();
+    std::experimental::propagate_const<std::unique_ptr<Impl>> impl;
 };
 
 class IIMODMANLIBSHARED_EXPORT CachedMod
 {
 public:
-    CachedMod(const ModCache &cache, const QString &id);
+    CachedMod(const ModCache::Impl &cache, const QString &id);
 
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
@@ -80,7 +73,7 @@ public:
     CachedMod &operator = (const CachedMod &);
 
 private:
-    const ModCache &cache;
+    const ModCache::Impl &cache;
     QString id_;
     QList<CachedVersion> versions_;
     ModInfo info_;
@@ -92,7 +85,7 @@ private:
 class IIMODMANLIBSHARED_EXPORT CachedVersion
 {
 public:
-    CachedVersion(const ModCache &cache, const QString &modId, const QString &versionId);
+    CachedVersion(const ModCache::Impl &cache, const QString &modId, const QString &versionId);
 
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
@@ -107,7 +100,7 @@ public:
     CachedVersion &operator = (const CachedVersion &);
 
 private:
-    const ModCache &cache;
+    const ModCache::Impl &cache;
     const QString modId;
     QString id_;
     ModInfo info_;

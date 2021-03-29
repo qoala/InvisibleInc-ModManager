@@ -10,6 +10,34 @@ namespace iimodmanager {
 
 Q_LOGGING_CATEGORY(modcache, "modcache", QtWarningMsg)
 
+//! Private implementation of ModCache.
+//! Additionally exposes methods to the CachedMod/CachedVersion children defined in this file.
+class ModCache::Impl
+{
+public:
+    Impl(const ModManConfig &config);
+
+    inline const QList<CachedMod> mods() const { return mods_; };
+    bool contains(const QString &id) const;
+    const CachedMod *mod(const QString &id) const;
+
+    const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
+    void refresh(RefreshLevel = FULL);
+
+// file-visibility:
+    inline QString modPath(const QString &modId) const;
+    inline QString modVersionPath(const QString &modId, const QString &versionId) const;
+
+private:
+    const ModManConfig &config_;
+    //! All cached mods.
+    QList<CachedMod> mods_;
+    //! Index of mods by mod ID.
+    QMap<QString, qsizetype> modIds_;
+
+    void refreshIndex();
+};
+
 // Folder Structure: {cachePath}/workshop-{steamId}/{versionTime}/
 // Time format is ISO8601, but with ':' replaced with '_' to be a valid folder name on Windows.
 const QString formatVersionTime(const QDateTime &versionTime)
@@ -38,40 +66,73 @@ const QJsonDocument readJSON(QIODevice &file)
 }
 
 ModCache::ModCache(const ModManConfig &config, QObject *parent)
-    : QObject(parent), config_(config)
+    : QObject(parent), impl{std::make_unique<Impl>(config)}
 {}
 
+const QList<CachedMod> ModCache::mods() const
+{
+    return impl->mods();
+}
+
 bool ModCache::contains(const QString &id) const
+{
+    return impl->contains(id);
+}
+
+const CachedMod *ModCache::mod(const QString &id) const
+{
+    return impl->mod(id);
+}
+
+QString ModCache::modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime)
+{
+    QDir cacheDir(config.cachePath());
+    QDir modDir(cacheDir.absoluteFilePath(modId));
+    return modDir.absoluteFilePath(formatVersionTime(versionTime));
+}
+
+const CachedMod *ModCache::addUnloaded(const SteamModInfo &steamInfo)
+{
+    return impl->addUnloaded(steamInfo);
+}
+
+void ModCache::refresh(ModCache::RefreshLevel level)
+{
+    impl->refresh(level);
+}
+
+ModCache::~ModCache() = default;
+
+ModCache::Impl::Impl(const ModManConfig &config)
+    : config_(config)
+{}
+
+bool ModCache::Impl::contains(const QString &id) const
 {
     return modIds_.contains(id);
 }
 
-const CachedMod *ModCache::mod(const QString &id) const
+const CachedMod *ModCache::Impl::mod(const QString &id) const
 {
     if (modIds_.contains(id))
         return &mods_.at(modIds_[id]);
     return nullptr;
 }
 
-QString ModCache::modPath(const ModManConfig &config, const QString &modId)
+QString ModCache::Impl::modPath(const QString &modId) const
 {
-    QDir cacheDir(config.cachePath());
+    QDir cacheDir(config_.cachePath());
     return cacheDir.absoluteFilePath(modId);
 }
 
-QString ModCache::modVersionPath(const ModManConfig &config, const QString &modId, const QString &versionId)
+QString ModCache::Impl::modVersionPath(const QString &modId, const QString &versionId) const
 {
-    QDir cacheDir(config.cachePath());
+    QDir cacheDir(config_.cachePath());
     QDir modDir(cacheDir.absoluteFilePath(modId));
     return modDir.absoluteFilePath(versionId);
 }
 
-QString ModCache::modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime)
-{
-    return modVersionPath(config, modId, formatVersionTime(versionTime));
-}
-
-const CachedMod *ModCache::addUnloaded(const SteamModInfo &steamInfo)
+const CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo)
 {
     if (steamInfo.id.isEmpty())
         return nullptr;
@@ -94,7 +155,7 @@ const CachedMod *ModCache::addUnloaded(const SteamModInfo &steamInfo)
     }
 }
 
-void ModCache::refresh(RefreshLevel level)
+void ModCache::Impl::refresh(RefreshLevel level)
 {
     QDir cacheDir(config_.cachePath());
     qCDebug(modcache).noquote() << "cache:refresh() Start" << cacheDir.path();
@@ -116,7 +177,7 @@ void ModCache::refresh(RefreshLevel level)
     qCDebug(modcache).noquote().nospace() << "cache:refresh() End mods:" << mods_.size();
 }
 
-void ModCache::refreshIndex()
+void ModCache::Impl::refreshIndex()
 {
     modIds_.clear();
     for (qsizetype i = 0; i < mods_.size(); ++i)
@@ -127,7 +188,7 @@ void ModCache::refreshIndex()
     }
 }
 
-CachedMod::CachedMod(const ModCache &cache, const QString &id)
+CachedMod::CachedMod(const ModCache::Impl &cache, const QString &id)
     : cache(cache), id_(id)
 {}
 
@@ -277,7 +338,7 @@ bool CachedMod::writeModManFile(QIODevice &file)
     return false;
 }
 
-CachedVersion::CachedVersion(const ModCache &cache, const QString &modId, const QString &versionId)
+CachedVersion::CachedVersion(const ModCache::Impl &cache, const QString &modId, const QString &versionId)
     : cache(cache), modId(modId), id_(versionId)
 {}
 
