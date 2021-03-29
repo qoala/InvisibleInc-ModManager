@@ -4,6 +4,7 @@
 #include <QTextStream>
 #include <modinfo.h>
 #include <modcache.h>
+#include <modlist.h>
 
 namespace iimodmanager {
 
@@ -33,13 +34,22 @@ QFuture<void> CacheListCommand::executeCommand(QCommandLineParser &parser, const
     }
 
     ModCache cache(app_.config());
-    cache.refresh(versionSetting == ALL ? ModCache::FULL : ModCache::LATEST_ONLY);
+    if (versionSetting == ALL)
+    {
+        cache.refresh(ModCache::FULL);
+        ModList modList(app_.config(), &cache, nullptr);
+        modList.refresh(ModList::FULL);
+    }
+    else
+    {
+        cache.refresh(ModCache::LATEST_ONLY);
+    }
 
     if (format == TEXT)
     {
         maxWidth = 0;
         for (auto mod : cache.mods()) {
-        const int width = mod.id().size() + mod.info().name().size();
+        const qsizetype width = mod.id().size() + mod.info().name().size() + 3;
         if (width > maxWidth)
             maxWidth = width;
         }
@@ -75,7 +85,7 @@ void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
 
     if (versionSetting == LATEST)
     {
-        const int width = info.id().size() + info.name().size();
+        const qsizetype width = info.id().size() + info.name().size() + 3;
         cout << QString(maxWidth - width, ' ') << "  ::";
         cout << (mod.downloaded() ? mod.latestVersion()->toString() : "(not downloaded)");
     }
@@ -85,7 +95,15 @@ void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
         {
             const QList<CachedVersion> &versions = mod.versions();
             for (auto it = versions.rbegin(); it != versions.rend() ; ++it)
-                cout << Qt::endl << "  " << it->toString();
+            {
+                QString versionString = it->toString();
+                cout << Qt::endl << "  " << versionString;
+                if (it->installed())
+                {
+                    const qsizetype sepWidth = std::max<qsizetype>(maxWidth - versionString.size() - 2, 0);
+                    cout << QString(sepWidth, ' ') << "  (installed)";
+                }
+            }
         }
         else
         {

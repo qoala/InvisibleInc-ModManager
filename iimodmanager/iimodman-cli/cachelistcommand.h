@@ -32,7 +32,7 @@ private:
     };
     OutputFormat format;
     VersionSetting versionSetting;
-    int maxWidth;
+    qsizetype maxWidth;
 
     void writeSpecMod(QTextStream &out, const CachedMod &mod);
     void writeTextMod(QTextStream &out, const CachedMod &mod);
