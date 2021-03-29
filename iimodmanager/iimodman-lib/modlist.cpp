@@ -10,17 +10,48 @@ namespace iimodmanager {
 Q_DECLARE_LOGGING_CATEGORY(modlist)
 Q_LOGGING_CATEGORY(modlist, "modlist", QtWarningMsg);
 
+//! Private implementation of ModList.
+//! Additionally exposes methods to the InstalledMod children defined in this file.
+class ModList::Impl
+{
+public:
+    Impl(const ModManConfig &config, ModCache *cache);
+
+    inline const QList<InstalledMod> mods() const { return mods_; }
+
+    void refresh(RefreshLevel level = FULL);
+
+// file-visibility:
+    inline const ModCache *cache() const { return cache_; }
+    QString modPath(const QString &modId) const;
+
+private:
+    const ModManConfig &config_;
+    ModCache *cache_;
+    QList<InstalledMod> mods_;
+};
+
 ModList::ModList(const ModManConfig &config, ModCache *cache, QObject *parent)
-    : QObject(parent), config_(config), cache_(cache)
+    : QObject(parent), impl{std::make_unique<Impl>(config, cache)}
 {}
 
-QString ModList::modPath(const ModManConfig &config, const QString &modId)
+const QList<InstalledMod> ModList::mods() const
 {
-    QDir installDir(config.installPath());
-    return installDir.absoluteFilePath(modId);
+    return impl->mods();
 }
 
 void ModList::refresh(ModList::RefreshLevel level)
+{
+    impl->refresh(level);
+}
+
+ModList::~ModList() = default;
+
+ModList::Impl::Impl(const ModManConfig &config, ModCache *cache)
+    : config_(config), cache_(cache)
+{}
+
+void ModList::Impl::refresh(ModList::RefreshLevel level)
 {
     QDir installDir(config_.installPath());
     qCDebug(modlist).noquote() << "installed:refresh() Start" << installDir.path();
@@ -38,7 +69,13 @@ void ModList::refresh(ModList::RefreshLevel level)
     }
 }
 
-InstalledMod::InstalledMod(const ModList &parent, const QString &id)
+QString ModList::Impl::modPath(const QString &modId) const
+{
+    QDir installDir(config_.installPath());
+    return installDir.absoluteFilePath(modId);
+}
+
+InstalledMod::InstalledMod(const ModList::Impl &parent, const QString &id)
     : parent(parent), id_(id)
 {}
 

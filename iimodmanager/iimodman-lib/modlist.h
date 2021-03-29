@@ -6,6 +6,7 @@
 #include "modinfo.h"
 #include "modmanconfig.h"
 
+#include <experimental/propagate_const>
 #include <QList>
 
 namespace iimodmanager {
@@ -16,6 +17,8 @@ class InstalledMod;
 class IIMODMANLIBSHARED_EXPORT ModList : public QObject
 {
 public:
+    //! Private implementation. Only accessible to classes in this file.
+    class Impl;
     enum RefreshLevel
     {
         //! Mod ID, content metadata, and cache version association.
@@ -28,23 +31,19 @@ public:
 
     ModList(const ModManConfig &config, ModCache *cache = nullptr, QObject *parent = nullptr);
 
-    inline const ModCache *cache() const { return cache_; }
-    inline const QList<InstalledMod> mods() const { return mods_; }
-
-    inline QString modPath(const QString &modId) const { return modPath(config_, modId); };
-    static QString modPath(const ModManConfig &config, const QString &modId);
+    const QList<InstalledMod> mods() const;
 
     void refresh(RefreshLevel level = FULL);
+
+    ~ModList();
 private:
-    const ModManConfig &config_;
-    ModCache *cache_;
-    QList<InstalledMod> mods_;
+    std::experimental::propagate_const<std::unique_ptr<Impl>> impl;
 };
 
 class IIMODMANLIBSHARED_EXPORT InstalledMod
 {
 public:
-    InstalledMod(const ModList &parent, const QString &id);
+    InstalledMod(const ModList::Impl &parent, const QString &id);
 
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
@@ -60,7 +59,7 @@ public:
     InstalledMod &operator =(const InstalledMod&);
 
 private:
-    const ModList &parent;
+    const ModList::Impl &parent;
     QString id_;
     ModInfo info_;
     QString hash_;
