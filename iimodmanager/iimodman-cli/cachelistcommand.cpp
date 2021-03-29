@@ -70,27 +70,26 @@ void CacheListCommand::writeSpecMod(QTextStream &cout, const CachedMod &mod)
 void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
 {
     const ModInfo &info = mod.info();
-    const int width = info.id().size() + info.name().size();
 
     cout << info.toString();
-    cout << QString(maxWidth - width, ' ') << "  ::";
 
-    if (versionSetting != NONE && !mod.downloaded())
+    if (versionSetting == LATEST)
     {
-        cout << "(not downloaded)";
-    }
-    else if (versionSetting == LATEST)
-    {
-        cout << mod.latest()->toString();
+        const int width = info.id().size() + info.name().size();
+        cout << QString(maxWidth - width, ' ') << "  ::";
+        cout << (mod.downloaded() ? mod.latest()->toString() : "(not downloaded)");
     }
     else if (versionSetting == ALL)
     {
-        const QList<CachedVersion> &versions = mod.versions();
-        for (auto it = versions.rbegin(); it != versions.rend() ; ++it)
+        if (mod.downloaded())
         {
-            if (it != versions.rbegin())
-                cout << ", ";
-            cout << it->toString();
+            const QList<CachedVersion> &versions = mod.versions();
+            for (auto it = versions.rbegin(); it != versions.rend() ; ++it)
+                cout << Qt::endl << "  " << it->toString();
+        }
+        else
+        {
+            cout << Qt::endl << "  (not downloaded)";
         }
     }
 
