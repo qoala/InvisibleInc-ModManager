@@ -1,24 +1,92 @@
 #include "modinfo.h"
 
 #include <QDir>
+#include <QGlobalStatic>
 #include <QRegularExpression>
 #include <QSettings>
 #include <QTextStream>
 
 namespace iimodmanager {
 
+//! Private implementation of ModInfo.
+class ModInfo::Impl
+{
+public:
+    Impl(const QString &id, const QString &name, const QString &version);
+
+    inline const QString &id() const { return id_; }
+    inline const QString &name() const { return name_; }
+    inline const QString &version() const { return version_; }
+
+    static const std::shared_ptr<const Impl> emptyImpl;
+
+private:
+    const QString id_;
+    const QString name_;
+    const QString version_;
+};
+
+//! Dynamically initialized singleton empty ModInfo.
+const std::shared_ptr<const ModInfo::Impl> ModInfo::Impl::emptyImpl = std::make_shared<ModInfo::Impl>(QString(), QString(), QString());
+
 ModInfo::ModInfo()
+    : impl(Impl::emptyImpl)
 {}
 
 ModInfo::ModInfo(const QString &id, const QString &name)
-    : id_(id), name_(name)
-{}
+    : impl{std::make_shared<Impl>(id, name, QString())}
+{
+    if (id.isEmpty())
+        clear();
+}
+
+const QString &ModInfo::id() const
+{
+    return impl->id();
+}
+
+const QString &ModInfo::name() const
+{
+    return impl->name();
+}
+
+const QString &ModInfo::version() const
+{
+    return impl->version();
+}
+
+bool ModInfo::isSteam() const
+{
+    return impl->id().startsWith("workshop-");
+}
+
+QString ModInfo::steamId() const
+{
+    return impl->id().sliced(9);
+}
+
+bool ModInfo::isEmpty() const
+{
+    return Impl::emptyImpl == impl;
+}
+
+QString ModInfo::toString() const
+{
+    return QStringLiteral("%1 [%2]").arg(impl->name(), impl->id());
+}
+
+void ModInfo::clear()
+{
+    impl = Impl::emptyImpl;
+}
 
 const ModInfo ModInfo::readModInfo(QIODevice &file, const QString &id)
 {
+    if (id.isEmpty())
+        return ModInfo();
 
-    ModInfo mod;
-    mod.id_ = id;
+    QString name;
+    QString version;
 
     if (file.isOpen() || file.open(QIODevice::ReadOnly))
     {
@@ -33,17 +101,23 @@ const ModInfo ModInfo::readModInfo(QIODevice &file, const QString &id)
                 QString key = match.captured(1);
                 if (key == "name")
                 {
-                    mod.name_ = match.captured(2);
+                    name = match.captured(2);
                 }
                 else if (key == "version")
                 {
-                    mod.version_ = match.captured(2);
+                    version = match.captured(2);
                 }
             }
         }
     }
 
+    ModInfo mod;
+    mod.impl = std::make_shared<Impl>(id, name, version);
     return mod;
 }
+
+ModInfo::Impl::Impl(const QString &id, const QString &name, const QString &version)
+    : id_(id), name_(name), version_(version)
+{}
 
 }  // namespace iimodmanager

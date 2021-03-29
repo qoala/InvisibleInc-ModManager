@@ -10,27 +10,32 @@
 namespace iimodmanager {
 
 //! The contents of a mod's modinfo.txt.
+//! Immutable with implicitly shared storage on copy.
 class IIMODMANLIBSHARED_EXPORT ModInfo
 {
 public:
     ModInfo();
     ModInfo(const QString &id, const QString &name = QString());
 
-    inline const QString &id() const { return id_; }
-    inline const QString &name() const { return name_; }
-    inline const QString &version() const { return version_; }
+    const QString &id() const;
+    const QString &name() const;
+    const QString &version() const;
 
-    inline bool isSteam() const { return id_.startsWith("workshop-"); }
-    QString steamId() const { return id_.sliced(9); }
+    bool isSteam() const;
+    QString steamId() const;
 
-    inline const QString toString() const { return QStringLiteral("%1 [%2]").arg(name_, id_); }
+    bool isEmpty() const;
+    QString toString() const;
+
+    //! Clear the contents and make this ModInfo empty.
+    void clear();
 
     static const ModInfo readModInfo(QIODevice &file, const QString &id);
 
 private:
-    QString id_;
-    QString name_;
-    QString version_;
+    class Impl;
+
+    std::shared_ptr<const Impl> impl;
 };
 
 }  // namespace iimodmanager

@@ -434,7 +434,7 @@ const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, 
         installedVersion_->impl()->setInstalled(false);
 
     // Ensure the version's modinfo is available, in case this isn't latest.
-    if (cachedVersion->info().id().isEmpty())
+    if (cachedVersion->info().isEmpty())
         cachedVersion->impl()->refresh();
 
     cachedVersion->impl()->setInstalled(true);

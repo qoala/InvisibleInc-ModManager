@@ -29,7 +29,7 @@ QFuture<void> ModsListCommand::executeCommand(QCommandLineParser &parser, const 
 
     if (format == TEXT)
     {
-        cache.refresh();
+        cache.refresh(ModCache::LATEST_ONLY);
         modList.refresh();
 
         maxWidth = 0;
