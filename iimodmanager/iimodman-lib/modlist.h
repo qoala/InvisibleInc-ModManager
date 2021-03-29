@@ -50,6 +50,7 @@ public:
 
     const QString &id() const;
     const ModInfo &info() const;
+    const QString &hash() const;
 
     bool hasCacheVersion() const;
     //! The cached version matching the currently installed mod, or nullptr if there is no match.

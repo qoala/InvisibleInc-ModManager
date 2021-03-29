@@ -12,6 +12,7 @@ void ModsListCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
     parser.addPositionalArgument("list", "Command: List all installed mods");
     parser.addOptions({
+                    {"hash", "Print mod version hashes."},
                     {"spec", "Format output as a modspec."},
                 });
 }
@@ -21,6 +22,7 @@ QFuture<void> ModsListCommand::executeCommand(QCommandLineParser &parser, const 
     Q_UNUSED(args);
 
     format = parser.isSet("spec") ? MODSPEC : TEXT;
+    includeHashes = parser.isSet("hash");
 
     ModCache cache(app_.config());
     ModList modList(app_.config(), &cache);
@@ -68,9 +70,16 @@ void ModsListCommand::writeTextMod(QTextStream &cout, const InstalledMod &mod)
     const ModInfo &info = mod.info();
 
     cout << qSetFieldWidth(maxWidth) << info.toString() << qSetFieldWidth(0) << "  ";
-    cout << qSetFieldWidth(29) << mod.versionString() << qSetFieldWidth(0);
+    cout << qSetFieldWidth(29) << mod.versionString();
+    cout << qSetFieldWidth(20);
     if (!mod.hasCacheVersion())
         cout << " (not in cache)";
+    else
+        cout << ' ';
+    cout << qSetFieldWidth(0);
+
+    if (includeHashes)
+        cout << ' ' << mod.hash();
     cout << Qt::endl;
 }
 

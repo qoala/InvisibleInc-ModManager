@@ -32,6 +32,7 @@ private:
     };
     OutputFormat format;
     VersionSetting versionSetting;
+    bool includeHashes;
     qsizetype maxWidth;
 
     void writeSpecMod(QTextStream &out, const CachedMod &mod);

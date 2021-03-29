@@ -17,6 +17,7 @@ void CacheListCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("list", "Command: List all downloaded mods in the cache");
     parser.addOptions({
                     {{"a", "all"}, "List all versions of each mod."},
+                    {"hash", "Print mod version hashes."},
                     {"spec", "Format output as a modspec."},
                 });
 }
@@ -27,10 +28,12 @@ QFuture<void> CacheListCommand::executeCommand(QCommandLineParser &parser, const
 
     format = TEXT;
     versionSetting = parser.isSet("all") ? ALL : LATEST;
+    includeHashes = parser.isSet("hash");
     if (parser.isSet("spec"))
     {
         format = MODSPEC;
         versionSetting = NONE;
+        includeHashes = false;
     }
 
     ModCache cache(app_.config());
@@ -87,7 +90,11 @@ void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
     if (versionSetting == LATEST)
     {
         cout << "  ";
+        cout << qSetFieldWidth(29);
         cout << (mod.downloaded() ? mod.latestVersion()->toString() : "(not downloaded)");
+        cout << qSetFieldWidth(0);
+        if (includeHashes && mod.downloaded())
+            cout << ' ' << mod.latestVersion()->hash();
     }
     else if (versionSetting == ALL)
     {
@@ -97,9 +104,15 @@ void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
             const qsizetype fieldWidth = std::max<qsizetype>(maxWidth - 2, 0);
             for (auto it = versions.rbegin(); it != versions.rend() ; ++it)
             {
-                cout << Qt::endl << "  " << qSetFieldWidth(fieldWidth) << it->toString() << qSetFieldWidth(0);
+                cout << Qt::endl << "  " << qSetFieldWidth(fieldWidth) << it->toString();
+                cout << qSetFieldWidth(20);
                 if (it->installed())
                     cout << "  (installed)";
+                else
+                    cout << ' ';
+                cout << qSetFieldWidth(0);
+                if (includeHashes)
+                    cout << ' ' << it->hash();
             }
         }
         else

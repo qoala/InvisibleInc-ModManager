@@ -24,6 +24,7 @@ private:
         MODSPEC,
     };
     OutputFormat format;
+    bool includeHashes;
     int maxWidth;
 
     void writeSpecMod(QTextStream &out, const InstalledMod &mod);

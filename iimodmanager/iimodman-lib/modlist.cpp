@@ -40,6 +40,7 @@ public:
 
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
+    const QString &hash() const;
 
     bool hasCacheVersion() const;
     const CachedVersion *cacheVersion() const;
@@ -51,8 +52,9 @@ private:
     const ModList::Impl &parent;
     QString id_;
     ModInfo info_;
-    QString hash_;
     QString cacheVersionId_;
+
+    mutable QString hash_;
 };
 
 ModList::ModList(const ModManConfig &config, ModCache *cache, QObject *parent)
@@ -113,6 +115,11 @@ const ModInfo &InstalledMod::info() const
     return impl()->info();
 }
 
+const QString &InstalledMod::hash() const
+{
+    return impl()->hash();
+}
+
 bool InstalledMod::hasCacheVersion() const
 {
     return impl()->hasCacheVersion();
@@ -143,6 +150,13 @@ InstalledMod::Impl::Impl(const ModList::Impl &parent, const QString &id)
     : parent(parent), id_(id)
 {}
 
+const QString &InstalledMod::Impl::hash() const
+{
+    if (hash_.isEmpty())
+        hash_ = ModSignature::hashModPath(parent.modPath(id_));
+    return hash_;
+}
+
 bool InstalledMod::Impl::hasCacheVersion() const
 {
     if (auto cachedMod = parent.cache()->mod(id_))
@@ -166,6 +180,8 @@ bool InstalledMod::Impl::refresh(ModList::RefreshLevel level)
         return false;
     }
     qCDebug(modlist).noquote().nospace() << QString("installedmod:refresh(%1)").arg(id_);
+
+    hash_.clear();
 
     if (level == ModList::ID_ONLY)
     {
