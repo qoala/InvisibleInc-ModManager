@@ -38,6 +38,58 @@ private:
     void refreshIndex();
 };
 
+//! Private implementation of CachedMod.
+//! Additionally exposes mutators called by its parent ModCache;
+class CachedMod::Impl
+{
+public:
+    Impl(const ModCache::Impl &cache, const QString &id);
+
+    inline const QString &id() const { return id_; };
+    inline const ModInfo &info() const { return info_; };
+    inline const QList<CachedVersion> &versions() const { return versions_; };
+
+// file-visibility:
+    bool refresh(ModCache::RefreshLevel = ModCache::FULL);
+    bool updateFromSteam(const SteamModInfo &steamInfo);
+
+private:
+    const ModCache::Impl &cache;
+    QString id_;
+    QList<CachedVersion> versions_;
+    ModInfo info_;
+
+    bool readModManFile(QIODevice &file);
+    bool writeModManFile(QIODevice &file);
+};
+
+//! Private implementation of CachedVersion.
+//! Additionally exposes mutators called by its parent ModCache and CachedMod;
+class CachedVersion::Impl
+{
+public:
+    Impl(const ModCache::Impl &cache, const QString &modId, const QString &versionId);
+
+    inline const QString &id() const { return id_; };
+    inline const ModInfo &info() const { return info_; };
+    inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
+    inline const std::optional<QString> version() const { return version_; };
+    const QString &hash() const;
+
+// file-visibility:
+    bool refresh(ModCache::RefreshLevel = ModCache::FULL);
+
+private:
+    const ModCache::Impl &cache;
+    const QString modId;
+    QString id_;
+    ModInfo info_;
+    std::optional<QDateTime> timestamp_;
+    std::optional<QString> version_;
+
+    mutable QString hash_;
+};
+
 // Folder Structure: {cachePath}/workshop-{steamId}/{versionTime}/
 // Time format is ISO8601, but with ':' replaced with '_' to be a valid folder name on Windows.
 const QString formatVersionTime(const QDateTime &versionTime)
@@ -143,7 +195,7 @@ const CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo)
 
     const qsizetype position = mods_.size();
     CachedMod &mod = mods_.emplaceBack(*this, modId);
-    if (mod.updateFromSteam(steamInfo))
+    if (mod.impl()->updateFromSteam(steamInfo))
     {
         modIds_[mod.id()] = position;
         return &mod;
@@ -168,7 +220,7 @@ void ModCache::Impl::refresh(RefreshLevel level)
     for (auto modId : modIds)
     {
         CachedMod &mod = mods_.emplaceBack(*this, modId);
-        if (!mod.refresh(level))
+        if (!mod.impl()->refresh(level))
             mods_.removeLast();
     }
 
@@ -189,12 +241,32 @@ void ModCache::Impl::refreshIndex()
 }
 
 CachedMod::CachedMod(const ModCache::Impl &cache, const QString &id)
-    : cache(cache), id_(id)
+    : impl_{std::make_shared<Impl>(cache, id)}
 {}
+
+const QString &CachedMod::id() const
+{
+    return impl()->id();
+}
+
+const ModInfo &CachedMod::info() const
+{
+    return impl()->info();
+}
+
+const QList<CachedVersion> &CachedMod::versions() const
+{
+    return impl()->versions();
+}
+
+bool CachedMod::downloaded() const
+{
+    return !impl()->versions().isEmpty();
+}
 
 bool CachedMod::containsVersion(const QString &versionId) const
 {
-    for (auto version : versions_)
+    for (auto version : impl()->versions())
     {
         if (version.id() == versionId)
             return true;
@@ -209,7 +281,7 @@ bool CachedMod::containsVersion(const QDateTime &versionTime) const
 
 const CachedVersion *CachedMod::version(const QString &versionId) const
 {
-    for (const CachedVersion &version : versions_)
+    for (const CachedVersion &version : impl()->versions())
     {
         if (version.id() == versionId)
             return &version;
@@ -219,12 +291,17 @@ const CachedVersion *CachedMod::version(const QString &versionId) const
 
 const CachedVersion *CachedMod::latest() const
 {
-    if (versions_.isEmpty())
+    auto versions = impl()->versions();
+    if (versions.isEmpty())
         return nullptr;
-    return &versions_.first();
+    return &versions.first();
 }
 
-bool CachedMod::refresh(ModCache::RefreshLevel level)
+CachedMod::Impl::Impl(const ModCache::Impl &cache, const QString &id)
+    : cache(cache), id_(id)
+{}
+
+bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
 {
     QDir modDir(cache.modPath(id_));
 
@@ -237,7 +314,7 @@ bool CachedMod::refresh(ModCache::RefreshLevel level)
     for (auto versionPath : versionPaths)
     {
         CachedVersion &version = versions_.emplaceBack(cache, id(), versionPath.fileName());
-        if (version.refresh(versionLevel))
+        if (version.impl()->refresh(versionLevel))
         {
             if (level == ModCache::LATEST_ONLY)
                 versionLevel = ModCache::ID_ONLY;
@@ -264,7 +341,7 @@ bool CachedMod::refresh(ModCache::RefreshLevel level)
     return false;
 }
 
-bool CachedMod::updateFromSteam(const SteamModInfo &steamInfo)
+bool CachedMod::Impl::updateFromSteam(const SteamModInfo &steamInfo)
 {
     bool changed = false;
     if (versions_.empty())
@@ -293,16 +370,7 @@ bool CachedMod::updateFromSteam(const SteamModInfo &steamInfo)
     return changed;
 }
 
-CachedMod &CachedMod::operator =(const CachedMod &o)
-{
-   assert(&cache == &o.cache);
-   id_ = o.id_;
-   versions_ = o.versions_;
-   info_ = o.info_;
-   return *this;
-}
-
-bool CachedMod::readModManFile(QIODevice &file)
+bool CachedMod::Impl::readModManFile(QIODevice &file)
 {
     if (file.isOpen() || file.open(QIODevice::ReadOnly))
     {
@@ -323,7 +391,7 @@ bool CachedMod::readModManFile(QIODevice &file)
     return false;
 }
 
-bool CachedMod::writeModManFile(QIODevice &file)
+bool CachedMod::Impl::writeModManFile(QIODevice &file)
 {
     QJsonObject root;
     root["modId"] = id_;
@@ -339,28 +407,57 @@ bool CachedMod::writeModManFile(QIODevice &file)
 }
 
 CachedVersion::CachedVersion(const ModCache::Impl &cache, const QString &modId, const QString &versionId)
+    : impl_{std::make_shared<Impl>(cache, modId, versionId)}
+{}
+
+const QString &CachedVersion::id() const
+{
+    return impl()->id();
+}
+
+const ModInfo &CachedVersion::info() const
+{
+    return impl()->info();
+}
+
+const std::optional<QDateTime> CachedVersion::timestamp() const
+{
+    return impl()->timestamp();
+}
+
+const std::optional<QString> CachedVersion::version() const
+{
+    return impl()->version();
+}
+
+const QString &CachedVersion::hash() const
+{
+    return impl()->hash();
+}
+
+const QString CachedVersion::toString() const
+{
+    if (auto version = impl()->version())
+        return "v" + *version;
+    else if (auto timestamp = impl()->timestamp())
+        return timestamp->toString();
+    else
+        return impl()->id();
+
+}
+
+CachedVersion::Impl::Impl(const ModCache::Impl &cache, const QString &modId, const QString &versionId)
     : cache(cache), modId(modId), id_(versionId)
 {}
 
-const QString &CachedVersion::hash() const
+const QString &CachedVersion::Impl::hash() const
 {
     if (hash_.isEmpty())
         hash_ = ModSignature::hashModPath(cache.modVersionPath(modId, id_));
     return hash_;
 }
 
-const QString CachedVersion::toString() const
-{
-    if (version().has_value())
-        return "v" + *version();
-    else if (timestamp().has_value())
-        return timestamp()->toString();
-    else
-        return id();
-
-}
-
-bool CachedVersion::refresh(ModCache::RefreshLevel level)
+bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level)
 {
     QDir modVersionDir(cache.modVersionPath(modId, id_));
     if (!modVersionDir.exists("modinfo.txt"))
@@ -392,18 +489,8 @@ bool CachedVersion::refresh(ModCache::RefreshLevel level)
         timestamp_.reset();
     }
 
-    qCDebug(modcache).noquote().nospace() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << " version=" << (version_.has_value() ? *version_ : "");
+    qCDebug(modcache).noquote().nospace() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << " version=" << (version_ ? *version_ : "");
     return true;
-}
-
-CachedVersion &CachedVersion::operator =(const CachedVersion &o)
-{
-   assert(&cache == &o.cache);
-   id_ = o.id_;
-   info_ = o.info_;
-   timestamp_ = o.timestamp_;
-   version_ = o.version_;
-   return *this;
 }
 
 } // namespace iimodmanager

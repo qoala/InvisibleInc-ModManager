@@ -50,16 +50,21 @@ private:
     std::experimental::propagate_const<std::unique_ptr<Impl>> impl;
 };
 
+//! A single mod and all its versions currently in the local mod cache.
+//! Copying by value will point to the same shared data. Refreshing the parent ModCache separates the shared data.
 class IIMODMANLIBSHARED_EXPORT CachedMod
 {
 public:
+    //! Private implementation. Only accessible to classes in this file.
+    class Impl;
+
     CachedMod(const ModCache::Impl &cache, const QString &id);
 
-    inline const QString &id() const { return id_; };
-    inline const ModInfo &info() const { return info_; };
-    inline bool downloaded() const { return !versions_.empty(); };
+    const QString &id() const;
+    const ModInfo &info() const;
+    const QList<CachedVersion> &versions() const;
+    bool downloaded() const;
 
-    inline const QList<CachedVersion> &versions() const { return versions_; };
     bool containsVersion(const QString &versionId) const;
     bool containsVersion(const QDateTime &versionTime) const;
     //! The version with the given ID, or nullptr if it isn't in the cache.
@@ -67,46 +72,41 @@ public:
     //! The latest version, or nullptr if no versions are available.
     const CachedVersion *latest() const;
 
-    bool refresh(ModCache::RefreshLevel = ModCache::FULL);
-    bool updateFromSteam(const SteamModInfo &steamInfo);
-
-    CachedMod &operator = (const CachedMod &);
-
 private:
-    const ModCache::Impl &cache;
-    QString id_;
-    QList<CachedVersion> versions_;
-    ModInfo info_;
+    friend ModCache;
+    std::shared_ptr<Impl> impl_;
 
-    bool readModManFile(QIODevice &file);
-    bool writeModManFile(QIODevice &file);
+    // Wrap the pointer manually, to preserve CopyConstructable/CopyAssignable.
+    inline const Impl *impl() const { return impl_.get(); };
+    inline Impl *impl() { return impl_.get(); };
 };
 
+//! A single version of a mod in the local mod cache.
+//! Copying by value will point to the same shared data. Refreshing the parent ModCache or CachedMod separates the shared data.
 class IIMODMANLIBSHARED_EXPORT CachedVersion
 {
 public:
+    //! Private implementation. Only accessible to classes in this file.
+    class Impl;
+
     CachedVersion(const ModCache::Impl &cache, const QString &modId, const QString &versionId);
 
-    inline const QString &id() const { return id_; };
-    inline const ModInfo &info() const { return info_; };
-    inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
-    inline const std::optional<QString> version() const { return version_; };
+    const QString &id() const;
+    const ModInfo &info() const;
+    const std::optional<QDateTime> timestamp() const;
+    const std::optional<QString> version() const;
     const QString &hash() const;
 
     const QString toString() const;
 
-    bool refresh(ModCache::RefreshLevel = ModCache::FULL);
-
-    CachedVersion &operator = (const CachedVersion &);
-
 private:
-    const ModCache::Impl &cache;
-    const QString modId;
-    QString id_;
-    ModInfo info_;
-    std::optional<QDateTime> timestamp_;
-    std::optional<QString> version_;
-    mutable QString hash_;
+    friend ModCache;
+    friend CachedMod;
+    std::shared_ptr<Impl> impl_;
+
+    // Wrap the pointer manually, to preserve CopyConstructable/CopyAssignable.
+    inline const Impl *impl() const { return impl_.get(); };
+    inline Impl *impl() { return impl_.get(); };
 };
 
 } // namespace iimodmanager
