@@ -16,11 +16,11 @@ void SteamAPIModInfoCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
     parser.addPositionalArgument("modinfo", "Command: Retrieve mod info for the specified mod");
     parser.addOptions({
-                    {{"id", "steam-id"}, "REQUIRED: Steam workshop ID (e.g. '2151835746')", "id"},
-                });
+                          {{"id", "steam-id"}, "REQUIRED: Steam workshop ID (e.g. '2151835746')", "id"},
+                      });
 }
 
-QFuture<void> SteamAPIModInfoCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
+void SteamAPIModInfoCommand::parse(QCommandLineParser &parser, const QStringList &args)
 {
     Q_UNUSED(args);
     if (!parser.isSet("steam-id"))
@@ -30,8 +30,11 @@ QFuture<void> SteamAPIModInfoCommand::executeCommand(QCommandLineParser &parser,
         parser.showHelp(EXIT_FAILURE);
     }
 
-    const QString workshopId = parser.value("steam-id");
+    workshopId = parser.value("steam-id");
+}
 
+QFuture<void> SteamAPIModInfoCommand::execute()
+{
     ModDownloader *downloader = new ModDownloader(app_.config(), this);
     ModInfoCall *call = downloader->fetchModInfo(workshopId);
 

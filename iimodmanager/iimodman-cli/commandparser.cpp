@@ -25,7 +25,7 @@ QFuture<void> CommandParser::parse(const QStringList &arguments)
     QTextStream cerr(stderr);
 
     parser_.parse(arguments);
-    QStringList args = parser_.positionalArguments();
+    const QStringList args = parser_.positionalArguments();
     if (args.isEmpty())
     {
         addTerminalArgs();
@@ -74,8 +74,13 @@ QFuture<void> CommandParser::parse(const QStringList &arguments)
         parser_.showHelp(EXIT_FAILURE);
     }
 
-    command->parse(parser_, arguments);
-    return command->execute(parser_, args, parser_.isSet(help));
+    command->addTerminalArgs(parser_);
+    if (parser_.isSet(help) || (args.size() >= 3 && args.at(2) == "help"))
+        parser_.showHelp(EXIT_SUCCESS);
+    parser_.process(arguments);
+    command->parse(parser_, args);
+
+    return command->execute();
 }
 
 }  // namespace iimodmanager

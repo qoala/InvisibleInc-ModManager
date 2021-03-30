@@ -19,13 +19,13 @@ UpdateModsImpl::UpdateModsImpl(ModManCliApplication &app, ModCache *cache, ModDo
       missingCacheAction(CACHE_SKIP),
       alreadyLatestVersionAction(LATEST_SKIP),
       confirmBeforeDownloading(true)
-{
-    if (!cache)
-        cache_->refresh(ModCache::LATEST_ONLY);
-}
+{}
 
 void UpdateModsImpl::start(const QStringList &modIds)
 {
+    if (cache_->mods().isEmpty())
+        cache_->refresh(ModCache::LATEST_ONLY);
+
     workshopIds = checkModIds(modIds);
     if (workshopIds.empty())
     {

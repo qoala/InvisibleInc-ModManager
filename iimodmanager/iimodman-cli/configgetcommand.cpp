@@ -17,7 +17,7 @@ void ConfigGetCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("key", "Config key to retrieve", "[key]");
 }
 
-QFuture<void> ConfigGetCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
+void ConfigGetCommand::parse(QCommandLineParser &parser, const QStringList &args)
 {
     if (args.size() < 3)
     {
@@ -26,7 +26,11 @@ QFuture<void> ConfigGetCommand::executeCommand(QCommandLineParser &parser, const
         parser.showHelp(EXIT_FAILURE);
     }
 
-    QString key = args.at(2);
+    key = args.at(2);
+}
+
+QFuture<void> ConfigGetCommand::execute()
+{
     QTextStream cout(stdout);
     if (key == "core.cachePath")
     {
@@ -43,8 +47,8 @@ QFuture<void> ConfigGetCommand::executeCommand(QCommandLineParser &parser, const
     else
     {
         QTextStream cerr(stderr);
-        cerr << app_.applicationName() << ": Unknown config key: " << key << Qt::endl;
-        parser.showHelp(EXIT_FAILURE);
+        cerr << app_.applicationName() << ": Unknown config key (try 'config list'): " << key << Qt::endl;
+        app_.exit(EXIT_FAILURE);
     }
 
     QPromise<void> promise;

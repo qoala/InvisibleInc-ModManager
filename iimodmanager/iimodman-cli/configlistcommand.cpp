@@ -16,11 +16,14 @@ void ConfigListCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("list", "Command: List all config values");
 }
 
-QFuture<void> ConfigListCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
+void ConfigListCommand::parse(QCommandLineParser &parser, const QStringList &args)
 {
     Q_UNUSED(parser);
     Q_UNUSED(args);
+}
 
+QFuture<void> ConfigListCommand::execute()
+{
     QTextStream cout(stdout);
     cout << "core.cachePath=" << app_.config().cachePath() << Qt::endl;
     cout << "core.installPath=" << app_.config().installPath() << Qt::endl;

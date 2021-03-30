@@ -13,12 +13,13 @@ public:
     CacheAddCommand(ModManCliApplication &app);
 
     // Command interface
-protected:
     void addTerminalArgs(QCommandLineParser &parser) const;
-    QFuture<void> executeCommand(QCommandLineParser &parser, const QStringList &args);
+    void parse(QCommandLineParser &parser, const QStringList &args);
+    QFuture<void> execute();
 
 private:
     AddModsImpl *impl;
+    QStringList modIds;
 };
 
 } // namespace iimodmanager

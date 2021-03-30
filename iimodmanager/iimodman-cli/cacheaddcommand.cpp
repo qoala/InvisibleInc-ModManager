@@ -14,21 +14,21 @@ void CacheAddCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
     parser.addPositionalArgument("update", "Command: Update downloaded mods currently in the cache");
     parser.addOptions({
-                    {{"m", "mod-id"}, "Add mods by ID (e.g. 'workshop-2151835746'), may be repeated.", "id"},
-                });
+                          {{"m", "mod-id"}, "Add mods by ID (e.g. 'workshop-2151835746'), may be repeated.", "id"},
+                      });
 }
 
-QFuture<void> CacheAddCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
+void CacheAddCommand::parse(QCommandLineParser &parser, const QStringList &args)
 {
     Q_UNUSED(args);
-    QStringList modIds;
-    impl = new AddModsImpl(app_, this);
 
     if (parser.isSet("mod-id"))
-    {
         modIds.append(parser.values("mod-id"));
-    }
+}
 
+QFuture<void> CacheAddCommand::execute()
+{
+    impl = new AddModsImpl(app_, this);
     impl->start(modIds);
 
     return QtFuture::connect(impl, &AddModsImpl::finished);

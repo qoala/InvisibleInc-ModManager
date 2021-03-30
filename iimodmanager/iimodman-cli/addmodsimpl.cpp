@@ -14,13 +14,13 @@ AddModsImpl::AddModsImpl(ModManCliApplication &app, ModCache *cache, ModDownload
     : QObject(parent), app(app),
       cache_(cache ? cache : new ModCache(app.config(), this)),
       downloader(downloader ? downloader : new ModDownloader(app.config(), this))
-{
-    if (!cache)
-        cache_->refresh(ModCache::LATEST_ONLY);
-}
+{}
 
 void AddModsImpl::start(const QStringList &modIds)
 {
+    if (cache_->mods().isEmpty())
+        cache_->refresh(ModCache::LATEST_ONLY);
+
     workshopIds = checkModIds(modIds);
     if (workshopIds.empty())
     {

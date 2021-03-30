@@ -18,13 +18,13 @@ void CacheListCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
     parser.addPositionalArgument("list", "Command: List all downloaded mods in the cache");
     parser.addOptions({
-                    {{"a", "all"}, "List all versions of each mod."},
-                    {"hash", "Print mod version hashes."},
-                    {"spec", "Format output as a modspec."},
-                });
+                          {{"a", "all"}, "List all versions of each mod."},
+                          {"hash", "Print mod version hashes."},
+                          {"spec", "Format output as a modspec."},
+                      });
 }
 
-QFuture<void> CacheListCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
+void CacheListCommand::parse(QCommandLineParser &parser, const QStringList &args)
 {
     Q_UNUSED(args);
 
@@ -37,7 +37,10 @@ QFuture<void> CacheListCommand::executeCommand(QCommandLineParser &parser, const
         versionSetting = NONE;
         includeHashes = false;
     }
+}
 
+QFuture<void> CacheListCommand::execute()
+{
     ModCache cache(app_.config());
     if (versionSetting == ALL)
     {

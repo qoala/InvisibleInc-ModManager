@@ -5,6 +5,7 @@
 
 namespace iimodmanager {
 
+class ModCache;
 class UpdateModsImpl;
 
 class CacheUpdateCommand : public Command
@@ -13,12 +14,16 @@ public:
     CacheUpdateCommand(ModManCliApplication &app);
 
     // Command interface
-protected:
     void addTerminalArgs(QCommandLineParser &parser) const;
-    QFuture<void> executeCommand(QCommandLineParser &parser, const QStringList &args);
+    void parse(QCommandLineParser &parser, const QStringList &args);
+    QFuture<void> execute();
 
 private:
+    ModCache *cache;
     UpdateModsImpl *impl;
+    QStringList modIds;
+    bool inclDownloaded;
+    bool inclAll;
 };
 
 } // namespace iimodmanager

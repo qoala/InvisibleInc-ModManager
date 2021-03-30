@@ -18,18 +18,21 @@ void ModsListCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
     parser.addPositionalArgument("list", "Command: List all installed mods");
     parser.addOptions({
-                    {"hash", "Print mod version hashes."},
-                    {"spec", "Format output as a modspec."},
-                });
+                          {"hash", "Print mod version hashes."},
+                          {"spec", "Format output as a modspec."},
+                      });
 }
 
-QFuture<void> ModsListCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
+void ModsListCommand::parse(QCommandLineParser &parser, const QStringList &args)
 {
     Q_UNUSED(args);
 
     format = parser.isSet("spec") ? MODSPEC : TEXT;
     includeHashes = parser.isSet("hash");
+}
 
+QFuture<void> ModsListCommand::execute()
+{
     ModCache cache(app_.config());
     ModList modList(app_.config(), &cache);
 

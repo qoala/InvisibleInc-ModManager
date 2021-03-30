@@ -18,7 +18,7 @@ void ConfigSetCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("value", "Config value to set", "[value]");
 }
 
-QFuture<void> ConfigSetCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
+void ConfigSetCommand::parse(QCommandLineParser &parser, const QStringList &args)
 {
     if (args.size() < 3)
     {
@@ -33,9 +33,13 @@ QFuture<void> ConfigSetCommand::executeCommand(QCommandLineParser &parser, const
         parser.showHelp(EXIT_FAILURE);
     }
 
-    QString key = args.at(2);
-    QString value = args.at(3);
+    key = args.at(2);
+    value = args.at(3);
 
+}
+
+QFuture<void> ConfigSetCommand::execute()
+{
     if (key == "core.cachePath")
     {
         app_.config().setCachePath(value);
@@ -52,7 +56,7 @@ QFuture<void> ConfigSetCommand::executeCommand(QCommandLineParser &parser, const
     {
         QTextStream cerr(stderr);
         cerr << app_.applicationName() << ": Unknown config key: " << key << Qt::endl;
-        parser.showHelp(EXIT_FAILURE);
+        app_.exit(EXIT_FAILURE);
     }
 
     QPromise<void> promise;

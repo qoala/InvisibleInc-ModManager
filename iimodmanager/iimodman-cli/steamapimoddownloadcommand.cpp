@@ -20,12 +20,12 @@ void SteamAPIDownloadModCommand::addTerminalArgs(QCommandLineParser &parser) con
 {
     parser.addPositionalArgument("moddl", "Command: Download the latest version of the specified mod");
     parser.addOptions({
-                    {{"id", "steam-id"}, "REQUIRED: Steam workshop ID (e.g. '2151835746')", "id"},
-                    {{"f","force"}, "Overwrite even if the latest version is already downloaded."},
-                });
+                          {{"id", "steam-id"}, "REQUIRED: Steam workshop ID (e.g. '2151835746')", "id"},
+                          {{"f","force"}, "Overwrite even if the latest version is already downloaded."},
+                      });
 }
 
-QFuture<void> SteamAPIDownloadModCommand::executeCommand(QCommandLineParser &parser, const QStringList &args)
+void SteamAPIDownloadModCommand::parse(QCommandLineParser &parser, const QStringList &args)
 {
     Q_UNUSED(args);
     if (!parser.isSet("steam-id"))
@@ -40,7 +40,13 @@ QFuture<void> SteamAPIDownloadModCommand::executeCommand(QCommandLineParser &par
     impl->setAlreadyLatestVersionBehavior(parser.isSet("force") ? LATEST_FORCE : LATEST_SKIP);
     impl->setConfirmBeforeDownloading(false);
 
-    QStringList modIds("workshop-" + parser.value("steam-id"));
+    modId = "workshop-" + parser.value("steam-id");
+
+}
+
+QFuture<void> SteamAPIDownloadModCommand::execute()
+{
+    QStringList modIds(modId);
     impl->start(modIds);
 
     return QtFuture::connect(impl, &UpdateModsImpl::finished);
