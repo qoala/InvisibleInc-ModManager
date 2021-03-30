@@ -1,6 +1,9 @@
 #include "moddownloader.h"
+#include "modmancliapplication.h"
 #include "steamapimodinfocommand.h"
 
+#include <QCommandLineParser>
+#include <QFuture>
 #include <QTextStream>
 
 namespace iimodmanager {

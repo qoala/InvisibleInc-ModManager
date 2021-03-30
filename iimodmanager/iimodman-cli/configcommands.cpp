@@ -2,6 +2,9 @@
 #include "configgetcommand.h"
 #include "configlistcommand.h"
 #include "configsetcommand.h"
+#include "modmancliapplication.h"
+
+#include <QCommandLineParser>
 
 namespace iimodmanager {
 

@@ -4,8 +4,9 @@
 #include "modmancliapplication.h"
 
 #include <QCommandLineParser>
-#include <QFuture>
-#include <QStringList>
+
+template <typename T> class QFuture;
+
 
 namespace iimodmanager {
 

@@ -1,13 +1,14 @@
 #ifndef IIMODMANAGER_ADDMODSIMPL_H
 #define IIMODMANAGER_ADDMODSIMPL_H
 
-#include "modmancliapplication.h"
-
 #include <modcache.h>
 #include <moddownloader.h>
 
 
 namespace iimodmanager {
+
+class ModManCliApplication;
+
 
 //! Shared implementation for commands that register mods in the mod cache from Steam.
 class AddModsImpl : public QObject

@@ -1,6 +1,9 @@
 #include "addmodsimpl.h"
 #include "cacheaddcommand.h"
 
+#include <QCommandLineParser>
+#include <QFuture>
+
 namespace iimodmanager {
 
 CacheAddCommand::CacheAddCommand(ModManCliApplication &app)

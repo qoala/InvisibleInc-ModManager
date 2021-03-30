@@ -1,4 +1,8 @@
 #include "command.h"
+#include "modmancliapplication.h"
+
+#include <QCommandLineParser>
+#include <QFuture>
 
 namespace iimodmanager {
 

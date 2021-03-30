@@ -3,10 +3,6 @@
 
 #include "command.h"
 
-#include <QPromise>
-#include <modcache.h>
-#include <moddownloader.h>
-
 namespace iimodmanager {
 
 class UpdateModsImpl;

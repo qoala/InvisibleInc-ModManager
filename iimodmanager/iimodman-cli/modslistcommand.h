@@ -3,6 +3,9 @@
 
 #include "command.h"
 
+class QTextStream;
+
+
 namespace iimodmanager {
 
 class InstalledMod;

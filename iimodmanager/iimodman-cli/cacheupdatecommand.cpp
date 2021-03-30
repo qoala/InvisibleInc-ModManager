@@ -1,5 +1,9 @@
 #include "cacheupdatecommand.h"
+#include "modmancliapplication.h"
 #include "updatemodsimpl.h"
+
+#include <QCommandLineParser>
+#include <QFuture>
 
 namespace iimodmanager {
 

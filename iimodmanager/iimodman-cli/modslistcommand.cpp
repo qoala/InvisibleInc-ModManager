@@ -1,6 +1,9 @@
+#include "modmancliapplication.h"
 #include "modslistcommand.h"
 
+#include <QCommandLineParser>
 #include <QPromise>
+#include <QTextStream>
 #include <modcache.h>
 #include <modinfo.h>
 #include <modlist.h>

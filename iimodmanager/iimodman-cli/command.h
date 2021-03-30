@@ -1,13 +1,16 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#include "modmancliapplication.h"
+#include <QObject>
 
-#include <QCommandLineParser>
-#include <QFuture>
+class QCommandLineParser;
+template <typename T> class QFuture;
 
 
 namespace iimodmanager {
+
+class ModManCliApplication;
+
 
 class Command : public QObject
 {

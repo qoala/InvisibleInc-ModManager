@@ -1,4 +1,5 @@
 #include "addmodsimpl.h"
+#include "modmancliapplication.h"
 
 #include <QTimer>
 #include <modinfo.h>

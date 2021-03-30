@@ -1,5 +1,7 @@
 #include "configlistcommand.h"
+#include "modmancliapplication.h"
 
+#include <QCommandLineParser>
 #include <QPromise>
 #include <QTextStream>
 

@@ -1,6 +1,9 @@
+#include "modmancliapplication.h"
 #include "steamapicommands.h"
 #include "steamapimoddownloadcommand.h"
 #include "steamapimodinfocommand.h"
+
+#include <QCommandLineParser>
 
 namespace iimodmanager {
 

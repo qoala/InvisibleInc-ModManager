@@ -3,8 +3,6 @@
 
 #include "commandcategory.h"
 
-#include <QObject>
-
 namespace iimodmanager {
 
 class ConfigCommands : public CommandCategory

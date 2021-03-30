@@ -1,9 +1,11 @@
 #include "cachelistcommand.h"
+#include "modmancliapplication.h"
 
+#include <QCommandLineParser>
 #include <QPromise>
 #include <QTextStream>
-#include <modinfo.h>
 #include <modcache.h>
+#include <modinfo.h>
 #include <modlist.h>
 
 namespace iimodmanager {

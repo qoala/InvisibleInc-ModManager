@@ -1,10 +1,11 @@
+#include "cachecommands.h"
+#include "commandcategory.h"
 #include "commandparser.h"
 #include "configcommands.h"
-#include "commandcategory.h"
-#include "cachecommands.h"
-#include "steamapicommands.h"
 #include "modscommands.h"
+#include "steamapicommands.h"
 
+#include <QFuture>
 #include <QTextStream>
 
 namespace iimodmanager {

@@ -3,10 +3,13 @@
 
 #include "command.h"
 
-#include <modcache.h>
-#include <QTextStream>
+class QTextStream;
+
 
 namespace iimodmanager {
+
+class CachedMod;
+
 
 class CacheListCommand : public Command
 {

@@ -2,6 +2,9 @@
 #include "cachecommands.h"
 #include "cachelistcommand.h"
 #include "cacheupdatecommand.h"
+#include "modmancliapplication.h"
+
+#include <QCommandLineParser>
 
 namespace iimodmanager {
 

@@ -3,6 +3,7 @@
 
 #include "command.h"
 
+
 namespace iimodmanager {
 
 class ConfigListCommand : public Command

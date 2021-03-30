@@ -3,7 +3,9 @@
 #include "moddownloader.h"
 #include "steamapimoddownloadcommand.h"
 #include "updatemodsimpl.h"
+#include "modmancliapplication.h"
 
+#include <QCommandLineParser>
 #include <QDir>
 #include <QFutureWatcher>
 #include <QPromise>

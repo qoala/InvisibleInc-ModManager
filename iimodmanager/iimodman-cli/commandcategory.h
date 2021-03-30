@@ -2,10 +2,7 @@
 #define COMMANDCATEGORY_H
 
 #include "command.h"
-#include "modmancliapplication.h"
 
-#include <QCommandLineParser>
-#include <QString>
 
 namespace iimodmanager {
 

@@ -3,7 +3,6 @@
 
 #include "command.h"
 
-#include <QPromise>
 
 namespace iimodmanager {
 

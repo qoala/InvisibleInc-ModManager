@@ -1,5 +1,7 @@
 #include "commandcategory.h"
+#include "modmancliapplication.h"
 
+#include <QCommandLineParser>
 #include <QTextStream>
 
 namespace iimodmanager {
