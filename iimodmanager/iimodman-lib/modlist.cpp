@@ -92,9 +92,9 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
     mods_.reserve(modIds.size());
     for (auto modId : modIds)
     {
-        InstalledMod &mod = mods_.emplaceBack(*this, modId);
-        if (!mod.impl()->refresh(level))
-            mods_.removeLast();
+        InstalledMod mod(*this, modId);
+        if (mod.impl()->refresh(level))
+            mods_.append(mod);
     }
 }
 

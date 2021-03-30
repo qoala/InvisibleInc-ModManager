@@ -35,7 +35,7 @@ target_include_directories(${IIMODMAN_LIB_TARGET_NAME} PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/iimodman>
   )
 target_link_libraries(${IIMODMAN_LIB_TARGET_NAME} PUBLIC
-    Qt6::Core Qt6::Network
+    ${IIMODMAN_LIB_QT_LIBRARIES}
     PRIVATE
     QuaZip::QuaZip
   )

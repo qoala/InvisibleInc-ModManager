@@ -7,6 +7,7 @@
 
 #include <QLoggingCategory>
 #include <QObject>
+#include <memory>
 
 class QDateTime;
 template <typename T> class QList;

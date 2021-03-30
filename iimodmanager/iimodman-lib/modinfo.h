@@ -4,6 +4,7 @@
 #include "iimodman-lib_global.h"
 
 #include <QString>
+#include <memory>
 
 class QIODevice;
 

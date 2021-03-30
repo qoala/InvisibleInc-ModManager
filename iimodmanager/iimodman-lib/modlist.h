@@ -6,6 +6,7 @@
 #include <experimental/propagate_const>
 
 #include <QObject>
+#include <memory>
 
 template <typename T> class QList;
 

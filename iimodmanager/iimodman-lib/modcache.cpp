@@ -226,18 +226,15 @@ const CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo)
     if (modIds_.contains(modId))
         return nullptr;
 
-    const qsizetype position = mods_.size();
-    CachedMod &mod = mods_.emplaceBack(*this, modId);
+    CachedMod mod(*this, modId);
     if (mod.impl()->updateFromSteam(steamInfo))
     {
-        modIds_[mod.id()] = position;
-        return &mod;
+        modIds_[mod.id()] = mods_.size();
+        mods_.append(mod);
+        return &mods_.last();
     }
-    else
-    {
-        mods_.removeLast();
-        return nullptr;
-    }
+
+    return nullptr;
 }
 
 void ModCache::Impl::refresh(RefreshLevel level)
@@ -252,9 +249,9 @@ void ModCache::Impl::refresh(RefreshLevel level)
     mods_.reserve(modIds.size());
     for (auto modId : modIds)
     {
-        CachedMod &mod = mods_.emplaceBack(*this, modId);
-        if (!mod.impl()->refresh(level))
-            mods_.removeLast();
+        CachedMod mod(*this, modId);
+        if (mod.impl()->refresh(level))
+            mods_.append(mod);
     }
 
     refreshIndex();
@@ -363,15 +360,12 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
     ModCache::RefreshLevel versionLevel = level == ModCache::LATEST_ONLY ? ModCache::FULL : level;
     for (auto versionPath : versionPaths)
     {
-        CachedVersion &cachedVersion = versions_.emplaceBack(cache, id(), versionPath.fileName());
+        CachedVersion cachedVersion(cache, id(), versionPath.fileName());
         if (cachedVersion.impl()->refresh(versionLevel))
         {
+            versions_.append(cachedVersion);
             if (level == ModCache::LATEST_ONLY)
                 versionLevel = ModCache::ID_ONLY;
-        }
-        else
-        {
-            versions_.removeLast();
         }
     }
 
