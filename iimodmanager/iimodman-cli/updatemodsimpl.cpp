@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QTimer>
 #include <QThreadPool>
+#include <modinfo.h>
 
 namespace iimodmanager {
 

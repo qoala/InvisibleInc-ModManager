@@ -1,10 +1,15 @@
 #include "modcache.h"
+#include "moddownloader.h"
+#include "modinfo.h"
 #include "modsignature.h"
 
+#include <QDateTime>
 #include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QList>
+#include <QMap>
 
 namespace iimodmanager {
 

@@ -3,9 +3,10 @@
 
 #include "command.h"
 
-#include <modlist.h>
-
 namespace iimodmanager {
+
+class InstalledMod;
+
 
 class ModsListCommand : public Command
 {

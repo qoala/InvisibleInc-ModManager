@@ -1,7 +1,7 @@
 #ifndef IIMODMANAGER_MODSIGNATURE_H
 #define IIMODMANAGER_MODSIGNATURE_H
 
-#include <QString>
+class QString;
 
 
 namespace iimodmanager {

@@ -2,14 +2,22 @@
 #define MODLIST_H
 
 #include "iimodman-lib_global.h"
-#include "modcache.h"
-#include "modinfo.h"
-#include "modmanconfig.h"
 
 #include <experimental/propagate_const>
-#include <QList>
+
+#include <QObject>
+
+template <typename T> class QList;
+
 
 namespace iimodmanager {
+
+class CachedVersion;
+class ModCache;
+class ModInfo;
+class ModManConfig;
+class SteamModInfo;
+
 
 class InstalledMod;
 

@@ -1,6 +1,7 @@
 #include "addmodsimpl.h"
 
 #include <QTimer>
+#include <modinfo.h>
 
 namespace iimodmanager {
 

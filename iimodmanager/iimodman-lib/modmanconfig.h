@@ -3,7 +3,7 @@
 
 #include "iimodman-lib_global.h"
 #include <QSettings>
-#include <QString>
+
 
 namespace iimodmanager {
 

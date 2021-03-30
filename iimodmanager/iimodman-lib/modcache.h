@@ -1,16 +1,23 @@
 #ifndef IIMODMANAGER_MODCACHE_H
 #define IIMODMANAGER_MODCACHE_H
 
-#include "moddownloader.h"
-#include "modinfo.h"
+#include "iimodman-lib_global.h"
 
-#include <QDateTime>
-#include <QList>
-#include <QLoggingCategory>
-#include <QMap>
 #include <experimental/propagate_const>
 
+#include <QLoggingCategory>
+#include <QObject>
+
+class QDateTime;
+template <typename T> class QList;
+
+
 namespace iimodmanager {
+
+class ModInfo;
+class ModManConfig;
+class SteamModInfo;
+
 
 Q_DECLARE_LOGGING_CATEGORY(modcache)
 

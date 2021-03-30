@@ -3,6 +3,7 @@
 #include <QCryptographicHash>
 #include <QDir>
 #include <QLoggingCategory>
+#include <QString>
 
 namespace iimodmanager {
 

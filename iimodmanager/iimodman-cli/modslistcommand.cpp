@@ -1,6 +1,9 @@
 #include "modslistcommand.h"
 
 #include <QPromise>
+#include <modcache.h>
+#include <modinfo.h>
+#include <modlist.h>
 
 namespace iimodmanager {
 

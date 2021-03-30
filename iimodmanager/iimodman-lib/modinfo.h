@@ -1,10 +1,11 @@
 #ifndef MODINFO_H
 #define MODINFO_H
 
-#include <QIODevice>
-#include <QString>
 #include "iimodman-lib_global.h"
-#include "modmanconfig.h"
+
+#include <QString>
+
+class QIODevice;
 
 
 namespace iimodmanager {

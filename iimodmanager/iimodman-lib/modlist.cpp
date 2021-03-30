@@ -1,7 +1,10 @@
-#include "modlist.h"
+#include "modcache.h"
 #include "modinfo.h"
+#include "modlist.h"
+#include "modmanconfig.h"
 
 #include <QDir>
+#include <QList>
 #include <QLoggingCategory>
 #include <modsignature.h>
 

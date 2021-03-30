@@ -4,12 +4,11 @@
 #include "iimodman-lib_global.h"
 #include "modmanconfig.h"
 
-#include <QFuture>
 #include <QLoggingCategory>
 #include <QObject>
 #include <QNetworkAccessManager>
 #include <QDateTime>
-#include <QTemporaryFile>
+
 
 namespace iimodmanager {
 

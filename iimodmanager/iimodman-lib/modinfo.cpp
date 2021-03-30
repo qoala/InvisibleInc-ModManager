@@ -2,8 +2,10 @@
 
 #include <QDir>
 #include <QGlobalStatic>
+#include <QIODevice>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QString>
 #include <QTextStream>
 
 namespace iimodmanager {
