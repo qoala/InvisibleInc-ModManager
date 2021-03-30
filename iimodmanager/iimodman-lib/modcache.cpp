@@ -321,7 +321,7 @@ const CachedVersion *CachedMod::version(const QString &versionId) const
 
 const CachedVersion *CachedMod::latestVersion() const
 {
-    auto versions = impl()->versions();
+    const QList<CachedVersion> &versions = impl()->versions();
     if (versions.isEmpty())
         return nullptr;
     return &versions.first();
