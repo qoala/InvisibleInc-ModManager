@@ -7,8 +7,6 @@
 
 #include <QCommandLineParser>
 #include <QDir>
-#include <QFutureWatcher>
-#include <QPromise>
 
 namespace iimodmanager {
 
@@ -44,12 +42,12 @@ void SteamAPIDownloadModCommand::parse(QCommandLineParser &parser, const QString
 
 }
 
-QFuture<void> SteamAPIDownloadModCommand::execute()
+void SteamAPIDownloadModCommand::execute()
 {
     QStringList modIds(modId);
     impl->start(modIds);
 
-    return QtFuture::connect(impl, &UpdateModsImpl::finished);
+    connect(impl, &UpdateModsImpl::finished, this, &Command::finished);
 }
 
 

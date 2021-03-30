@@ -2,8 +2,8 @@
 #include "modmancliapplication.h"
 
 #include <QCommandLineParser>
-#include <QPromise>
 #include <QTextStream>
+#include <QTimer>
 
 namespace iimodmanager {
 
@@ -29,7 +29,7 @@ void ConfigGetCommand::parse(QCommandLineParser &parser, const QStringList &args
     key = args.at(2);
 }
 
-QFuture<void> ConfigGetCommand::execute()
+void ConfigGetCommand::execute()
 {
     QTextStream cout(stdout);
     if (key == "core.cachePath")
@@ -51,9 +51,7 @@ QFuture<void> ConfigGetCommand::execute()
         app_.exit(EXIT_FAILURE);
     }
 
-    QPromise<void> promise;
-    promise.finish();
-    return promise.future();
+    QTimer::singleShot(0, this, &Command::finished);
 }
 
 }  // namespace iimodmanager

@@ -2,8 +2,8 @@
 #include "modslistcommand.h"
 
 #include <QCommandLineParser>
-#include <QPromise>
 #include <QTextStream>
+#include <QTimer>
 #include <modcache.h>
 #include <modinfo.h>
 #include <modlist.h>
@@ -31,7 +31,7 @@ void ModsListCommand::parse(QCommandLineParser &parser, const QStringList &args)
     includeHashes = parser.isSet("hash");
 }
 
-QFuture<void> ModsListCommand::execute()
+void ModsListCommand::execute()
 {
     ModCache cache(app_.config());
     ModList modList(app_.config(), &cache);
@@ -64,9 +64,7 @@ QFuture<void> ModsListCommand::execute()
         }
     }
 
-    QPromise<void> promise;
-    promise.finish();
-    return promise.future();
+    QTimer::singleShot(0, this, &Command::finished);
 }
 
 void ModsListCommand::writeSpecMod(QTextStream &cout, const InstalledMod &mod)

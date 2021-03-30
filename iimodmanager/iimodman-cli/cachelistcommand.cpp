@@ -2,8 +2,8 @@
 #include "modmancliapplication.h"
 
 #include <QCommandLineParser>
-#include <QPromise>
 #include <QTextStream>
+#include <QTimer>
 #include <modcache.h>
 #include <modinfo.h>
 #include <modlist.h>
@@ -39,7 +39,7 @@ void CacheListCommand::parse(QCommandLineParser &parser, const QStringList &args
     }
 }
 
-QFuture<void> CacheListCommand::execute()
+void CacheListCommand::execute()
 {
     ModCache cache(app_.config());
     if (versionSetting == ALL)
@@ -76,9 +76,7 @@ QFuture<void> CacheListCommand::execute()
         }
     }
 
-    QPromise<void> promise;
-    promise.finish();
-    return promise.future();
+    QTimer::singleShot(0, this, &Command::finished);
 }
 
 void CacheListCommand::writeSpecMod(QTextStream &cout, const CachedMod &mod)

@@ -2,7 +2,6 @@
 #include "cacheaddcommand.h"
 
 #include <QCommandLineParser>
-#include <QFuture>
 
 namespace iimodmanager {
 
@@ -26,12 +25,12 @@ void CacheAddCommand::parse(QCommandLineParser &parser, const QStringList &args)
         modIds.append(parser.values("mod-id"));
 }
 
-QFuture<void> CacheAddCommand::execute()
+void CacheAddCommand::execute()
 {
     impl = new AddModsImpl(app_, this);
     impl->start(modIds);
 
-    return QtFuture::connect(impl, &AddModsImpl::finished);
+    connect(impl, &AddModsImpl::finished, this, &Command::finished);
 }
 
 } // namespace iimodmanager

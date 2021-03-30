@@ -3,7 +3,6 @@
 #include "updatemodsimpl.h"
 
 #include <QCommandLineParser>
-#include <QFuture>
 #include <modcache.h>
 
 namespace iimodmanager {
@@ -62,7 +61,7 @@ void CacheUpdateCommand::parse(QCommandLineParser &parser, const QStringList &ar
         inclAll = true;
 }
 
-QFuture<void> CacheUpdateCommand::execute()
+void CacheUpdateCommand::execute()
 {
     cache->refresh(ModCache::LATEST_ONLY);
 
@@ -78,7 +77,7 @@ QFuture<void> CacheUpdateCommand::execute()
 
     impl->start(modIds);
 
-    return QtFuture::connect(impl, &UpdateModsImpl::finished);
+    connect(impl, &UpdateModsImpl::finished, this, &Command::finished);
 }
 
 } // namespace iimodmanager

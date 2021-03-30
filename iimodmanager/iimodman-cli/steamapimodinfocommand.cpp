@@ -3,7 +3,6 @@
 #include "steamapimodinfocommand.h"
 
 #include <QCommandLineParser>
-#include <QFuture>
 #include <QTextStream>
 
 namespace iimodmanager {
@@ -33,13 +32,12 @@ void SteamAPIModInfoCommand::parse(QCommandLineParser &parser, const QStringList
     workshopId = parser.value("steam-id");
 }
 
-QFuture<void> SteamAPIModInfoCommand::execute()
+void SteamAPIModInfoCommand::execute()
 {
     ModDownloader *downloader = new ModDownloader(app_.config(), this);
     ModInfoCall *call = downloader->fetchModInfo(workshopId);
 
-    return QtFuture::connect(call, &ModInfoCall::finished)
-            .then([call]
+    connect(call, &ModInfoCall::finished, this, [this, call]
     {
         const SteamModInfo modInfo = call->result();
         call->deleteLater();
@@ -51,6 +49,8 @@ QFuture<void> SteamAPIModInfoCommand::execute()
         cout << "---" << Qt::endl;
         cout << modInfo.description << Qt::endl;
         cout << "---" << Qt::endl;
+
+        emit finished();
     });
 }
 

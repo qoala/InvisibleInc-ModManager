@@ -5,17 +5,18 @@
 
 #include <QCommandLineParser>
 
-template <typename T> class QFuture;
-
 
 namespace iimodmanager {
+
+class Command;
+
 
 class CommandParser
 {
 public:
     CommandParser(ModManCliApplication &app);
 
-    QFuture<void> parse(const QStringList &args);
+    Command *parse(const QStringList &args);
 
 private:
     ModManCliApplication &app_;

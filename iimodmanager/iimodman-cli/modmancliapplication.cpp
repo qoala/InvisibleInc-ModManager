@@ -1,7 +1,7 @@
 #include "modmancliapplication.h"
 #include "commandparser.h"
+#include "command.h"
 
-#include <QFutureWatcher>
 #include <QTextStream>
 
 namespace iimodmanager {
@@ -20,12 +20,11 @@ int ModManCliApplication::main(int argc, char *argv[])
     qSetMessagePattern("[%{type} %{time}] %{if-category}%{category}: %{endif}%{message}");
 
     CommandParser parser(app);
-    QFuture<void> future = parser.parse(app.arguments());
+    Command *command = parser.parse(app.arguments());
 
-    QFutureWatcher<void> watcher;
-    connect(&watcher, &QFutureWatcher<void>::finished, &app, &QCoreApplication::quit);
-    watcher.setFuture(future);
+    connect(command, &Command::finished, &app, &QCoreApplication::quit);
 
+    command->execute();
     return app.exec();
 }
 

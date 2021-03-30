@@ -13,7 +13,7 @@ public:
     // Command interface
     void addTerminalArgs(QCommandLineParser &parser) const;
     void parse(QCommandLineParser &parser, const QStringList &args);
-    QFuture<void> execute();
+    void execute();
 
 private:
     QString workshopId;

@@ -4,7 +4,6 @@
 #include <QObject>
 
 class QCommandLineParser;
-template <typename T> class QFuture;
 
 
 namespace iimodmanager {
@@ -14,12 +13,17 @@ class ModManCliApplication;
 
 class Command : public QObject
 {
+    Q_OBJECT
+
 public:
     virtual ~Command();
 
     virtual void addTerminalArgs(QCommandLineParser &parser) const = 0;
     virtual void parse(QCommandLineParser &parser, const QStringList &args) = 0;
-    virtual QFuture<void> execute() = 0;
+    virtual void execute() = 0;
+
+signals:
+    void finished();
 
 protected:
     ModManCliApplication &app_;

@@ -5,7 +5,6 @@
 #include "modscommands.h"
 #include "steamapicommands.h"
 
-#include <QFuture>
 #include <QTextStream>
 
 namespace iimodmanager {
@@ -17,7 +16,7 @@ void CommandParser::addTerminalArgs() {
     parser_.addPositionalArgument("command", "Command to be executed", "[command]|help");
 }
 
-QFuture<void> CommandParser::parse(const QStringList &arguments)
+Command *CommandParser::parse(const QStringList &arguments)
 {
     parser_.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     QCommandLineOption help = parser_.addHelpOption();
@@ -80,7 +79,7 @@ QFuture<void> CommandParser::parse(const QStringList &arguments)
     parser_.process(arguments);
     command->parse(parser_, args);
 
-    return command->execute();
+    return command;
 }
 
 }  // namespace iimodmanager

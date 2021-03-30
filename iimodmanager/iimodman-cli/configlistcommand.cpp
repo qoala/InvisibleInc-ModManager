@@ -2,8 +2,8 @@
 #include "modmancliapplication.h"
 
 #include <QCommandLineParser>
-#include <QPromise>
 #include <QTextStream>
+#include <QTimer>
 
 namespace iimodmanager {
 
@@ -22,7 +22,7 @@ void ConfigListCommand::parse(QCommandLineParser &parser, const QStringList &arg
     Q_UNUSED(args);
 }
 
-QFuture<void> ConfigListCommand::execute()
+void ConfigListCommand::execute()
 {
     QTextStream cout(stdout);
     cout << "core.cachePath=" << app_.config().cachePath() << Qt::endl;
@@ -36,9 +36,7 @@ QFuture<void> ConfigListCommand::execute()
         cout << "steam.apiKey [private] (Obtain explicitly with `config get steam.apiKey`)" << Qt::endl;
     }
 
-    QPromise<void> promise;
-    promise.finish();
-    return promise.future();
+    QTimer::singleShot(0, this, &Command::finished);
 }
 
 }  // namespace iimodmanager
