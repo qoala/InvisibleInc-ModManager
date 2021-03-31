@@ -48,10 +48,6 @@ void ConfigSetCommand::execute()
     {
         app_.config().setInstallPath(value);
     }
-    else if (key == "steam.apiKey")
-    {
-        app_.config().setSteamApiKey(value);
-    }
     else
     {
         QTextStream cerr(stderr);

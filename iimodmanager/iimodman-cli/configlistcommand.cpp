@@ -27,14 +27,6 @@ void ConfigListCommand::execute()
     QTextStream cout(stdout);
     cout << "core.cachePath=" << app_.config().cachePath() << Qt::endl;
     cout << "core.installPath=" << app_.config().installPath() << Qt::endl;
-    if (app_.config().steamApiKey().isEmpty())
-    {
-        cout << "steam.apiKey [unset]" << Qt::endl;
-    }
-    else
-    {
-        cout << "steam.apiKey [private] (Obtain explicitly with `config get steam.apiKey`)" << Qt::endl;
-    }
 
     QTimer::singleShot(0, this, &Command::finished);
 }

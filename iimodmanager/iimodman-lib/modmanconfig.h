@@ -19,8 +19,6 @@ public:
     void setCachePath(const QString&);
     const QString installPath() const;
     void setInstallPath(const QString&);
-    const QString steamApiKey() const;
-    void setSteamApiKey(const QString&);
 private:
     QSettings settings_;
 

@@ -40,10 +40,6 @@ void ConfigGetCommand::execute()
     {
         cout << app_.config().installPath() << Qt::endl;
     }
-    else if (key == "steam.apiKey")
-    {
-        cout << app_.config().steamApiKey() << Qt::endl;
-    }
     else
     {
         QTextStream cerr(stderr);

@@ -36,17 +36,6 @@ void ModManConfig::setInstallPath(const QString& value)
     this->settings_.setValue(installPathKey, value);
 }
 
-const QString ModManConfig::steamApiKey() const
-{
-
-    return this->settings_.value(steamApiKeyKey).toString();
-}
-
-void ModManConfig::setSteamApiKey(const QString &value)
-{
-    this->settings_.setValue(steamApiKeyKey, value);
-}
-
 const QString ModManConfig::defaultCachePath()
 {
     // Linux default.
