@@ -97,6 +97,32 @@ void UpdateModsImpl::startInfos()
     steamInfoCall->start(workshopIds.first());
 }
 
+void UpdateModsImpl::nextSteamInfo()
+{
+    if (++loopIndex < workshopIds.size())
+    {
+        // Next steamInfo
+        steamInfoCall->start(workshopIds.at(loopIndex));
+    }
+    else if (steamInfos.empty())
+    {
+        // No downloads needed.
+        steamInfoCall->deleteLater();
+        steamInfoCall = nullptr;
+        emit finished();
+    }
+    else
+    {
+        // Begin downloading.
+        steamInfoCall->deleteLater();
+        steamInfoCall = nullptr;
+        if (confirmBeforeDownloading)
+            confirmDownloads();
+        else
+            startDownloads();
+    }
+}
+
 void UpdateModsImpl::confirmDownloads()
 {
     // Run on another thread, as std::getline blocks.
@@ -134,9 +160,33 @@ void UpdateModsImpl::startDownloads()
     steamDownloadCall->start(steamInfos.first());
 }
 
+void UpdateModsImpl::nextDownload()
+{
+    if (++loopIndex < steamInfos.size())
+    {
+        // Next download.
+        steamDownloadCall->start(steamInfos.at(loopIndex));
+    }
+    else
+    {
+        // Finished.
+        steamDownloadCall->deleteLater();
+        steamDownloadCall = nullptr;
+        emit finished();
+    }
+}
+
 void UpdateModsImpl::steamInfoFinished()
 {
     const SteamModInfo steamInfo = steamInfoCall->result();
+
+    if (!steamInfo.valid())
+    {
+        QTextStream cerr(stderr);
+        cerr << "workshop-" << steamInfoCall->workshopId() << " couldn't be added to cache. Skipping." << Qt::endl;
+        nextSteamInfo();
+        return;
+    }
 
     const QString modId = steamInfo.modId();
     const CachedMod *cachedMod = cache().contains(modId) ? cache().mod(modId) : cache_->addUnloaded(steamInfo);
@@ -155,28 +205,7 @@ void UpdateModsImpl::steamInfoFinished()
         steamInfos.append(steamInfo);
     }
 
-    if (++loopIndex < workshopIds.size())
-    {
-        // Next steamInfo
-        steamInfoCall->start(workshopIds.at(loopIndex));
-    }
-    else if (steamInfos.empty())
-    {
-        // No downloads needed.
-        steamInfoCall->deleteLater();
-        steamInfoCall = nullptr;
-        emit finished();
-    }
-    else
-    {
-        // Begin downloading.
-        steamInfoCall->deleteLater();
-        steamInfoCall = nullptr;
-        if (confirmBeforeDownloading)
-            confirmDownloads();
-        else
-            startDownloads();
-    }
+    nextSteamInfo();
 }
 
 void UpdateModsImpl::steamDownloadFinished()
@@ -188,18 +217,7 @@ void UpdateModsImpl::steamDownloadFinished()
     ModInfo mod = ModInfo::readModInfo(modInfoFile, steamDownloadCall->modInfo().modId());
     cerr << mod.toString() << " updated" << Qt::endl;
 
-    if (++loopIndex < steamInfos.size())
-    {
-        // Next download.
-        steamDownloadCall->start(steamInfos.at(loopIndex));
-    }
-    else
-    {
-        // Finished.
-        steamDownloadCall->deleteLater();
-        steamDownloadCall = nullptr;
-        emit finished();
-    }
+    nextDownload();
 }
 
 } // namespace iimodmanager

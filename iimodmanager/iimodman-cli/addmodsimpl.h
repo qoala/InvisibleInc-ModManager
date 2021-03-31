@@ -37,6 +37,7 @@ private:
     QStringList checkModIds(const QStringList &modIds);
     QString checkModId(const QString &modId);
     void startInfos();
+    void nextSteamInfo();
 
     void steamInfoFinished();
 };

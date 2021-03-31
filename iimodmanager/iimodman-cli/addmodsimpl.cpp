@@ -81,17 +81,8 @@ void AddModsImpl::startInfos()
     steamInfoCall->start(workshopIds.first());
 }
 
-void AddModsImpl::steamInfoFinished()
+void AddModsImpl::nextSteamInfo()
 {
-    const SteamModInfo steamInfo = steamInfoCall->result();
-
-    const CachedMod *cachedMod = cache_->addUnloaded(steamInfo);
-    QTextStream cerr(stderr);
-    if (cachedMod)
-        cerr << cachedMod->info().toString() << " registered to cache" << Qt::endl;
-    else
-        cerr << steamInfo.modId() << " couldn't be added to cache. Skipping." << Qt::endl;
-
     if (++loopIndex < workshopIds.size())
     {
         // Next steamInfo
@@ -104,6 +95,28 @@ void AddModsImpl::steamInfoFinished()
         steamInfoCall = nullptr;
         emit finished();
     }
+}
+
+void AddModsImpl::steamInfoFinished()
+{
+    const SteamModInfo steamInfo = steamInfoCall->result();
+
+    if (!steamInfo.valid())
+    {
+        QTextStream cerr(stderr);
+        cerr << "workshop-" << steamInfoCall->workshopId() << " couldn't be added to cache. Skipping." << Qt::endl;
+        nextSteamInfo();
+        return;
+    }
+
+    const CachedMod *cachedMod = cache_->addUnloaded(steamInfo);
+    QTextStream cerr(stderr);
+    if (cachedMod)
+        cerr << cachedMod->info().toString() << " registered to cache" << Qt::endl;
+    else
+        cerr << steamInfo.modId() << " couldn't be added to cache. Skipping." << Qt::endl;
+
+    nextSteamInfo();
 }
 
 } // namespace iimodmanager

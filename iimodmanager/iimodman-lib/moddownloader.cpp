@@ -45,32 +45,68 @@ ModDownloadCall *ModDownloader::modDownloadCall()
     return call;
 }
 
-SteamModInfo parseSteamModInfo(const QByteArray rawData)
+SteamModInfo parseSteamModInfo(const QByteArray rawData, const QString &debugContext)
 {
+        SteamModInfo result;
+
         QJsonParseError errors;
         const QJsonDocument json = QJsonDocument::fromJson(rawData, &errors);
 
-        if (json.isNull())
+        if (json.isNull() || !json.isObject())
         {
-            qDebug() << rawData;
-            qFatal("JSON Parse Error: %s", errors.errorString().toUtf8().constData());
+            qCWarning(steamAPI).noquote() << debugContext << "Invalid response from Steam API:" << errors.errorString();
+            return result;
+        }
+        if (!json.isObject())
+        {
+            qCWarning(steamAPI).noquote() << debugContext << "Invalid response from Steam API: Not a JSON object.";
+            return result;
         }
 
-        assert(!json.isNull());
-        assert(json.isObject());
-
         const QJsonObject response = json.object().value("response").toObject();
+        if (!response.value("resultcount").isDouble() || response.value("resultcount").toInt(0) < 1)
+        {
+            qCWarning(steamAPI).noquote() << debugContext << "Steam API: No results.";
+            return result;
+        }
         assert(response.value("resultcount").toInt(0) >= 1);
         const QJsonObject fileDetail = response.value("publishedfiledetails").toArray().at(0).toObject();
 
-        SteamModInfo result;
+        int appId = fileDetail.value("consumer_app_id").toInt();
+        if (appId != 243970)
+        {
+            qCWarning(steamAPI).noquote() << debugContext << "Steam API: Mod is for non-Invisible-Inc app:" << appId;
+            return result;
+        }
+        QString filename = fileDetail.value("filename").toString();
+        if (!filename.endsWith(".zip"))
+        {
+            qCWarning(steamAPI).noquote() << debugContext << "Steam API: File is not a .zip, possibly not a Mod:" << filename;
+            return result;
+        }
 
-        result.id = fileDetail.value("publishedfileid").toString();
-        result.title = fileDetail.value("title").toString();
-        result.description = fileDetail.value("description").toString();
-        result.downloadUrl = fileDetail.value("file_url").toString();
-        result.lastUpdated = QDateTime::fromSecsSinceEpoch(fileDetail.value("time_updated").toInt(), Qt::UTC);
+        QString workshopId = fileDetail.value("publishedfileid").toString();
+        QString title = fileDetail.value("title").toString();
+        QString description = fileDetail.value("description").toString();
+        QString downloadUrl = fileDetail.value("file_url").toString();
+        QDateTime lastUpdated = QDateTime::fromSecsSinceEpoch(fileDetail.value("time_updated").toInt(), Qt::UTC);
 
+        if (workshopId.isEmpty())
+        {
+            qCWarning(steamAPI).noquote() << debugContext << "Steam API: no publishedfileid";
+            return result;
+        }
+        if (downloadUrl.isEmpty())
+        {
+            qCWarning(steamAPI).noquote() << debugContext << "Steam API: no file_url";
+            return result;
+        }
+
+        result.id = workshopId;
+        result.title = title;
+        result.description = description;
+        result.downloadUrl = downloadUrl;
+        result.lastUpdated = lastUpdated;
         return result;
 }
 
@@ -80,7 +116,8 @@ ModInfoCall::ModInfoCall(const ModManConfig &config, QNetworkAccessManager &qnam
 
 void ModInfoCall::start(const QString &id)
 {
-    QString callDebugInfo = QString("ModInfo(%1)").arg(id);
+    const QString callDebugInfo = QString("ModInfo(%1)").arg(id);
+    id_ = id;
 
     QNetworkRequest request(getPublishedFileDetails);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
@@ -93,7 +130,7 @@ void ModInfoCall::start(const QString &id)
     connect(reply, &QNetworkReply::finished, this, [this, callDebugInfo, reply]
     {
         qCDebug(steamAPI).noquote() << callDebugInfo << "Request End";
-        result_ = parseSteamModInfo(reply->readAll());
+        result_ = parseSteamModInfo(reply->readAll(), callDebugInfo);
         reply->deleteLater();
         emit finished();
     });
@@ -105,7 +142,7 @@ ModDownloadCall::ModDownloadCall(const ModManConfig &config, QNetworkAccessManag
 
 void ModDownloadCall::start(const SteamModInfo &info)
 {
-    QString callDebugInfo = QString("ModDownload(%1,%2)").arg(info.id, info.lastUpdated.toString(Qt::ISODate));
+    const QString callDebugInfo = QString("ModDownload(%1,%2)").arg(info.id, info.lastUpdated.toString(Qt::ISODate));
     info_ = info;
 
     resultPath_ = ModCache::modVersionPath(config_, info.modId(), info.lastUpdated);
