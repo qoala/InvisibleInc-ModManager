@@ -16,6 +16,7 @@ UpdateModsImpl::UpdateModsImpl(ModManCliApplication &app, ModCache *cache, ModDo
     : QObject(parent), app(app),
       cache_(cache ? cache : new ModCache(app.config(), this)),
       downloader(downloader ? downloader : new ModDownloader(app.config(), this)),
+      verb(VERB_UPDATE),
       missingCacheAction(CACHE_SKIP),
       alreadyLatestVersionAction(LATEST_SKIP),
       confirmBeforeDownloading(true)
@@ -30,7 +31,7 @@ void UpdateModsImpl::start(const QStringList &modIds)
     if (workshopIds.empty())
     {
         QTextStream cerr(stderr);
-        cerr << QString("No mods to update.") << Qt::endl;
+        cerr << (verb == VERB_UPDATE ? "No mods to update." : "No mods to download.") << Qt::endl;
 
         // Use a single-shot timer in case the event loop hasn't started yet.
         QTimer::singleShot(0, this, [this]{
@@ -215,7 +216,7 @@ void UpdateModsImpl::steamDownloadFinished()
     QTextStream cerr(stderr);
     QFile modInfoFile = QFile(modVersionDir.absoluteFilePath("modinfo.txt"));
     ModInfo mod = ModInfo::readModInfo(modInfoFile, steamDownloadCall->modInfo().modId());
-    cerr << mod.toString() << " updated" << Qt::endl;
+    cerr << mod.toString() << (verb == VERB_UPDATE ? " updated" : " downloaded") << Qt::endl;
 
     nextDownload();
 }

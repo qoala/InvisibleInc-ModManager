@@ -15,6 +15,11 @@ class UpdateModsImpl : public QObject
     Q_OBJECT
 
 public:
+    enum ActionVerb {
+        VERB_UPDATE,
+        VERB_DOWNLOAD,
+    };
+
     enum MissingCacheAction {
         CACHE_SKIP,
         CACHE_ADD,
@@ -25,15 +30,15 @@ public:
         LATEST_FORCE
     };
 
-
     UpdateModsImpl(ModManCliApplication &app, QObject *parent = nullptr);
     UpdateModsImpl(ModManCliApplication &app, ModCache *cache, ModDownloader *downloader, QObject *parent = nullptr);
 
     const ModCache &cache() const { return *cache_; };
 
-    void setMissingCacheAction(MissingCacheAction action);
-    void setAlreadyLatestVersionBehavior(AlreadyLatestVersionAction behavior);
-    void setConfirmBeforeDownloading(bool behavior);
+    void setVerb(ActionVerb);
+    void setMissingCacheAction(MissingCacheAction);
+    void setAlreadyLatestVersionBehavior(AlreadyLatestVersionAction);
+    void setConfirmBeforeDownloading(bool);
 
     void start(const QStringList &modIds);
 
@@ -44,6 +49,7 @@ private:
     ModManCliApplication &app;
     ModCache *cache_;
     ModDownloader *downloader;
+    ActionVerb verb;
     MissingCacheAction missingCacheAction;
     AlreadyLatestVersionAction alreadyLatestVersionAction;
     bool confirmBeforeDownloading;
@@ -66,14 +72,19 @@ private:
     void steamDownloadFinished();
 };
 
+inline void UpdateModsImpl::setVerb(UpdateModsImpl::ActionVerb verb)
+{
+    this->verb = verb;
+}
+
 inline void UpdateModsImpl::setMissingCacheAction(MissingCacheAction action)
 {
     missingCacheAction = action;
 }
 
-inline void UpdateModsImpl::setAlreadyLatestVersionBehavior(AlreadyLatestVersionAction behavior)
+inline void UpdateModsImpl::setAlreadyLatestVersionBehavior(AlreadyLatestVersionAction action)
 {
-    alreadyLatestVersionAction = behavior;
+    alreadyLatestVersionAction = action;
 }
 
 inline void UpdateModsImpl::setConfirmBeforeDownloading(bool behavior)
