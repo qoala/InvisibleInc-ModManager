@@ -40,6 +40,10 @@ void ConfigGetCommand::execute()
     {
         cout << app_.config().installPath() << Qt::endl;
     }
+    else if (key == "core.localPath")
+    {
+        cout << app_.config().localPath() << Qt::endl;
+    }
     else
     {
         QTextStream cerr(stderr);

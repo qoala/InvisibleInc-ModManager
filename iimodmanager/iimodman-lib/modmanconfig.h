@@ -15,15 +15,24 @@ public:
 
     ModManConfig();
 
+    // Configurable paths
     const QString cachePath() const;
     void setCachePath(const QString&);
     const QString installPath() const;
     void setInstallPath(const QString&);
+    const QString localPath() const;
+    void setLocalPath(const QString&);
+
+    // Derived paths
+    const QString modPath() const;
+    const QString savePath() const;
+
 private:
     QSettings settings_;
 
-    static const QString defaultCachePath();
-    static const QString defaultInstallPath();
+    const QString defaultCachePath() const;
+    const QString defaultInstallPath() const;
+    const QString defaultLocalPath() const;
 };
 
 }  // namespace iimodmanager

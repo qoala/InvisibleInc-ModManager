@@ -48,6 +48,10 @@ void ConfigSetCommand::execute()
     {
         app_.config().setInstallPath(value);
     }
+    else if (key == "core.localPath")
+    {
+        app_.config().setLocalPath(value);
+    }
     else
     {
         QTextStream cerr(stderr);

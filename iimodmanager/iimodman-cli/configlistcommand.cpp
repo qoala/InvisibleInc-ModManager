@@ -27,6 +27,7 @@ void ConfigListCommand::execute()
     QTextStream cout(stdout);
     cout << "core.cachePath=" << app_.config().cachePath() << Qt::endl;
     cout << "core.installPath=" << app_.config().installPath() << Qt::endl;
+    cout << "core.localPath=" << app_.config().localPath() << Qt::endl;
 
     QTimer::singleShot(0, this, &Command::finished);
 }

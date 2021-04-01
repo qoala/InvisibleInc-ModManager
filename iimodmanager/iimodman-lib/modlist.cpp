@@ -82,7 +82,7 @@ ModList::Impl::Impl(const ModManConfig &config, ModCache *cache)
 
 void ModList::Impl::refresh(ModList::RefreshLevel level)
 {
-    QDir installDir(config_.installPath());
+    QDir installDir(config_.modPath());
     qCDebug(modlist).noquote() << "installed:refresh() Start" << installDir.path();
 
     installDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
@@ -100,7 +100,7 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
 
 QString ModList::Impl::modPath(const QString &modId) const
 {
-    QDir installDir(config_.installPath());
+    QDir installDir(config_.modPath());
     return installDir.absoluteFilePath(modId);
 }
 
