@@ -9,22 +9,23 @@
 
 namespace iimodmanager {
 
-enum MissingCacheAction {
-    CACHE_SKIP,
-    CACHE_ADD,
-};
-
-enum AlreadyLatestVersionAction {
-    LATEST_SKIP,
-    LATEST_FORCE
-};
-
 //! Shared implementation for commands that update mods in the mod cache.
 class UpdateModsImpl : public QObject
 {
     Q_OBJECT
 
 public:
+    enum MissingCacheAction {
+        CACHE_SKIP,
+        CACHE_ADD,
+    };
+
+    enum AlreadyLatestVersionAction {
+        LATEST_SKIP,
+        LATEST_FORCE
+    };
+
+
     UpdateModsImpl(ModManCliApplication &app, QObject *parent = nullptr);
     UpdateModsImpl(ModManCliApplication &app, ModCache *cache, ModDownloader *downloader, QObject *parent = nullptr);
 

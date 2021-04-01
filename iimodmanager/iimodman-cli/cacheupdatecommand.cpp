@@ -49,8 +49,8 @@ void CacheUpdateCommand::parse(QCommandLineParser &parser, const QStringList &ar
     cache = new ModCache(app_.config(), this);
     impl = new UpdateModsImpl(app_, cache, nullptr, this);
 
-    impl->setMissingCacheAction(parser.isSet("add") ? CACHE_ADD : CACHE_SKIP);
-    impl->setAlreadyLatestVersionBehavior(parser.isSet("force") ? LATEST_FORCE : LATEST_SKIP);
+    impl->setMissingCacheAction(parser.isSet("add") ? UpdateModsImpl::CACHE_ADD : UpdateModsImpl::CACHE_SKIP);
+    impl->setAlreadyLatestVersionBehavior(parser.isSet("force") ? UpdateModsImpl::LATEST_FORCE : UpdateModsImpl::LATEST_SKIP);
     impl->setConfirmBeforeDownloading(!parser.isSet("yes"));
 
     if (parser.isSet("mod-id"))

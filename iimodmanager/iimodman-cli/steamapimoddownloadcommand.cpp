@@ -34,8 +34,8 @@ void SteamAPIDownloadModCommand::parse(QCommandLineParser &parser, const QString
     }
 
     impl = new UpdateModsImpl(app_, this);
-    impl->setMissingCacheAction(CACHE_ADD);
-    impl->setAlreadyLatestVersionBehavior(parser.isSet("force") ? LATEST_FORCE : LATEST_SKIP);
+    impl->setMissingCacheAction(UpdateModsImpl::CACHE_ADD);
+    impl->setAlreadyLatestVersionBehavior(parser.isSet("force") ? UpdateModsImpl::LATEST_FORCE : UpdateModsImpl::LATEST_SKIP);
     impl->setConfirmBeforeDownloading(false);
 
     modId = "workshop-" + parser.value("steam-id");
