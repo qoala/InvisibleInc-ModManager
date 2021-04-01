@@ -2,6 +2,7 @@
 #include "modmancliapplication.h"
 
 #include <QCommandLineParser>
+#include <QDir>
 #include <QTextStream>
 #include <QTimer>
 
@@ -25,9 +26,9 @@ void ConfigListCommand::parse(QCommandLineParser &parser, const QStringList &arg
 void ConfigListCommand::execute()
 {
     QTextStream cout(stdout);
-    cout << "core.cachePath=" << app_.config().cachePath() << Qt::endl;
-    cout << "core.installPath=" << app_.config().installPath() << Qt::endl;
-    cout << "core.localPath=" << app_.config().localPath() << Qt::endl;
+    cout << "core.cachePath=" << QDir::toNativeSeparators(app_.config().cachePath()) << Qt::endl;
+    cout << "core.installPath=" << QDir::toNativeSeparators(app_.config().installPath()) << Qt::endl;
+    cout << "core.localPath=" << QDir::toNativeSeparators(app_.config().localPath()) << Qt::endl;
 
     QTimer::singleShot(0, this, &Command::finished);
 }

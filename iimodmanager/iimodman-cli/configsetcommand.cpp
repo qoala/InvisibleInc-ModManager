@@ -2,6 +2,7 @@
 #include "modmancliapplication.h"
 
 #include <QCommandLineParser>
+#include <QDir>
 #include <QTextStream>
 #include <QTimer>
 
@@ -42,15 +43,15 @@ void ConfigSetCommand::execute()
 {
     if (key == "core.cachePath")
     {
-        app_.config().setCachePath(value);
+        app_.config().setCachePath(QDir::fromNativeSeparators(value));
     }
     else if (key == "core.installPath")
     {
-        app_.config().setInstallPath(value);
+        app_.config().setInstallPath(QDir::fromNativeSeparators(value));
     }
     else if (key == "core.localPath")
     {
-        app_.config().setLocalPath(value);
+        app_.config().setLocalPath(QDir::fromNativeSeparators(value));
     }
     else
     {
