@@ -87,7 +87,7 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
 
     installDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     installDir.setSorting(QDir::Name);
-    QStringList modIds = installDir.entryList();
+    const QStringList modIds = installDir.entryList();
     mods_.clear();
     mods_.reserve(modIds.size());
     for (auto modId : modIds)

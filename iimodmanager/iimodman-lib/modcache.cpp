@@ -244,7 +244,7 @@ void ModCache::Impl::refresh(RefreshLevel level)
 
     cacheDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     cacheDir.setSorting(QDir::Name);
-    QStringList modIds = cacheDir.entryList();
+    const QStringList modIds = cacheDir.entryList();
     mods_.clear();
     mods_.reserve(modIds.size());
     for (auto modId : modIds)
@@ -296,7 +296,7 @@ bool CachedMod::downloaded() const
 
 bool CachedMod::containsVersion(const QString &versionId) const
 {
-    for (auto cachedVersion : impl()->versions())
+    for (const CachedVersion &cachedVersion : impl()->versions())
     {
         if (cachedVersion.id() == versionId)
             return true;
@@ -354,7 +354,7 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
 
     modDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     modDir.setSorting(QDir::Name | QDir::Reversed);
-    QFileInfoList versionPaths = modDir.entryInfoList();
+    const QFileInfoList versionPaths = modDir.entryInfoList();
     versions_.clear();
     versions_.reserve(versionPaths.size());
     ModCache::RefreshLevel versionLevel = level == ModCache::LATEST_ONLY ? ModCache::FULL : level;
