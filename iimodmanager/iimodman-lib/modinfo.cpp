@@ -64,7 +64,7 @@ bool ModInfo::isSteam() const
 
 QString ModInfo::steamId() const
 {
-#if QT_VERSION >= 0x060000
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return impl->id().sliced(9);
 #else
     return impl->id().mid(9);
