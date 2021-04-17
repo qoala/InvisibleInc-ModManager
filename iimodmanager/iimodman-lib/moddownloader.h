@@ -90,6 +90,7 @@ private:
     const ModManConfig &config_;
     QNetworkAccessManager &qnam_;
     SteamModInfo info_;
+    QString cachePath_;
     QString resultPath_;
 };
 

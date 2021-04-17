@@ -15,6 +15,35 @@ Q_LOGGING_CATEGORY(steamAPI, "steamapi", QtWarningMsg)
 
 const QString getPublishedFileDetails = QStringLiteral("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/");
 
+/**
+ * @brief Fix extracted file names containing '\' separators that should be sub folders.
+ * @param cacheDir The root directory of the cache. Used for log and error statements.
+ * @param dir The directory into which files were extracted.
+ * @param fileNames The absolute paths of the extracted files.
+ *
+ * The Mod Uploader creates non-conforming ZIP files using the local path separator, but QuaZip::QuaZip explicitly does not support such files.
+ * In that case, on non-Windows systems, files were incorrectly extracted with "path\filename".
+ */
+void fixFileNames(const QDir &cacheDir, const QDir &dir, const QStringList &filePaths)
+{
+    for (const QString &absolutePath : filePaths)
+    {
+        QFileInfo info(absolutePath);
+        QString name = info.fileName();
+
+        if (dir.absoluteFilePath(name) == absolutePath && name.contains('\\'))
+        {
+            QFile file(absolutePath);
+            QString newPath = dir.absoluteFilePath(name.replace('\\', '/'));
+
+            if (QDir().mkpath(QFileInfo(newPath).absolutePath()) && file.rename(newPath))
+                qCWarning(steamAPI) << QStringLiteral("Renamed %1 to %2").arg(cacheDir.relativeFilePath(absolutePath), cacheDir.relativeFilePath(newPath));
+            else
+                qFatal("Failed to rename %s to %s", cacheDir.relativeFilePath(absolutePath).toUtf8().constData(), cacheDir.relativeFilePath(newPath).toUtf8().constData());
+        }
+    }
+}
+
 ModDownloader::ModDownloader(const ModManConfig &config, QObject *parent)
     : QObject(parent), config_(config)
 {}
@@ -145,6 +174,7 @@ void ModDownloadCall::start(const SteamModInfo &info)
     const QString callDebugInfo = QString("ModDownload(%1,%2)").arg(info.id, info.lastUpdated.toString(Qt::ISODate));
     info_ = info;
 
+    cachePath_ = config_.cachePath();
     resultPath_ = ModCache::modVersionPath(config_, info.modId(), info.lastUpdated);
     QDir modVersionDir(resultPath());
 
@@ -194,8 +224,12 @@ void ModDownloadCall::start(const SteamModInfo &info)
 
         qCDebug(steamAPI).noquote() << callDebugInfo << "Unzip Start" << outputDir.absolutePath();
         zipFile->seek(0);
-        JlCompress::extractDir(zipFile, outputDir.absolutePath());
+        QStringList files = JlCompress::extractDir(zipFile, outputDir.absolutePath());
         zipFile->deleteLater();
+
+        const QDir cacheDir(cachePath_);
+        fixFileNames(cacheDir, outputDir, files);
+
         qCDebug(steamAPI).noquote() << callDebugInfo << "Unzip End";
 
         emit finished();
