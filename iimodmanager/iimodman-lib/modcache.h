@@ -71,7 +71,7 @@ public:
     //! Private implementation. Only accessible to classes in this file.
     class Impl;
 
-    CachedMod(const ModCache::Impl &cache, const QString &id);
+    CachedMod(const ModCache::Impl &cache, const QString id = QString());
 
     const QString &id() const;
     const ModInfo &info() const;
