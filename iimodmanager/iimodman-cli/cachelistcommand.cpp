@@ -107,7 +107,7 @@ void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)
             const qsizetype fieldWidth = std::max<qsizetype>(maxWidth - 2, 0);
             for (auto it = versions.rbegin(); it != versions.rend() ; ++it)
             {
-                cout << Qt::endl << "  " << qSetFieldWidth(fieldWidth) << it->toString();
+                cout << Qt::endl << "  " << qSetFieldWidth(fieldWidth) << it->toString(FORMAT_FULL);
                 cout << qSetFieldWidth(20);
                 if (it->installed())
                     cout << "  (installed)";

@@ -25,6 +25,12 @@ Q_DECLARE_LOGGING_CATEGORY(modcache)
 class CachedMod;
 class CachedVersion;
 
+
+enum StringFormat {
+    FORMAT_SHORT,
+    FORMAT_FULL,
+};
+
 //! Mods cached locally, but not installed. May be downloaded or just have an ID-to-name registration.
 class IIMODMANLIBSHARED_EXPORT ModCache : public QObject
 {
@@ -115,7 +121,7 @@ public:
     bool installed() const;
     const QString &hash() const;
 
-    const QString toString() const;
+    const QString toString(StringFormat format = FORMAT_SHORT) const;
 
 private:
     friend ModCache;

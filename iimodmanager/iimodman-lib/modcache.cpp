@@ -587,14 +587,19 @@ const QString &CachedVersion::hash() const
     return impl()->hash();
 }
 
-const QString CachedVersion::toString() const
+const QString CachedVersion::toString(StringFormat format) const
 {
     if (auto version = impl()->version())
-        return "v" + *version;
-    else if (auto timestamp = impl()->timestamp())
-        return timestamp->toString();
+    {
+        if (format == FORMAT_FULL)
+            return QStringLiteral("v%1 [%2]").arg(*version, impl()->id());
+        else
+            return QStringLiteral("v%1").arg(*version);
+    }
     else
-        return impl()->id();
+    {
+        return QStringLiteral("[%2]").arg(impl()->id());
+    }
 
 }
 
