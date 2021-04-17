@@ -219,19 +219,6 @@ CachedMod *ModCache::Impl::mod(const QString &id)
     return nullptr;
 }
 
-QString ModCache::Impl::modPath(const QString &modId) const
-{
-    QDir cacheDir(config_.cachePath());
-    return cacheDir.absoluteFilePath(modId);
-}
-
-QString ModCache::Impl::modVersionPath(const QString &modId, const QString &versionId) const
-{
-    QDir cacheDir(config_.cachePath());
-    QDir modDir(cacheDir.absoluteFilePath(modId));
-    return modDir.absoluteFilePath(versionId);
-}
-
 const CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo)
 {
     if (steamInfo.id.isEmpty())
@@ -283,6 +270,19 @@ void ModCache::Impl::refresh(RefreshLevel level)
     refreshIndex();
 
     qCDebug(modcache).noquote().nospace() << "cache:refresh() End mods:" << mods_.size();
+}
+
+QString ModCache::Impl::modPath(const QString &modId) const
+{
+    QDir cacheDir(config_.cachePath());
+    return cacheDir.absoluteFilePath(modId);
+}
+
+QString ModCache::Impl::modVersionPath(const QString &modId, const QString &versionId) const
+{
+    QDir cacheDir(config_.cachePath());
+    QDir modDir(cacheDir.absoluteFilePath(modId));
+    return modDir.absoluteFilePath(versionId);
 }
 
 void ModCache::Impl::refreshIndex()
