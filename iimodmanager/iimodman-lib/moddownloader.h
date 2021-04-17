@@ -12,6 +12,9 @@
 
 namespace iimodmanager {
 
+class CachedVersion;
+class ModCache;
+
 Q_DECLARE_LOGGING_CATEGORY(steamAPI)
 
 //! Details about a mod from the Steam API.
@@ -39,8 +42,8 @@ public:
 
     ModInfoCall *fetchModInfo(const QString& id);
     ModInfoCall *modInfoCall();
-    ModDownloadCall *downloadModVersion(const SteamModInfo& info);
-    ModDownloadCall *modDownloadCall();
+    ModDownloadCall *downloadModVersion(ModCache &cache, const SteamModInfo& info);
+    ModDownloadCall *modDownloadCall(ModCache &cache);
 
 private:
     const ModManConfig &config_;
@@ -76,12 +79,12 @@ class IIMODMANLIBSHARED_EXPORT ModDownloadCall : public QObject
     friend ModDownloader;
 
 public:
-    ModDownloadCall(const ModManConfig &config, QNetworkAccessManager &qnam, QObject *parent);
+    ModDownloadCall(const ModManConfig &config, QNetworkAccessManager &qnam, ModCache &cache, QObject *parent);
 
     void start(const SteamModInfo& info);
 
-    inline const SteamModInfo& modInfo() const { return info_; };
-    inline const QString &resultPath() const { return resultPath_; };
+    inline const SteamModInfo& steamInfo() const { return info_; };
+    const CachedVersion *resultVersion() const;
 
 signals:
     void finished();
@@ -89,9 +92,10 @@ signals:
 private:
     const ModManConfig &config_;
     QNetworkAccessManager &qnam_;
+    ModCache &cache_;
+
     SteamModInfo info_;
-    QString cachePath_;
-    QString resultPath_;
+    QString resultVersionId_;
 };
 
 }  // namespace iimodmanager

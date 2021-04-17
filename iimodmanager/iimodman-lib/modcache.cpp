@@ -3,6 +3,7 @@
 #include "modinfo.h"
 #include "modsignature.h"
 
+#include <JlCompress.h>
 #include <QDateTime>
 #include <QDir>
 #include <QJsonArray>
@@ -29,7 +30,8 @@ public:
 
     CachedMod *mod(const QString &id);
 
-    const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
+    CachedMod *addUnloaded(const SteamModInfo &steamInfo);
+    const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile);
     void refresh(RefreshLevel = FULL);
     inline void save();
 
@@ -66,6 +68,7 @@ public:
     CachedVersion *version(const QString &versionId);
 
     bool refresh(ModCache::RefreshLevel = ModCache::FULL);
+    CachedVersion *refreshVersion(const QString &versionId, ModCache::RefreshLevel = ModCache::FULL);
     bool updateFromSteam(const SteamModInfo &steamInfo);
     const CachedVersion *markInstalledVersion(const QString &hash, const QString expectedVersionId);
 
@@ -81,6 +84,7 @@ private:
     CachedVersion *installedVersion_;
 
     CachedVersion *findVersionByHash(const QString &hash, const QString expectedVersionId);
+    void sortVersions();
 };
 
 //! Private implementation of CachedVersion.
@@ -152,6 +156,40 @@ bool compareModIds(const CachedMod &a, const CachedMod &b)
     return a.id() < b.id();
 }
 
+bool compareVersionIds(const CachedVersion &a, const CachedVersion &b)
+{
+    return a.id() > b.id();
+}
+
+/**
+ * @brief Fix extracted file names containing '\' separators that should be sub folders.
+ * @param cacheDir The root directory of the cache. Used for log and error statements.
+ * @param dir The directory into which files were extracted.
+ * @param fileNames The absolute paths of the extracted files.
+ *
+ * The Mod Uploader creates non-conforming ZIP files using the local path separator, but QuaZip::QuaZip explicitly does not support such files.
+ * In that case, on non-Windows systems, files were incorrectly extracted with "path\filename".
+ */
+void fixFileNames(const QDir &cacheDir, const QDir &dir, const QStringList &filePaths)
+{
+    for (const QString &absolutePath : filePaths)
+    {
+        QFileInfo info(absolutePath);
+        QString name = info.fileName();
+
+        if (dir.absoluteFilePath(name) == absolutePath && name.contains('\\'))
+        {
+            QFile file(absolutePath);
+            QString newPath = dir.absoluteFilePath(name.replace('\\', '/'));
+
+            if (QDir().mkpath(QFileInfo(newPath).absolutePath()) && file.rename(newPath))
+                qCWarning(modcache).noquote() << QStringLiteral("Renamed %1 to %2").arg(cacheDir.relativeFilePath(absolutePath), cacheDir.relativeFilePath(newPath));
+            else
+                qFatal("Failed to rename %s to %s", cacheDir.relativeFilePath(absolutePath).toUtf8().constData(), cacheDir.relativeFilePath(newPath).toUtf8().constData());
+        }
+    }
+}
+
 ModCache::ModCache(const ModManConfig &config, QObject *parent)
     : QObject(parent), impl{std::make_unique<Impl>(config)}
 {}
@@ -181,6 +219,11 @@ QString ModCache::modVersionPath(const ModManConfig &config, const QString &modI
 const CachedMod *ModCache::addUnloaded(const SteamModInfo &steamInfo)
 {
     return impl->addUnloaded(steamInfo);
+}
+
+const CachedVersion *ModCache::addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile)
+{
+    return impl->addZipVersion(steamInfo, zipFile);
 }
 
 void ModCache::refresh(ModCache::RefreshLevel level)
@@ -226,7 +269,7 @@ CachedMod *ModCache::Impl::mod(const QString &id)
     return nullptr;
 }
 
-const CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo)
+CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo)
 {
     if (steamInfo.id.isEmpty())
         return nullptr;
@@ -244,6 +287,46 @@ const CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo)
     }
 
     return nullptr;
+}
+
+const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile)
+{
+    if (steamInfo.id.isEmpty())
+        return nullptr;
+
+    const QString modId = steamInfo.modId();
+    const QString versionId = formatVersionTime(steamInfo.lastUpdated);
+    const QDir cacheDir(config_.cachePath());
+    QDir outputDir(modVersionPath(modId, versionId));
+
+    CachedMod *m = mod(modId);
+    if (!m)
+        m = addUnloaded(steamInfo);
+    if (!m)
+        qFatal("Couldn't add mod to cache %s", modId.toUtf8().constData());
+
+    if (outputDir.exists() && !outputDir.isEmpty())
+    {
+        if (outputDir.exists("modinfo.txt"))
+        {
+            qCWarning(modcache).noquote() << modId << "Deleting existing" << outputDir.absolutePath();
+            outputDir.removeRecursively();
+        }
+        else
+        {
+            qFatal("Output directory non-empty and not a mod folder: %s",
+                   outputDir.absolutePath().toUtf8().constData());
+        }
+    }
+
+    qCDebug(modcache).noquote() << modId << "Unzip Start" << outputDir.absolutePath();
+    QStringList files = JlCompress::extractDir(&zipFile, outputDir.absolutePath());
+
+    fixFileNames(cacheDir, outputDir, files);
+
+    qCDebug(modcache).noquote() << modId << "Unzip End";
+
+    return m->impl()->refreshVersion(versionId);
 }
 
 void ModCache::Impl::refresh(RefreshLevel level)
@@ -482,6 +565,26 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
     return false;
 }
 
+CachedVersion *CachedMod::Impl::refreshVersion(const QString &versionId, ModCache::RefreshLevel level)
+{
+    if (CachedVersion *v = version(versionId))
+    {
+        if (v->impl()->refresh(level))
+            return v;
+    }
+    else
+    {
+        CachedVersion newVersion(cache, id(), versionId);
+        if (newVersion.impl()->refresh(level))
+        {
+            versions_.append(newVersion);
+            sortVersions();
+            return version(versionId);
+        }
+    }
+    return nullptr;
+}
+
 bool CachedMod::Impl::updateFromSteam(const SteamModInfo &steamInfo)
 {
     if (versions_.empty())
@@ -551,6 +654,20 @@ CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QSt
             return &version;
     }
     return nullptr;
+}
+
+void CachedMod::Impl::sortVersions()
+{
+    QString installedVersionId = installedVersion_ ? installedVersion_->id() : QString();
+
+    std::sort(versions_.begin(), versions_.end(), compareVersionIds);
+
+    if (!installedVersionId.isEmpty())
+    {
+        installedVersion_ = version(installedVersionId);
+        if (!installedVersion_)
+            qCWarning(modcache) << info_.toString() << "no longer contains installed version after refresh:" << installedVersionId;
+    }
 }
 
 CachedVersion::CachedVersion(const ModCache::Impl &cache, const QString &modId, const QString &versionId)

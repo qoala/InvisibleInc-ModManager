@@ -158,7 +158,7 @@ void UpdateModsImpl::confirmDownloads()
 
 void UpdateModsImpl::startDownloads()
 {
-    steamDownloadCall = downloader->modDownloadCall();
+    steamDownloadCall = downloader->modDownloadCall(*cache_);
     connect(steamDownloadCall, &ModDownloadCall::finished, this, &UpdateModsImpl::steamDownloadFinished);
 
     loopIndex = 0;
@@ -218,12 +218,12 @@ void UpdateModsImpl::steamInfoFinished()
 
 void UpdateModsImpl::steamDownloadFinished()
 {
-    QDir modVersionDir(steamDownloadCall->resultPath());
-
     QTextStream cerr(stderr);
-    QFile modInfoFile = QFile(modVersionDir.absoluteFilePath("modinfo.txt"));
-    ModInfo mod = ModInfo::readModInfo(modInfoFile, steamDownloadCall->modInfo().modId());
-    cerr << mod.toString() << (verb == VERB_UPDATE ? " updated" : " downloaded") << Qt::endl;
+    const CachedVersion *v = steamDownloadCall->resultVersion();
+    if (v)
+        cerr << v->info().toString() << (verb == VERB_UPDATE ? " updated" : " downloaded") << Qt::endl;
+    else
+        cerr << "Failed to " << (verb == VERB_UPDATE ? " update " : " download ") << steamDownloadCall->steamInfo().modId() << Qt::endl;
 
     nextDownload();
 }

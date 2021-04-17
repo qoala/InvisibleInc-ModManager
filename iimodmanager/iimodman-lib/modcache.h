@@ -57,6 +57,7 @@ public:
     //! Returns the mod if successful, or nullptr otherwise.
     //! If the mod is already in the cache, returns nullptr as the result wouldn't be a non-downloaded mod.
     const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
+    const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile);
     void refresh(RefreshLevel level = FULL);
     void saveMetadata();
 
