@@ -138,7 +138,7 @@ void UpdateModsImpl::confirmDownloads()
         cerr << "Do you want to continue? [Y/n] " << Qt::flush;
 
         QTextStream cin(stdin);
-        QString response = cin.readLine();
+        QString response = cin.readLine().toLower();
         if (response.isEmpty() || response == "y" || response == "yes")
         {
             // Start downloads on the main thread.
@@ -173,6 +173,8 @@ void UpdateModsImpl::nextDownload()
         // Finished.
         steamDownloadCall->deleteLater();
         steamDownloadCall = nullptr;
+
+        cache_->saveMetadata();
         emit finished();
     }
 }

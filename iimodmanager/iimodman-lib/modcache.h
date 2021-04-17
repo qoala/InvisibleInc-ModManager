@@ -52,6 +52,7 @@ public:
     //! If the mod is already in the cache, returns nullptr as the result wouldn't be a non-downloaded mod.
     const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
     void refresh(RefreshLevel level = FULL);
+    void saveMetadata();
 
     //! Find the currently installed version by hash and set its installed flag.
     //! Returns the version, or nullptr if there is no match in the cache.

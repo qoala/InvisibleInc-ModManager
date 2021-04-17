@@ -93,6 +93,8 @@ void AddModsImpl::nextSteamInfo()
         // No downloads needed.
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
+
+        cache_->saveMetadata();
         emit finished();
     }
 }

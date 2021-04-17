@@ -31,6 +31,7 @@ public:
 
     const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
     void refresh(RefreshLevel = FULL);
+    inline void save();
 
 // file-visibility:
     inline QString modPath(const QString &modId) const;
@@ -43,6 +44,7 @@ private:
     //! Index of mods by mod ID.
     QMap<QString, qsizetype> modIds_;
 
+    void sortMods();
     void refreshIndex();
     bool readModManDb();
     bool writeModManDb();
@@ -186,6 +188,11 @@ void ModCache::refresh(ModCache::RefreshLevel level)
     impl->refresh(level);
 }
 
+void ModCache::saveMetadata()
+{
+    impl->save();
+}
+
 const CachedVersion *ModCache::markInstalledVersion(const QString &modId, const QString &hash, const QString expectedVersionId)
 {
     CachedMod *mod = impl->mod(modId);
@@ -246,7 +253,7 @@ void ModCache::Impl::refresh(RefreshLevel level)
 
     mods_.clear();
     readModManDb();
-    refreshIndex();
+    sortMods();
 
     cacheDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     cacheDir.setSorting(QDir::Name);
@@ -266,10 +273,15 @@ void ModCache::Impl::refresh(RefreshLevel level)
         }
     }
 
-    std::sort(mods_.begin(), mods_.end(), compareModIds);
-    refreshIndex();
+    sortMods();
 
     qCDebug(modcache).noquote().nospace() << "cache:refresh() End mods:" << mods_.size();
+}
+
+void ModCache::Impl::save()
+{
+    sortMods();
+    writeModManDb();
 }
 
 QString ModCache::Impl::modPath(const QString &modId) const
@@ -283,6 +295,12 @@ QString ModCache::Impl::modVersionPath(const QString &modId, const QString &vers
     QDir cacheDir(config_.cachePath());
     QDir modDir(cacheDir.absoluteFilePath(modId));
     return modDir.absoluteFilePath(versionId);
+}
+
+void ModCache::Impl::sortMods()
+{
+    std::sort(mods_.begin(), mods_.end(), compareModIds);
+    refreshIndex();
 }
 
 void ModCache::Impl::refreshIndex()
@@ -300,7 +318,7 @@ bool ModCache::Impl::readModManDb()
 {
     QDir cacheDir(config_.cachePath());
     QFile file(cacheDir.filePath("modmandb.json"));
-    if (file.open(QIODevice::ReadOnly))
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         const QJsonObject root = readJSON(file);
         if (root.isEmpty())
@@ -308,7 +326,7 @@ bool ModCache::Impl::readModManDb()
 
         if (root.contains("mods") && root["mods"].isArray())
         {
-            const QJsonArray modsArray = root["nondownloadedMods"].toArray();
+            const QJsonArray modsArray = root["mods"].toArray();
             mods_.reserve(modsArray.size());
             for (const QJsonValue &v : modsArray)
             {
@@ -336,6 +354,15 @@ bool ModCache::Impl::writeModManDb()
     }
     root["mods"] = modsArray;
 
+    QJsonDocument json(root);
+
+    QDir cacheDir(config_.cachePath());
+    QFile file(cacheDir.filePath("modmandb.json"));
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        file.write(json.toJson());
+        return true;
+    }
     return false;
 }
 
