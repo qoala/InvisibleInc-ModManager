@@ -11,7 +11,7 @@ CacheAddCommand::CacheAddCommand(ModManCliApplication &app)
 
 void CacheAddCommand::addTerminalArgs(QCommandLineParser &parser) const
 {
-    parser.addPositionalArgument("update", "Command: Update downloaded mods currently in the cache");
+    parser.addPositionalArgument("add", "Command: Register mods to the cache for later download");
     parser.addOptions({
                           {{"m", "mod-id"}, "Add mods by ID (e.g. 'workshop-2151835746'), may be repeated.", "id"},
                       });

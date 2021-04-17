@@ -4,6 +4,7 @@ set(IIMODMAN_CLI_SOURCES
     addmodsimpl.cpp
     cachecommands.cpp
     cacheaddcommand.cpp
+    cacheaddinstalledcommand.cpp
     cachelistcommand.cpp
     cacheupdatecommand.cpp
     command.cpp

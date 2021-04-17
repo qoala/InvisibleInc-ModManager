@@ -34,6 +34,7 @@ public:
     UpdateModsImpl(ModManCliApplication &app, ModCache *cache, ModDownloader *downloader, QObject *parent = nullptr);
 
     const ModCache &cache() const { return *cache_; };
+    const bool success() const { return success_; };
 
     void setVerb(ActionVerb);
     void setMissingCacheAction(MissingCacheAction);
@@ -54,6 +55,7 @@ private:
     AlreadyLatestVersionAction alreadyLatestVersionAction;
     bool confirmBeforeDownloading;
 
+    bool success_;
     ModInfoCall *steamInfoCall;
     ModDownloadCall *steamDownloadCall;
     QStringList workshopIds;

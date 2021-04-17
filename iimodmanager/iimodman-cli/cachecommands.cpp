@@ -1,4 +1,5 @@
 #include "cacheaddcommand.h"
+#include "cacheaddinstalledcommand.h"
 #include "cachecommands.h"
 #include "cachelistcommand.h"
 #include "cacheupdatecommand.h"
@@ -19,7 +20,7 @@ void CacheCommands::addArgs(QCommandLineParser &parser) const
 
 void CacheCommands::addTerminalArgs(QCommandLineParser &parser) const
 {
-    parser.addPositionalArgument("command", "Command to be executed (add|list|update)", "add|list|update|help");
+    parser.addPositionalArgument("command", "Command to be executed (add|add-installed|list|update)", "add|add-installed|list|update|help");
 }
 
 Command *CacheCommands::parseCommands(const QString command) const
@@ -27,6 +28,10 @@ Command *CacheCommands::parseCommands(const QString command) const
     if (command == "add")
     {
         return new CacheAddCommand(app_);
+    }
+    if (command == "add-installed")
+    {
+        return new CacheAddInstalledCommand(app_);
     }
     if (command == "list")
     {

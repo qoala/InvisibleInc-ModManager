@@ -19,7 +19,8 @@ UpdateModsImpl::UpdateModsImpl(ModManCliApplication &app, ModCache *cache, ModDo
       verb(VERB_UPDATE),
       missingCacheAction(CACHE_SKIP),
       alreadyLatestVersionAction(LATEST_SKIP),
-      confirmBeforeDownloading(true)
+      confirmBeforeDownloading(true),
+      success_(false)
 {}
 
 void UpdateModsImpl::start(const QStringList &modIds)
@@ -35,6 +36,7 @@ void UpdateModsImpl::start(const QStringList &modIds)
 
         // Use a single-shot timer in case the event loop hasn't started yet.
         QTimer::singleShot(0, this, [this]{
+            success_ = true;
             emit finished();
         });
     }
@@ -110,6 +112,7 @@ void UpdateModsImpl::nextSteamInfo()
         // No downloads needed.
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
+        success_ = true;
         emit finished();
     }
     else
@@ -147,6 +150,7 @@ void UpdateModsImpl::confirmDownloads()
         else
         {
             cerr << "Abort." << Qt::endl;
+            success_ = false;
             emit finished();
         }
     });
@@ -175,6 +179,7 @@ void UpdateModsImpl::nextDownload()
         steamDownloadCall = nullptr;
 
         cache_->saveMetadata();
+        success_ = true;
         emit finished();
     }
 }
