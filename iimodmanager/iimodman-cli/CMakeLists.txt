@@ -7,6 +7,7 @@ set(IIMODMAN_CLI_SOURCES
     cacheaddinstalledcommand.cpp
     cachelistcommand.cpp
     cacheupdatecommand.cpp
+    confirmationprompt.cpp
     command.cpp
     commandcategory.cpp
     commandparser.cpp

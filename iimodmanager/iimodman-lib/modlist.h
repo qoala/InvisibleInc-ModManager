@@ -65,6 +65,7 @@ public:
     //! The cached version matching the currently installed mod, or nullptr if there is no match.
     const CachedVersion *cacheVersion() const;
 
+    QString path() const;
     QString versionString() const;
 
 private:

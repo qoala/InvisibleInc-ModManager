@@ -3,11 +3,15 @@
 
 #include "modmancliapplication.h"
 
-#include <modcache.h>
-#include <moddownloader.h>
-
 
 namespace iimodmanager {
+
+class ConfirmationPrompt;
+class ModCache;
+class ModDownloadCall;
+class ModDownloader;
+class ModInfoCall;
+class SteamModInfo;
 
 //! Shared implementation for commands that update mods in the mod cache.
 class UpdateModsImpl : public QObject
@@ -34,7 +38,7 @@ public:
     UpdateModsImpl(ModManCliApplication &app, ModCache *cache, ModDownloader *downloader, QObject *parent = nullptr);
 
     const ModCache &cache() const { return *cache_; };
-    const bool success() const { return success_; };
+    bool success() const { return success_; };
 
     void setVerb(ActionVerb);
     void setMissingCacheAction(MissingCacheAction);
@@ -58,6 +62,7 @@ private:
     bool success_;
     ModInfoCall *steamInfoCall;
     ModDownloadCall *steamDownloadCall;
+    ConfirmationPrompt *prompt;
     QStringList workshopIds;
     QList<SteamModInfo> steamInfos;
     qsizetype loopIndex;

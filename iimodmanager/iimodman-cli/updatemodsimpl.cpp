@@ -1,9 +1,12 @@
+#include "confirmationprompt.h"
 #include "updatemodsimpl.h"
 
 #include <iostream>
 #include <QDir>
 #include <QTimer>
 #include <QThreadPool>
+#include <modcache.h>
+#include <moddownloader.h>
 #include <modinfo.h>
 
 namespace iimodmanager {
@@ -129,31 +132,22 @@ void UpdateModsImpl::nextSteamInfo()
 
 void UpdateModsImpl::confirmDownloads()
 {
-    // Run on another thread, as std::getline blocks.
-    QThreadPool::globalInstance()->start([this]{
-        QTextStream cerr(stderr);
-        cerr << "The following mods will be downloaded:" << Qt::endl << "  ";
-        for (auto steamInfo : steamInfos)
-        {
+    QTextStream cerr(stderr);
+    cerr << "The following mods will be downloaded:" << Qt::endl << "  ";
+    for (auto steamInfo : steamInfos)
+    {
         cerr << QString("\"%1\" [%2] ").arg(steamInfo.title, steamInfo.modId());
-        }
-        cerr << Qt::endl;
-        cerr << "Do you want to continue? [Y/n] " << Qt::flush;
+    }
+    cerr << Qt::endl;
 
-        QTextStream cin(stdin);
-        QString response = cin.readLine().toLower();
-        if (response.isEmpty() || response == "y" || response == "yes")
-        {
-            // Start downloads on the main thread.
-            QTimer::singleShot(0, this, &UpdateModsImpl::startDownloads);
-        }
-        else
-        {
-            cerr << "Abort." << Qt::endl;
-            success_ = false;
-            emit finished();
-        }
+    prompt = new ConfirmationPrompt(this);
+    connect(prompt, &ConfirmationPrompt::yes, this, &UpdateModsImpl::startDownloads);
+    connect(prompt, &ConfirmationPrompt::no, this, [this] {
+        QTextStream(stderr) << "Abort." << Qt::endl;
+        success_ = false;
+        emit finished();
     });
+    prompt->start();
 }
 
 void UpdateModsImpl::startDownloads()

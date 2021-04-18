@@ -1,3 +1,4 @@
+#include "fileutils.h"
 #include "modcache.h"
 #include "moddownloader.h"
 #include "modinfo.h"
@@ -32,6 +33,7 @@ public:
 
     CachedMod *addUnloaded(const SteamModInfo &steamInfo);
     const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile);
+    const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
     void refresh(RefreshLevel = FULL);
     inline void save();
 
@@ -226,6 +228,11 @@ const CachedVersion *ModCache::addZipVersion(const SteamModInfo &steamInfo, QIOD
     return impl->addZipVersion(steamInfo, zipFile);
 }
 
+const CachedVersion *ModCache::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath)
+{
+    return impl->addModVersion(modId, versionId, folderPath);
+}
+
 void ModCache::refresh(ModCache::RefreshLevel level)
 {
     impl->refresh(level);
@@ -297,7 +304,7 @@ const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo
     const QString modId = steamInfo.modId();
     const QString versionId = formatVersionTime(steamInfo.lastUpdated);
     const QDir cacheDir(config_.cachePath());
-    QDir outputDir(modVersionPath(modId, versionId));
+    QString outputPath = modVersionPath(modId, versionId);
 
     CachedMod *m = mod(modId);
     if (!m)
@@ -305,28 +312,50 @@ const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo
     if (!m)
         qFatal("Couldn't add mod to cache %s", modId.toUtf8().constData());
 
-    if (outputDir.exists() && !outputDir.isEmpty())
-    {
-        if (outputDir.exists("modinfo.txt"))
-        {
-            qCWarning(modcache).noquote() << modId << "Deleting existing" << outputDir.absolutePath();
-            outputDir.removeRecursively();
-        }
-        else
-        {
-            qFatal("Output directory non-empty and not a mod folder: %s",
-                   outputDir.absolutePath().toUtf8().constData());
-        }
-    }
+    FileUtils::removeModDir(outputPath);
 
-    qCDebug(modcache).noquote() << modId << "Unzip Start" << outputDir.absolutePath();
-    QStringList files = JlCompress::extractDir(&zipFile, outputDir.absolutePath());
-
-    fixFileNames(cacheDir, outputDir, files);
-
+    qCDebug(modcache).noquote() << modId << "Unzip Start" << outputPath;
+    QStringList files = JlCompress::extractDir(&zipFile, outputPath);
+    fixFileNames(cacheDir, QDir(outputPath), files);
     qCDebug(modcache).noquote() << modId << "Unzip End";
 
     return m->impl()->refreshVersion(versionId);
+}
+
+const CachedVersion *ModCache::Impl::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath)
+{
+    QDir sourceDir(folderPath);
+    if (!sourceDir.exists("modinfo.txt"))
+    {
+        qCWarning(modcache).noquote() << modId << "No modinfo in source folder: " << folderPath;
+        return nullptr;
+    }
+
+    QString outputPath = modVersionPath(modId, versionId);
+    FileUtils::removeModDir(outputPath);
+    qCDebug(modcache) << "Copying" << folderPath << "to" << outputPath;
+    if (!FileUtils::copyRecursively(folderPath, outputPath))
+    {
+        qCWarning(modcache).noquote() << modId << "Failed to copy" << folderPath << "to" << outputPath;
+        return nullptr;
+    }
+
+    CachedMod *m = mod(modId);
+    if (m)
+    {
+        return m->impl()->refreshVersion(versionId);
+    }
+    else
+    {
+        CachedMod newMod(*this, modId);
+        const CachedVersion *v = newMod.impl()->refreshVersion(versionId);
+        if (v)
+        {
+            modIds_[modId] = mods_.size();
+            mods_.append(newMod);
+        }
+        return v;
+    }
 }
 
 void ModCache::Impl::refresh(RefreshLevel level)
@@ -579,6 +608,8 @@ CachedVersion *CachedMod::Impl::refreshVersion(const QString &versionId, ModCach
         {
             versions_.append(newVersion);
             sortVersions();
+            if (versions_.first().id() == versionId)
+                info_ = newVersion.info();
             return version(versionId);
         }
     }

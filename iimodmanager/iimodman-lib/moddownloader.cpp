@@ -1,9 +1,6 @@
 #include "moddownloader.h"
 #include "modcache.h"
-#include "modcache.h"
 
-#include <JlCompress.h>
-#include <QBuffer>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>

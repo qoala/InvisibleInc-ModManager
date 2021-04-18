@@ -47,6 +47,7 @@ public:
 
     bool hasCacheVersion() const;
     const CachedVersion *cacheVersion() const;
+    QString path() const;
 
 // file-visibility:
     bool refresh(ModList::RefreshLevel level = ModList::FULL);
@@ -133,6 +134,11 @@ const CachedVersion *InstalledMod::cacheVersion() const
     return impl()->cacheVersion();
 }
 
+QString InstalledMod::path() const
+{
+    return impl()->path();
+}
+
 QString InstalledMod::versionString() const
 {
     const CachedVersion *cachedVersion = cacheVersion();
@@ -172,6 +178,11 @@ const CachedVersion *InstalledMod::Impl::cacheVersion() const
     if (auto cachedMod = parent.cache()->mod(id_))
         return cachedMod->installedVersion();
     return nullptr;
+}
+
+QString InstalledMod::Impl::path() const
+{
+    return parent.modPath(id_);
 }
 
 bool InstalledMod::Impl::refresh(ModList::RefreshLevel level)

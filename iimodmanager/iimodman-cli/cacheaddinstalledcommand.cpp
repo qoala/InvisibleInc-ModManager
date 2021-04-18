@@ -1,4 +1,5 @@
 #include "cacheaddinstalledcommand.h"
+#include "confirmationprompt.h"
 #include "updatemodsimpl.h"
 
 #include <QCommandLineParser>
@@ -32,7 +33,7 @@ void CacheAddInstalledCommand::execute()
     updateImpl->setMissingCacheAction(UpdateModsImpl::CACHE_ADD);
 
     cache->refresh(ModCache::LATEST_ONLY);
-    modList->refresh();
+    modList->refresh(ModList::FULL);
 
     // all mods to be added
     modIds.clear();
@@ -43,7 +44,7 @@ void CacheAddInstalledCommand::execute()
     for (const InstalledMod &m : modList->mods())
     {
         modIds.append(m.id());
-        if (m.info().isSteam())
+        if (m.info().isSteam() && !m.hasCacheVersion())
             steamModIds.append(m.id());
     }
 
@@ -60,7 +61,78 @@ void CacheAddInstalledCommand::updateFinished()
         return;
     }
 
+    // Find installed versions in the updated cache.
+    modList->refresh(ModList::FULL);
+
+    uncachedMods.clear();
+    uncachedMods.reserve(modList->mods().size());
+    for (const InstalledMod &m : modList->mods())
+    {
+        if (!m.hasCacheVersion())
+            uncachedMods.append(m);
+    }
+
+    QTextStream cerr(stderr);
+    if (uncachedMods.empty())
+    {
+        cerr << "All installed mod versions in cache." << Qt::endl;
+        emit finished();
+        return;
+    }
+
+    cerr << "The currently installed version will be copied to cache for the following mods:" << Qt::endl << "  ";
+    for (const InstalledMod &m : uncachedMods)
+        cerr << QString("\"%1\" [%2] ").arg(m.info().name(), m.id());
+    cerr << Qt::endl;
+
+    prompt = new ConfirmationPrompt(this);
+    connect(prompt, &ConfirmationPrompt::yes, this, &CacheAddInstalledCommand::startCopy);
+    connect(prompt, &ConfirmationPrompt::no, this, [this] {
+        QTextStream(stderr) << "Abort." << Qt::endl;
+        emit finished();
+    });
+    prompt->start();
+}
+
+void CacheAddInstalledCommand::startCopy()
+{
+    for (const InstalledMod &m : uncachedMods)
+        copyMod(m);
+
     emit finished();
+}
+
+bool CacheAddInstalledCommand::copyMod(const InstalledMod &installed)
+{
+    QString versionId;
+    const CachedMod *m = cache->mod(installed.id());
+    if (installed.info().isSteam() && !m)
+    {
+        versionId = QStringLiteral("000-original");
+    }
+    else if (installed.info().isSteam())
+    {
+        int i;
+        for (i = 0; i < 100; ++i)
+        {
+            versionId = QStringLiteral("%1-original").arg(i, 3, 10, QLatin1Char('0'));
+            if (!m->containsVersion(versionId))
+                break;
+        }
+        if (i == 100)
+        {
+            QTextStream(stderr) << "Exceeded IDs for original versions of " << installed.info().toString() << Qt::endl;
+            return false;
+        }
+    }
+    else
+    {
+        versionId = QStringLiteral("dev");
+    }
+
+    const CachedVersion *v = cache->addModVersion(installed.id(), versionId, installed.path());
+    QTextStream(stderr) << v->info().toString() << " copied " << v->toString(FORMAT_FULL) << " from installed" << Qt::endl;
+    return true;
 }
 
 } // namespace iimodmanager
