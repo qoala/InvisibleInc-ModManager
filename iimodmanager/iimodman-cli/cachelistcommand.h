@@ -26,6 +26,7 @@ private:
     {
         TEXT,
         MODSPEC,
+        MODSPEC_VERSIONED,
     };
     enum VersionSetting
     {
@@ -38,7 +39,6 @@ private:
     bool includeHashes;
     qsizetype maxWidth;
 
-    void writeSpecMod(QTextStream &out, const CachedMod &mod);
     void writeTextMod(QTextStream &out, const CachedMod &mod);
 };
 

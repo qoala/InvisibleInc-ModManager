@@ -3,6 +3,7 @@
 #include "moddownloader.h"
 #include "modinfo.h"
 #include "modsignature.h"
+#include "modspec.h"
 
 #include <JlCompress.h>
 #include <QDateTime>
@@ -103,6 +104,8 @@ public:
     inline bool installed() const { return installed_; };
     const QString &hash() const;
 
+    const SpecMod asSpec() const;
+
 // file-visibility:
     void setInstalled(bool value) { installed_ = value; };
     bool refresh(ModCache::RefreshLevel = ModCache::FULL);
@@ -117,6 +120,7 @@ private:
 
     bool installed_;
     mutable QString hash_;
+    mutable std::optional<SpecMod> specMod;
 };
 
 // Folder Structure: {cachePath}/workshop-{steamId}/{versionTime}/
@@ -751,6 +755,11 @@ const QString CachedVersion::toString(StringFormat format) const
 
 }
 
+const SpecMod CachedVersion::asSpec() const
+{
+    return impl()->asSpec();
+}
+
 CachedVersion::Impl::Impl(const ModCache::Impl &cache, const QString &modId, const QString &versionId)
     : cache(cache), modId(modId), id_(versionId), installed_(false)
 {}
@@ -760,6 +769,14 @@ const QString &CachedVersion::Impl::hash() const
     if (hash_.isEmpty())
         hash_ = ModSignature::hashModPath(cache.modVersionPath(modId, id_));
     return hash_;
+}
+
+const SpecMod CachedVersion::Impl::asSpec() const
+{
+    if (!specMod)
+        specMod.emplace(modId, id_, info_.name(), info_.version());
+
+    return *specMod;
 }
 
 bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level)
@@ -772,6 +789,7 @@ bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level)
     }
 
     hash_.clear();
+    specMod.reset();
 
     if (level == ModCache::ID_ONLY)
         return true;

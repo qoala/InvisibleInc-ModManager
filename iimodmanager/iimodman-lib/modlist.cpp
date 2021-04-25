@@ -2,6 +2,7 @@
 #include "modinfo.h"
 #include "modlist.h"
 #include "modmanconfig.h"
+#include "modspec.h"
 
 #include <QDir>
 #include <QList>
@@ -47,6 +48,7 @@ public:
 
     bool hasCacheVersion() const;
     const CachedVersion *cacheVersion() const;
+    const SpecMod asSpec() const;
     QString path() const;
 
 // file-visibility:
@@ -59,6 +61,7 @@ private:
     QString cacheVersionId_;
 
     mutable QString hash_;
+    mutable std::optional<SpecMod> specMod;
 };
 
 ModList::ModList(const ModManConfig &config, ModCache *cache, QObject *parent)
@@ -134,6 +137,11 @@ const CachedVersion *InstalledMod::cacheVersion() const
     return impl()->cacheVersion();
 }
 
+const SpecMod InstalledMod::asSpec() const
+{
+    return impl()->asSpec();
+}
+
 QString InstalledMod::path() const
 {
     return impl()->path();
@@ -180,6 +188,20 @@ const CachedVersion *InstalledMod::Impl::cacheVersion() const
     return nullptr;
 }
 
+const SpecMod InstalledMod::Impl::asSpec() const
+{
+    if (!specMod)
+    {
+        const CachedVersion *v = cacheVersion();
+        if (v)
+            specMod.emplace(id_, v->id(), info_.name(), info_.version());
+        else
+            specMod.emplace(id_, QString(), info_.name(), info_.version());
+    }
+
+    return *specMod;
+}
+
 QString InstalledMod::Impl::path() const
 {
     return parent.modPath(id_);
@@ -196,6 +218,7 @@ bool InstalledMod::Impl::refresh(ModList::RefreshLevel level)
     qCDebug(modlist).noquote().nospace() << QString("installedmod:refresh(%1)").arg(id_);
 
     hash_.clear();
+    specMod.reset();
 
     if (level == ModList::ID_ONLY)
     {

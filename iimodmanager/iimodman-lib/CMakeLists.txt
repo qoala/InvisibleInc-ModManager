@@ -9,6 +9,7 @@ set(IIMODMAN_LIB_HEADERS
     modinfo.h
     modlist.h
     modmanconfig.h
+    modspec.h
   )
 set(IIMODMAN_LIB_SOURCES
     fileutils.cpp
@@ -18,6 +19,7 @@ set(IIMODMAN_LIB_SOURCES
     modlist.cpp
     modmanconfig.cpp
     modsignature.cpp
+    modspec.cpp
   )
 
 add_library(${IIMODMAN_LIB_TARGET_NAME} ${IIMODMAN_LIB_SOURCES})

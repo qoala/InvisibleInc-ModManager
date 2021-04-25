@@ -17,6 +17,7 @@ namespace iimodmanager {
 
 class ModInfo;
 class ModManConfig;
+class SpecMod;
 class SteamModInfo;
 
 
@@ -126,6 +127,7 @@ public:
     const QString &hash() const;
 
     const QString toString(StringFormat format = FORMAT_SHORT) const;
+    const SpecMod asSpec() const;
 
 private:
     friend ModCache;

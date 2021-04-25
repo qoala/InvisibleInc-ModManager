@@ -7,6 +7,7 @@
 #include <modcache.h>
 #include <modinfo.h>
 #include <modlist.h>
+#include <modspec.h>
 
 namespace iimodmanager {
 
@@ -19,7 +20,8 @@ void ModsListCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addPositionalArgument("list", "Command: List all installed mods");
     parser.addOptions({
                           {"hash", "Print mod version hashes."},
-                          {"spec", "Format output as a modspec."},
+                          {"spec", "Format output as a mod-spec."},
+                          {"spec-full", "Format output as a full versioned mod-spec."},
                       });
 }
 
@@ -27,7 +29,7 @@ void ModsListCommand::parse(QCommandLineParser &parser, const QStringList &args)
 {
     Q_UNUSED(args);
 
-    format = parser.isSet("spec") ? MODSPEC : TEXT;
+    format = parser.isSet("spec-full") ? MODSPEC_VERSIONED : parser.isSet("spec") ? MODSPEC : TEXT;
     includeHashes = parser.isSet("hash");
 }
 
@@ -36,11 +38,18 @@ void ModsListCommand::execute()
     ModCache cache(app_.config());
     ModList modList(app_.config(), &cache);
 
-    if (format == TEXT)
+    if (format == TEXT || format == MODSPEC_VERSIONED)
     {
         cache.refresh(ModCache::LATEST_ONLY);
         modList.refresh();
+    }
+    else
+    {
+        modList.refresh(ModList::CONTENT_ONLY);
+    }
 
+    if (format == TEXT)
+    {
         maxWidth = 0;
         for (auto mod : modList.mods()) {
         const int width = mod.id().size() + mod.info().name().size() + 3;
@@ -54,22 +63,18 @@ void ModsListCommand::execute()
             writeTextMod(cout, mod);
         }
     }
-    else if (format == MODSPEC)
+    else
     {
-        modList.refresh(ModList::CONTENT_ONLY);
-
         QTextStream cout(stdout);
         for (auto mod : modList.mods()) {
-            writeSpecMod(cout, mod);
+            if (format == MODSPEC_VERSIONED)
+                cout << mod.asSpec().asVersionedSpecString() << Qt::endl;
+            else
+                cout << mod.asSpec().asSpecString() << Qt::endl;
         }
     }
 
     QTimer::singleShot(0, this, &Command::finished);
-}
-
-void ModsListCommand::writeSpecMod(QTextStream &cout, const InstalledMod &mod)
-{
-    cout << mod.id() << ":" << mod.info().name() << Qt::endl;
 }
 
 void ModsListCommand::writeTextMod(QTextStream &cout, const InstalledMod &mod)

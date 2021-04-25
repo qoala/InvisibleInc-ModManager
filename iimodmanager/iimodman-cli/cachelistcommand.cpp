@@ -7,6 +7,7 @@
 #include <modcache.h>
 #include <modinfo.h>
 #include <modlist.h>
+#include <modspec.h>
 
 namespace iimodmanager {
 
@@ -20,7 +21,8 @@ void CacheListCommand::addTerminalArgs(QCommandLineParser &parser) const
     parser.addOptions({
                           {{"a", "all"}, "List all versions of each mod."},
                           {"hash", "Print mod version hashes."},
-                          {"spec", "Format output as a modspec."},
+                          {"spec", "Format output as a mod-spec."},
+                          {"spec-full", "Format output as a full versioned mod-spec."},
                       });
 }
 
@@ -34,6 +36,12 @@ void CacheListCommand::parse(QCommandLineParser &parser, const QStringList &args
     if (parser.isSet("spec"))
     {
         format = MODSPEC;
+        versionSetting = NONE;
+        includeHashes = false;
+    }
+    if (parser.isSet("spec-full"))
+    {
+        format = MODSPEC_VERSIONED;
         versionSetting = NONE;
         includeHashes = false;
     }
@@ -68,20 +76,20 @@ void CacheListCommand::execute()
             writeTextMod(cout, mod);
         }
     }
-    else if (format == MODSPEC)
+    else
     {
         QTextStream cout(stdout);
         for (auto mod : cache.mods()) {
-            writeSpecMod(cout, mod);
+            if (mod.downloaded()) {
+                if (format == MODSPEC_VERSIONED)
+                    cout << mod.latestVersion()->asSpec().asVersionedSpecString() << Qt::endl;
+                else
+                    cout << mod.latestVersion()->asSpec().asSpecString() << Qt::endl;
+            }
         }
     }
 
     QTimer::singleShot(0, this, &Command::finished);
-}
-
-void CacheListCommand::writeSpecMod(QTextStream &cout, const CachedMod &mod)
-{
-    cout << mod.id() << ":" << mod.info().name() << Qt::endl;
 }
 
 void CacheListCommand::writeTextMod(QTextStream &cout, const CachedMod &mod)

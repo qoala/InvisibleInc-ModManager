@@ -17,6 +17,7 @@ class CachedVersion;
 class ModCache;
 class ModInfo;
 class ModManConfig;
+class SpecMod;
 class SteamModInfo;
 
 
@@ -65,6 +66,7 @@ public:
     //! The cached version matching the currently installed mod, or nullptr if there is no match.
     const CachedVersion *cacheVersion() const;
 
+    const SpecMod asSpec() const;
     QString path() const;
     QString versionString() const;
 
