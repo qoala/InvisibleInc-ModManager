@@ -215,13 +215,6 @@ const CachedMod *ModCache::mod(const QString &id) const
     return impl->mod(id);
 }
 
-QString ModCache::modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime)
-{
-    QDir cacheDir(config.cachePath());
-    QDir modDir(cacheDir.absoluteFilePath(modId));
-    return modDir.absoluteFilePath(formatVersionTime(versionTime));
-}
-
 const CachedMod *ModCache::addUnloaded(const SteamModInfo &steamInfo)
 {
     return impl->addUnloaded(steamInfo);

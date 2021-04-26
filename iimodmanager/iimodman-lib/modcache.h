@@ -52,8 +52,6 @@ public:
     //! The mod with the given ID, or nullptr if it isn't in the cache.
     const CachedMod *mod(const QString &id) const;
 
-    static QString modVersionPath(const ModManConfig &config, const QString &modId, const QDateTime &versionTime);
-
     //! Add a CachedMod for the given Steam Workshop details.
     //! Returns the mod if successful, or nullptr otherwise.
     //! If the mod is already in the cache, returns nullptr as the result wouldn't be a non-downloaded mod.
