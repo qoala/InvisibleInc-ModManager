@@ -193,10 +193,7 @@ const SpecMod InstalledMod::Impl::asSpec() const
     if (!specMod)
     {
         const CachedVersion *v = cacheVersion();
-        if (v)
-            specMod.emplace(id_, v->id(), info_.name(), info_.version());
-        else
-            specMod.emplace(id_, QString(), info_.name(), info_.version());
+        specMod.emplace(id_, v ? v->id() : QString(), info_.name(), info_.version());
     }
 
     return *specMod;
