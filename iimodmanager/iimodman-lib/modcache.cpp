@@ -737,9 +737,9 @@ const QString CachedVersion::toString(StringFormat format) const
     if (auto version = impl()->version())
     {
         if (format == FORMAT_FULL)
-            return QStringLiteral("v%1 [%2]").arg(*version, impl()->id());
+            return QStringLiteral("%1 [%2]").arg(*version, impl()->id());
         else
-            return QStringLiteral("v%1").arg(*version);
+            return *version;
     }
     else
     {

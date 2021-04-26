@@ -151,15 +151,9 @@ QString InstalledMod::versionString() const
 {
     const CachedVersion *cachedVersion = cacheVersion();
     if (cachedVersion)
-    {
         return cachedVersion->toString();
-    }
     else
-    {
-        const QString &version = impl()->info().version();
-        if (!version.isEmpty())
-            return "v" + version;
-    }
+        return impl()->info().version();
     return QString();
 }
 

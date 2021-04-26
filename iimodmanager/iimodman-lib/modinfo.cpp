@@ -118,7 +118,7 @@ const ModInfo ModInfo::readModInfo(QIODevice &file, const QString &id)
     }
 
     ModInfo mod;
-    mod.impl = std::make_shared<Impl>(id, name, version);
+    mod.impl = std::make_shared<Impl>(id, name, version.isEmpty() ? QString() : 'v' + version);
     return mod;
 }
 
