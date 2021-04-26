@@ -127,6 +127,8 @@ public:
     const QString toString(StringFormat format = FORMAT_SHORT) const;
     const SpecMod asSpec() const;
 
+    QString path() const;
+
 private:
     friend ModCache;
     friend CachedMod;

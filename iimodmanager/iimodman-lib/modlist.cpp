@@ -1,3 +1,4 @@
+#include "fileutils.h"
 #include "modcache.h"
 #include "modinfo.h"
 #include "modlist.h"
@@ -22,8 +23,11 @@ public:
     Impl(const ModManConfig &config, ModCache *cache);
 
     inline const QList<InstalledMod> mods() const { return mods_; }
+    InstalledMod *mod(const QString &id);
+    const InstalledMod *mod(const QString &id) const;
 
     void refresh(RefreshLevel level = FULL);
+    const InstalledMod *installMod(const SpecMod &specMod);
 
 // file-visibility:
     inline ModCache *cache() const { return cache_; }
@@ -33,6 +37,10 @@ private:
     const ModManConfig &config_;
     ModCache *cache_;
     QList<InstalledMod> mods_;
+    //! Index of mods by mod ID.
+    QMap<QString, qsizetype> modIds_;
+
+    void refreshIndex();
 };
 
 //! Private implementation of InstalledMod.
@@ -73,9 +81,19 @@ const QList<InstalledMod> ModList::mods() const
     return impl->mods();
 }
 
+const InstalledMod *ModList::mod(const QString &id) const
+{
+    return impl->mod(id);
+}
+
 void ModList::refresh(ModList::RefreshLevel level)
 {
     impl->refresh(level);
+}
+
+const InstalledMod *ModList::installMod(const SpecMod &specMod)
+{
+    return impl->installMod(specMod);
 }
 
 ModList::~ModList() = default;
@@ -83,6 +101,20 @@ ModList::~ModList() = default;
 ModList::Impl::Impl(const ModManConfig &config, ModCache *cache)
     : config_(config), cache_(cache)
 {}
+
+InstalledMod *ModList::Impl::mod(const QString &id)
+{
+    if (modIds_.contains(id))
+        return &mods_[modIds_[id]];
+    return nullptr;
+}
+
+const InstalledMod *ModList::Impl::mod(const QString &id) const
+{
+    if (modIds_.contains(id))
+        return &mods_[modIds_[id]];
+    return nullptr;
+}
 
 void ModList::Impl::refresh(ModList::RefreshLevel level)
 {
@@ -100,12 +132,67 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
         if (mod.impl()->refresh(level))
             mods_.append(mod);
     }
+
+    refreshIndex();
+}
+
+const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod)
+{
+    const QString &modId = specMod.id();
+    const CachedMod *cm = cache()->mod(modId);
+    if (!cm)
+    {
+        return nullptr;
+    }
+    const CachedVersion *cv = specMod.versionId().isEmpty() ? cm->latestVersion() : cm->version(specMod.versionId());
+    if (!cv)
+    {
+        return nullptr;
+    }
+    const QString inputPath = cv->path();
+    const QString outputPath = modPath(modId);
+    FileUtils::removeModDir(outputPath);
+    qCDebug(modlist) << "Copying" << inputPath << "to" << outputPath;
+    if (!FileUtils::copyRecursively(inputPath, outputPath))
+    {
+        qCWarning(modlist).noquote() << "Failed to copy" << inputPath << "to" << outputPath;
+        return nullptr;
+    }
+
+    InstalledMod *im = mod(modId);
+    if (im)
+    {
+        if (im->impl()->refresh())
+            return im;
+    }
+    else
+    {
+        InstalledMod newMod(*this, modId);
+        if (newMod.impl()->refresh())
+        {
+            modIds_[modId] = mods_.size();
+            mods_.append(newMod);
+            return &mods_.last();
+        }
+    }
+    return nullptr;
 }
 
 QString ModList::Impl::modPath(const QString &modId) const
 {
     QDir installDir(config_.modPath());
     return installDir.absoluteFilePath(modId);
+}
+
+void ModList::Impl::refreshIndex()
+{
+    modIds_.clear();
+    for (qsizetype i = 0; i < mods_.size(); ++i)
+    {
+        const InstalledMod &mod = mods_.at(i);
+        const QString &modId = mod.id();
+        modIds_[modId] = i;
+    }
 }
 
 InstalledMod::InstalledMod(const ModList::Impl &parent, const QString &id)

@@ -106,6 +106,8 @@ public:
 
     const SpecMod asSpec() const;
 
+    QString path() const;
+
 // file-visibility:
     void setInstalled(bool value) { installed_ = value; };
     bool refresh(ModCache::RefreshLevel = ModCache::FULL);
@@ -753,6 +755,11 @@ const SpecMod CachedVersion::asSpec() const
     return impl()->asSpec();
 }
 
+QString CachedVersion::path() const
+{
+    return impl()->path();
+}
+
 CachedVersion::Impl::Impl(const ModCache::Impl &cache, const QString &modId, const QString &versionId)
     : cache(cache), modId(modId), id_(versionId), installed_(false)
 {}
@@ -770,6 +777,11 @@ const SpecMod CachedVersion::Impl::asSpec() const
         specMod.emplace(modId, id_, info_.name(), info_.version());
 
     return *specMod;
+}
+
+QString CachedVersion::Impl::path() const
+{
+    return cache.modVersionPath(modId, id_);
 }
 
 bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level)

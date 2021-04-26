@@ -1,5 +1,6 @@
 #include "modmancliapplication.h"
 #include "modscommands.h"
+#include "modsinstallcommand.h"
 #include "modslistcommand.h"
 
 #include <QCommandLineParser>
@@ -17,12 +18,16 @@ void ModsCommands::addArgs(QCommandLineParser &parser) const
 
 void ModsCommands::addTerminalArgs(QCommandLineParser &parser) const
 {
-    parser.addPositionalArgument("command", "Command to be executed (list)", "list|help");
+    parser.addPositionalArgument("command", "Command to be executed (install|list)", "install|list|help");
 }
 
 Command *ModsCommands::parseCommands(const QString command) const
 {
-    if (command == "list")
+    if (command == "install")
+    {
+        return new ModsInstallCommand(app_);
+    }
+    else if (command == "list")
     {
         return new ModsListCommand(app_);
     }

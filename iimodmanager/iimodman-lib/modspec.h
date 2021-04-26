@@ -5,6 +5,7 @@
 
 #include <experimental/propagate_const>
 
+#include <QString>
 #include <memory>
 
 template <typename T> class QList;
@@ -33,6 +34,9 @@ public:
     SpecMod(const QString &id, const QString &name);
     SpecMod(const QString &id, const QString &versionId, const QString &name, const QString &versionName);
 
+    static SpecMod forModId(const QString &id);
+    static SpecMod forModVersionId(const QString &id, const QString &versionId);
+
     QString id() const;
     QString versionId() const;
     QString name() const;
@@ -45,6 +49,16 @@ private:
     class Impl;
     std::shared_ptr<const Impl> impl;
 };
+
+inline SpecMod SpecMod::forModId(const QString &id)
+{
+    return SpecMod(id, QString());
+}
+
+inline SpecMod SpecMod::forModVersionId(const QString &id, const QString &versionId)
+{
+    return SpecMod(id, versionId, QString(), QString());
+}
 
 } // namespace iimodmanager
 
