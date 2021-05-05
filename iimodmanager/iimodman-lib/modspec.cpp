@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QList>
+#include <QMap>
 #include <QString>
 #include <stdexcept>
 
@@ -24,8 +25,10 @@ public:
     Impl(const QList<SpecMod> &mods);
 
     QList<SpecMod> mods;
+    //! Index of mods by mod ID.
+    QMap<QString, qsizetype> modIds;
 
-    bool readFromFile(QIODevice &file);
+    bool appendFromFile(QIODevice &file, const QString &debugRef);
 };
 
 class SpecMod::Impl
@@ -42,45 +45,66 @@ public:
     QString asVersionedSpecString() const;
 };
 
+ModSpec::ModSpec()
+    : ModSpec(QList<SpecMod>())
+{}
+
 ModSpec::ModSpec(const QList<SpecMod> &mods)
     : impl{std::make_unique<Impl>(mods)}
 {}
-
-QList<SpecMod> ModSpec::mods()
-{
-    return impl->mods;
-}
 
 const QList<SpecMod> ModSpec::mods() const
 {
     return impl->mods;
 }
 
-bool ModSpec::readFromFile(QIODevice &file)
+bool ModSpec::contains(QString modId) const
 {
-    return impl->readFromFile(file);
+    return impl->modIds.contains(modId);
 }
+
+void ModSpec::reserve(qsizetype size)
+{
+    impl->mods.reserve(size);
+}
+
+void ModSpec::append(const SpecMod &specMod)
+{
+    impl->modIds[specMod.id()] = impl->mods.size();
+    impl->mods.append(specMod);
+}
+
+bool ModSpec::appendFromFile(QIODevice &file, const QString &debugRef)
+{
+    return impl->appendFromFile(file, debugRef);
+}
+
+ModSpec::~ModSpec() = default;
 
 ModSpec::Impl::Impl(const QList<SpecMod> &mods)
     : mods(mods)
 {}
 
-bool ModSpec::Impl::readFromFile(QIODevice &file)
+bool ModSpec::Impl::appendFromFile(QIODevice &file, const QString &debugRef)
 {
     if (file.isOpen() || file.open(QIODevice::ReadOnly|QIODevice::Text))
     {
-        mods.clear();
         QTextStream in(&file);
+        qsizetype lineNo = 0;
         while (!in.atEnd())
         {
             QString line = in.readLine().simplified();
+            ++lineNo;
             // skip blank lines and comment lines
             if (line.isEmpty() || line.startsWith('#'))
                 continue;
 
-            std::optional<SpecMod> mod = SpecMod::fromSpecString(line);
-            if (mod)
-                mods.append(*mod);
+            std::optional<SpecMod> sm = SpecMod::fromSpecString(line, debugRef, lineNo);
+            if (sm)
+            {
+                modIds[sm->id()] = mods.size();
+                mods.append(*sm);
+            }
         }
         return true;
     }

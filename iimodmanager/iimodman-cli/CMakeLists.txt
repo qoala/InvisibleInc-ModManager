@@ -20,6 +20,7 @@ set(IIMODMAN_CLI_SOURCES
     modscommands.cpp
     modsinstallcommand.cpp
     modslistcommand.cpp
+    modssynccommand.cpp
     steamapicommands.cpp
     steamapimoddownloadcommand.cpp
     steamapimodinfocommand.cpp

@@ -28,6 +28,7 @@ public:
 
     void refresh(RefreshLevel level = FULL);
     const InstalledMod *installMod(const SpecMod &specMod);
+    const InstalledMod *removeMod(const QString &modId);
 
 // file-visibility:
     inline ModCache *cache() const { return cache_; }
@@ -94,6 +95,11 @@ void ModList::refresh(ModList::RefreshLevel level)
 const InstalledMod *ModList::installMod(const SpecMod &specMod)
 {
     return impl->installMod(specMod);
+}
+
+const InstalledMod *ModList::removeMod(const QString &modId)
+{
+    return impl->removeMod(modId);
 }
 
 ModList::~ModList() = default;
@@ -176,6 +182,17 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod)
         }
     }
     return nullptr;
+}
+
+const InstalledMod *ModList::Impl::removeMod(const QString &modId)
+{
+    InstalledMod *im = mod(modId);
+    if (im)
+    {
+        const QString outputPath = modPath(modId);
+        FileUtils::removeModDir(outputPath);
+    }
+    return im;
 }
 
 QString ModList::Impl::modPath(const QString &modId) const

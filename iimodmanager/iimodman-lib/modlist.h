@@ -46,6 +46,7 @@ public:
 
     void refresh(RefreshLevel level = FULL);
     const InstalledMod *installMod(const SpecMod &specMod);
+    const InstalledMod *removeMod(const QString &modId);
 
     ~ModList();
 private:

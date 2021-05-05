@@ -20,13 +20,18 @@ class IIMODMANLIBSHARED_EXPORT ModSpec
 {
 
 public:
+    ModSpec();
     ModSpec(const QList<SpecMod> &mods);
 
-    QList<SpecMod> mods();
     const QList<SpecMod> mods() const;
+    bool contains(QString modId) const;
 
-    bool readFromFile(QIODevice &file);
+    void reserve(qsizetype);
+    void append(const SpecMod &specMod);
 
+    bool appendFromFile(QIODevice &file, const QString &debugRef = QString());
+
+    ~ModSpec();
 private:
     class Impl;
     std::experimental::propagate_const<std::unique_ptr<Impl>> impl;
