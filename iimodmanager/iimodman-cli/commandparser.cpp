@@ -12,7 +12,7 @@ namespace iimodmanager {
 CommandParser::CommandParser(ModManCliApplication &app) : app_(app) {}
 
 void CommandParser::addTerminalArgs() {
-    parser_.addPositionalArgument("category", "Category of the command to be executed (cache|config|steamapi)", "(cache|config|steamapi)");
+    parser_.addPositionalArgument("category", "Category of the command to be executed (cache|config|mods|steamapi)", "(cache|config|mods|steamapi)");
     parser_.addPositionalArgument("command", "Command to be executed", "[command]|help");
 }
 
