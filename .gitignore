@@ -1,4 +1,6 @@
 
+# Output directory
+out/
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
