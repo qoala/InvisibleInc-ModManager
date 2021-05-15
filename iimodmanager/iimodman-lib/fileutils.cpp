@@ -2,9 +2,13 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QLoggingCategory>
 #include <QString>
 
 namespace iimodmanager {
+
+Q_DECLARE_LOGGING_CATEGORY(fileutils)
+Q_LOGGING_CATEGORY(fileutils, "files", QtWarningMsg);
 
 bool FileUtils::removeModDir(const QString &path)
 {
@@ -13,7 +17,7 @@ bool FileUtils::removeModDir(const QString &path)
     {
         if (dir.exists("modinfo.txt"))
         {
-            qWarning().noquote() << "Deleting existing" << path;
+            qCDebug(fileutils).noquote() << "Deleting existing" << path;
             dir.removeRecursively();
         }
         else
