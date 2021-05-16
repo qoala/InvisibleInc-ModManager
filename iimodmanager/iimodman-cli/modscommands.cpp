@@ -2,6 +2,7 @@
 #include "modscommands.h"
 #include "modsinstallcommand.h"
 #include "modslistcommand.h"
+#include "modsremovecommand.h"
 #include "modssynccommand.h"
 
 #include <QCommandLineParser>
@@ -19,7 +20,7 @@ void ModsCommands::addArgs(QCommandLineParser &parser) const
 
 void ModsCommands::addTerminalArgs(QCommandLineParser &parser) const
 {
-    parser.addPositionalArgument("command", "Command to be executed (install|list)", "install|list|sync|help");
+    parser.addPositionalArgument("command", "Command to be executed (install|list|sync|remove)", "install|list|sync|remove|help");
 }
 
 Command *ModsCommands::parseCommands(const QString command) const
@@ -30,6 +31,8 @@ Command *ModsCommands::parseCommands(const QString command) const
         return new ModsListCommand(app_);
     else if (command == "sync")
         return new ModsSyncCommand(app_);
+    else if (command == "remove")
+        return new ModsRemoveCommand(app_);
     return nullptr;
 }
 
