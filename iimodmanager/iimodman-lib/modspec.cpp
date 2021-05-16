@@ -157,6 +157,11 @@ QString SpecMod::versionName() const
     return impl->versionName;
 }
 
+SpecMod SpecMod::withoutVersion() const
+{
+    return SpecMod(impl->id, impl->name);
+}
+
 QString SpecMod::asSpecString() const
 {
     return impl->asSpecString();

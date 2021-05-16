@@ -50,6 +50,8 @@ public:
     QString name() const;
     QString versionName() const;
 
+    SpecMod withoutVersion() const;
+
     QString asSpecString() const;
     QString asVersionedSpecString() const;
 

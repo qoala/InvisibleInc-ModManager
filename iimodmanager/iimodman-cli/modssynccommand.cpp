@@ -36,12 +36,6 @@ void ModsSyncCommand::parse(QCommandLineParser &parser, const QStringList &args)
     {
         specFileNames.append(parser.values("spec"));
     }
-    else
-    {
-        QTextStream cerr(stderr);
-        cerr << app_.applicationName() << ": Missing spec file name" << Qt::endl;
-        parser.showHelp(EXIT_FAILURE);
-    }
 }
 
 void ModsSyncCommand::execute()
@@ -55,8 +49,16 @@ void ModsSyncCommand::execute()
     // Read input
     inputSpec.reserve(cache->mods().size());
     bool success = true;
-    for (auto specFileName : specFileNames)
-        success &= readSpecFile(specFileName);
+    if (specFileNames.isEmpty())
+    {
+        for (const auto &im : modList->mods())
+            inputSpec.append(im.asSpec().withoutVersion());
+    }
+    else
+    {
+        for (auto specFileName : specFileNames)
+            success &= readSpecFile(specFileName);
+    }
     if (!success)
     {
         QTimer::singleShot(0, this, [this](){ app_.exit(EXIT_FAILURE); });
