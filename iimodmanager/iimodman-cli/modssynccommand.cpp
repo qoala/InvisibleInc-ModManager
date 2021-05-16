@@ -179,7 +179,7 @@ std::optional<SpecMod> ModsSyncCommand::makeInstallTarget(const SpecMod &sm)
         return {};
     }
 
-    const CachedVersion *cv = sm.versionId().isEmpty() ? cm->latestVersion() : cm->version(sm.versionId());
+    const CachedVersion *cv = sm.versionId().isEmpty() ? cm->latestVersion() : cache->refreshVersion(sm.id(), sm.versionId());
     if (!cv)
     {
         QTextStream(stderr) << "Mod version is not in cache: " << cm->info().toString() << ' ' << sm.versionId() << Qt::endl;

@@ -40,8 +40,11 @@ public:
     class Impl;
     enum RefreshLevel
     {
+        //! Refresh all fields on all mods and all versions.
         FULL,
+        //! Refresh only available IDs on all mods and all versions.
         ID_ONLY,
+        //! Refresh the latest version of each mod fully, with available IDs for older versions.
         LATEST_ONLY,
     };
 
@@ -60,7 +63,10 @@ public:
     const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile);
     //! Copy the given folder's contents into a new or existing CachedVersion
     const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
+    //! Refresh all mods from disk to the specified level.
     void refresh(RefreshLevel level = FULL);
+    //! Refresh and return the specific mod version from disk. Nullptr if not present.
+    const CachedVersion *refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level = FULL);
     void saveMetadata();
 
     //! Find the currently installed version by hash and set its installed flag.

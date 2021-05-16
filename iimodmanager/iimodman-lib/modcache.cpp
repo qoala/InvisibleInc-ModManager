@@ -36,6 +36,7 @@ public:
     const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile);
     const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
     void refresh(RefreshLevel = FULL);
+    const CachedVersion *refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level = FULL);
     inline void save();
 
 // file-visibility:
@@ -237,6 +238,11 @@ void ModCache::refresh(ModCache::RefreshLevel level)
     impl->refresh(level);
 }
 
+const CachedVersion *ModCache::refreshVersion(const QString &modId, const QString &versionId, ModCache::RefreshLevel level)
+{
+    return impl->refreshVersion(modId, versionId, level);
+}
+
 void ModCache::saveMetadata()
 {
     impl->save();
@@ -387,6 +393,14 @@ void ModCache::Impl::refresh(RefreshLevel level)
     sortMods();
 
     qCDebug(modcache).noquote().nospace() << "cache:refresh() End mods:" << mods_.size();
+}
+
+const CachedVersion *ModCache::Impl::refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level)
+{
+    CachedMod *m = mod(modId);
+    if (!m)
+        return nullptr;
+    return m->impl()->refreshVersion(versionId);
 }
 
 void ModCache::Impl::save()
