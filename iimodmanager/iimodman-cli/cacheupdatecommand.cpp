@@ -20,6 +20,7 @@ void CacheUpdateCommand::addTerminalArgs(QCommandLineParser &parser) const
                           {"downloaded", "Update all currently downloaded mods in the cache.\n(default if no mods specified)"},
                           {{"a","add"}, "Automatically add missing mods to the cache."},
                           {{"f","force"}, "Overwrite even if the latest version is already downloaded."},
+                          {{"v","verbose"}, "Print additional status messages."},
                           {{"y","yes"}, "Automatic yes to all prompts."},
                       });
 }
@@ -52,6 +53,7 @@ void CacheUpdateCommand::parse(QCommandLineParser &parser, const QStringList &ar
     impl->setMissingCacheAction(parser.isSet("add") ? UpdateModsImpl::CACHE_ADD : UpdateModsImpl::CACHE_SKIP);
     impl->setAlreadyLatestVersionBehavior(parser.isSet("force") ? UpdateModsImpl::LATEST_FORCE : UpdateModsImpl::LATEST_SKIP);
     impl->setConfirmBeforeDownloading(!parser.isSet("yes"));
+    impl->setVerbose(parser.isSet("verbose"));
 
     if (parser.isSet("mod-id"))
         modIds.append(parser.values("mod-id"));

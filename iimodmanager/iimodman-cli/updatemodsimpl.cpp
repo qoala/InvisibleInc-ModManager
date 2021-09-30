@@ -77,15 +77,21 @@ QString UpdateModsImpl::checkModId(const QString &modId)
     }
     else
     {
-        QTextStream cerr(stderr);
-        cerr << QString("Mod %1 is not in the cache. Skipping.").arg(modId) << Qt::endl;
+        if (verbose)
+        {
+            QTextStream cerr(stderr);
+            cerr << QString("Mod %1 is not in the cache. Skipping.").arg(modId) << Qt::endl;
+        }
         return QString();
     }
 
     if (!cachedInfo.isSteam())
     {
-        QTextStream cerr(stderr);
-        cerr << QString("Mod %1 is not a steam workshop ID. Skipping.").arg(modId) << Qt::endl;
+        if (verbose)
+        {
+            QTextStream cerr(stderr);
+            cerr << QString("Mod %1 is not a steam workshop ID. Skipping.").arg(modId) << Qt::endl;
+        }
         return QString();
     }
     return cachedInfo.steamId();
@@ -116,6 +122,9 @@ void UpdateModsImpl::nextSteamInfo()
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
         success_ = true;
+
+        QTextStream cerr(stderr);
+        cerr << (verb == VERB_UPDATE ? "No mods to update." : "No mods to download.") << Qt::endl;
         emit finished();
     }
     else
@@ -199,8 +208,11 @@ void UpdateModsImpl::steamInfoFinished()
     }
     else if (alreadyLatestVersionAction == LATEST_SKIP && cachedMod->containsVersion(steamInfo.lastUpdated))
     {
-        QTextStream cerr(stderr);
-        cerr << cachedMod->info().toString() << " already up to date" << Qt::endl;
+        if (verbose)
+        {
+            QTextStream cerr(stderr);
+            cerr << cachedMod->info().toString() << " already up to date" << Qt::endl;
+        }
     }
     else
     {

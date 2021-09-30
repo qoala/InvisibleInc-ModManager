@@ -44,6 +44,7 @@ public:
     void setMissingCacheAction(MissingCacheAction);
     void setAlreadyLatestVersionBehavior(AlreadyLatestVersionAction);
     void setConfirmBeforeDownloading(bool);
+    void setVerbose(bool);
 
     void start(const QStringList &modIds);
 
@@ -58,6 +59,7 @@ private:
     MissingCacheAction missingCacheAction;
     AlreadyLatestVersionAction alreadyLatestVersionAction;
     bool confirmBeforeDownloading;
+    bool verbose;
 
     bool success_;
     ModInfoCall *steamInfoCall;
@@ -97,6 +99,11 @@ inline void UpdateModsImpl::setAlreadyLatestVersionBehavior(AlreadyLatestVersion
 inline void UpdateModsImpl::setConfirmBeforeDownloading(bool behavior)
 {
     confirmBeforeDownloading = behavior;
+}
+
+inline void UpdateModsImpl::setVerbose(bool behavior)
+{
+    verbose = behavior;
 }
 
 } // namespace iimodmanager
