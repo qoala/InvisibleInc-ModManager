@@ -8,7 +8,7 @@ Currently only supports a command line interface.
 
 ## Building from source
 
-Requires qt5-dev, cmake(>=3.15).
+Requires qt5-dev/qt5base-dev, zlib1g-dev, cmake(>=3.15).
 
 ```
 cmake -S iimodmanager -B out
