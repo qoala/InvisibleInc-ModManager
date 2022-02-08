@@ -31,6 +31,7 @@ void CacheAddInstalledCommand::execute()
     updateImpl = new UpdateModsImpl(app_, cache, nullptr, this);
     updateImpl->setVerb(UpdateModsImpl::VERB_DOWNLOAD);
     updateImpl->setMissingCacheAction(UpdateModsImpl::CACHE_ADD);
+    updateImpl->setVerbose(true);
 
     cache->refresh(ModCache::LATEST_ONLY);
     modList->refresh(ModList::FULL);
