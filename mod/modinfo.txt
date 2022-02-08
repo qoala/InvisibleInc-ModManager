@@ -1,0 +1,3 @@
+name = II Mod Manager
+author = qoalabear
+version = 0.0.1
