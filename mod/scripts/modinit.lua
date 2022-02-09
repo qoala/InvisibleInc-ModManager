@@ -3,11 +3,19 @@ local function earlyInit( modApi )
 end
 
 local function init( modApi )
+	local scriptPath = modApi:getScriptPath()
+
+	include( scriptPath.."/states/state-main-menu" )
 end
 
 local function load( modApi, options, params )
+	local scriptPath = modApi:getScriptPath()
+
 	if params then
 	end
+
+	modApi:insertUIElements( include( scriptPath.."/screen_inserts" ) )
+	modApi:addNewUIScreen( "modal-mod-manager", include( scriptPath.."/gui/modal-mod-manager" ) )
 end
 
 
