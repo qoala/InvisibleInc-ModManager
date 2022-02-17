@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "modmanguiapplication.h"
 
 #include <QApplication>
 #include <QKeySequence>
@@ -8,12 +9,16 @@
 
 namespace iimodmanager {
 
-MainWindow::MainWindow()
+MainWindow::MainWindow(ModManGuiApplication &app)
+    : app(app)
 {
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
 
-    infoLabel = new QLabel(tr("<i>Content</i>"));
+    QString message = QString("Mod Manager loaded.  \tInstalled: %1 mods  \tCache: %2 mods").arg(app.modList().mods().size()).arg(app.cache().mods().size());
+    statusBar()->showMessage(message);
+
+    infoLabel = new QLabel(message);
     infoLabel->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     infoLabel->setAlignment(Qt::AlignLeft);
     infoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -25,9 +30,6 @@ MainWindow::MainWindow()
 
     createActions();
     createMenus();
-
-    QString message = tr("Mod Manager loaded");
-    statusBar()->showMessage(message);
 
     setWindowTitle(tr("II Mod Manager"));
     setMinimumSize(160, 160);

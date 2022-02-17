@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "modmanguiapplication.h"
 
 #include <QApplication>
 #include <QPushButton>
@@ -6,10 +7,10 @@
 
 int main(int argc, char *argv[])
 {
-  QApplication app(argc, argv);
+    iimodmanager::ModManGuiApplication app(argc, &argv);
 
-  iimodmanager::MainWindow window;
-  window.show();
+    iimodmanager::MainWindow window(app);
+    window.show();
 
-  return app.exec();
+    return app.exec();
 }

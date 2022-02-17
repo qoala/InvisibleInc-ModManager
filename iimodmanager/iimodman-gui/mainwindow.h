@@ -8,12 +8,15 @@
 
 namespace iimodmanager {
 
+class ModManGuiApplication;
+
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow();
+    MainWindow(ModManGuiApplication &app);
 
 private slots:
     void addMod();
@@ -22,6 +25,7 @@ private:
     void createActions();
     void createMenus();
 
+    ModManGuiApplication &app;
     QMenu *fileMenu;
     QAction *quitAct;
     QMenu *cacheMenu;
