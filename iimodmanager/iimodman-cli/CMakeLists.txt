@@ -34,5 +34,5 @@ target_compile_definitions(${IIMODMAN_CLI_TARGET_NAME} PRIVATE
   )
 target_link_libraries(${IIMODMAN_CLI_TARGET_NAME}
     ${IIMODMAN_LIB_TARGET_NAME}
-    ${IIMODMAN_LIB_QT_LIBRARIES})
+    ${IIMODMAN_CLI_QT_LIBRARIES})
 
