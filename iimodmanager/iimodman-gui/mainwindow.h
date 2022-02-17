@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QAction>
-#include <QLabel>
+#include <QPlainTextEdit>
 #include <QMainWindow>
 #include <QMenu>
 
@@ -20,6 +20,7 @@ public:
 
 private slots:
     void addMod();
+    void installedStatus();
 
 private:
     void createActions();
@@ -30,7 +31,9 @@ private:
     QAction *quitAct;
     QMenu *cacheMenu;
     QAction *addModAct;
-    QLabel *infoLabel;
+    QMenu *installedMenu;
+    QAction *installedStatusAct;
+    QPlainTextEdit *textDisplay;
 };
 
 } // namespace iimodmanager
