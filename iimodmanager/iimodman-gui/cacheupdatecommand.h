@@ -26,10 +26,13 @@ signals:
 
 private slots:
     void steamInfoFinished();
+    void steamDownloadFinished();
 
 private:
     void startInfos();
     void nextSteamInfo();
+    void startDownloads();
+    void nextDownload();
 
     ModManGuiApplication &app;
     QTextCursor cursor;

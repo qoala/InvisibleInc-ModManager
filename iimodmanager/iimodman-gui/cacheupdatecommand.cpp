@@ -45,6 +45,7 @@ void CacheUpdateCommand::execute()
 void CacheUpdateCommand::startInfos()
 {
     steamInfoCall = app.modDownloader().modInfoCall();
+    steamInfoCall->setParent(this);
     connect(steamInfoCall, &ModInfoCall::finished, this, &CacheUpdateCommand::steamInfoFinished);
 
     steamInfos.clear();
@@ -74,10 +75,13 @@ void CacheUpdateCommand::nextSteamInfo()
     }
     else
     {
+        // Begin downloading.
+        steamInfoCall->deleteLater();
+        steamInfoCall = nullptr;
+
         cursor.movePosition(QTextCursor::End);
-        cursor.insertText(QString("Found %1 updates\n").arg(steamInfos.size()));
-        emit finished();
-        deleteLater();
+        cursor.insertText(QString("Found %1 updates. Downloading...\n").arg(steamInfos.size()));
+        startDownloads();
     }
 }
 
@@ -104,6 +108,50 @@ void CacheUpdateCommand::steamInfoFinished()
         steamInfos.append(steamInfo);
     }
     nextSteamInfo();
+}
+
+void CacheUpdateCommand::startDownloads()
+{
+    steamDownloadCall = app.modDownloader().modDownloadCall(app.cache());
+    steamDownloadCall->setParent(this);
+    connect(steamDownloadCall, &ModDownloadCall::finished, this, &CacheUpdateCommand::steamDownloadFinished);
+
+    loopIndex = 0;
+    steamDownloadCall->start(steamInfos.first());
+}
+
+void CacheUpdateCommand::nextDownload()
+{
+    if (++loopIndex < steamInfos.size())
+    {
+        // Next download.
+        steamDownloadCall->start(steamInfos.at(loopIndex));
+    }
+    else
+    {
+        // Finished.
+        steamDownloadCall->deleteLater();
+        steamDownloadCall = nullptr;
+
+        cursor.movePosition(QTextCursor::End);
+        cursor.insertText("All workshop mods are up to date.\n");
+
+        app.cache().saveMetadata();
+        emit finished();
+        deleteLater();
+    }
+}
+
+void CacheUpdateCommand::steamDownloadFinished()
+{
+    const CachedVersion *v = steamDownloadCall->resultVersion();
+    cursor.movePosition(QTextCursor::End);
+    if (v)
+        cursor.insertText(QString("  %1 updated.\n").arg(v->info().toString()));
+    else
+        cursor.insertText(QString("  %1 download failed.\n").arg(steamDownloadCall->steamInfo().modId()));
+
+    nextDownload();
 }
 
 } // namespace iimodmanager
