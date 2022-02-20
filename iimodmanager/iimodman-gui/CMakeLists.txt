@@ -1,11 +1,12 @@
 project(IIModManager_GUI VERSION ${IIMODMAN_VERSION})
 
 set(IIMODMAN_GUI_SOURCES
-  installedstatuscommand.cpp
-  main.cpp
-  mainwindow.cpp
-  modmanguiapplication.cpp
-  util.cpp
+    cacheupdatecommand.cpp
+    installedstatuscommand.cpp
+    main.cpp
+    mainwindow.cpp
+    modmanguiapplication.cpp
+    util.cpp
   )
 
 add_executable(${IIMODMAN_GUI_TARGET_NAME} ${IIMODMAN_GUI_SOURCES})

@@ -20,7 +20,8 @@ public:
 
 private slots:
     void enableActions();
-    void addMod();
+    void cacheUpdate();
+    void cacheAddMod();
     void installedStatus();
 
 private:
@@ -32,7 +33,8 @@ private:
     QMenu *fileMenu;
     QAction *quitAct;
     QMenu *cacheMenu;
-    QAction *addModAct;
+    QAction *cacheUpdateAct;
+    QAction *cacheAddModAct;
     QMenu *installedMenu;
     QAction *installedStatusAct;
     QPlainTextEdit *textDisplay;

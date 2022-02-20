@@ -13,7 +13,7 @@ InstalledStatusCommand::InstalledStatusCommand(ModManGuiApplication  &app, QText
 void InstalledStatusCommand::execute()
 {
     cursor.movePosition(QTextCursor::End);
-    cursor.insertText("\n\n---\nCurrently Installed Mods\n\n");
+    cursor.insertText("\n---\nCurrently Installed Mods\n\n");
 
     QList<InstalledMod> mods(app.modList().mods());
     std::sort(mods.begin(), mods.end(), util::compareModNames);

@@ -1,3 +1,4 @@
+#include "cacheupdatecommand.h"
 #include "installedstatuscommand.h"
 #include "mainwindow.h"
 #include "modmanguiapplication.h"
@@ -18,7 +19,7 @@ MainWindow::MainWindow(ModManGuiApplication &app)
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
 
-    QString message = QString("Mod Manager loaded.  \tInstalled: %1 mods  \tCache: %2 mods").arg(app.modList().mods().size()).arg(app.cache().mods().size());
+    QString message = QString("Mod Manager loaded.  \tInstalled: %1 mods  \tCache: %2 mods\n").arg(app.modList().mods().size()).arg(app.cache().mods().size());
     statusBar()->showMessage(message);
 
     textDisplay = new QPlainTextEdit(message);
@@ -47,9 +48,12 @@ void MainWindow::createActions()
     quitAct->setShortcuts(QKeySequence::Quit);
     connect(quitAct, &QAction::triggered, QApplication::instance(), &QApplication::quit);
 
-    addModAct = new QAction(tr("&Add Workshop Mod"), this);
-    addModAct->setStatusTip(tr("Download and add a mod to the cache"));
-    connect(addModAct, &QAction::triggered, this, &MainWindow::addMod);
+    cacheUpdateAct = new QAction(tr("&Update Cache"), this);
+    cacheUpdateAct->setStatusTip(tr("Check for and download updates for all mods in the cache"));
+    connect(cacheUpdateAct, &QAction::triggered, this, &MainWindow::cacheUpdate);
+    cacheAddModAct = new QAction(tr("&Add Workshop Mod"), this);
+    cacheAddModAct->setStatusTip(tr("Download and add a mod to the cache"));
+    connect(cacheAddModAct, &QAction::triggered, this, &MainWindow::cacheAddMod);
 
     installedStatusAct = new QAction(tr("&Status"), this);
     installedStatusAct->setStatusTip(tr("List currently installed mods"));
@@ -61,24 +65,35 @@ void MainWindow::createMenus()
     fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(quitAct);
     cacheMenu = menuBar()->addMenu(tr("&Cache"));
-    cacheMenu->addAction(addModAct);
+    cacheMenu->addAction(cacheUpdateAct);
+    cacheMenu->addAction(cacheAddModAct);
     installedMenu = menuBar()->addMenu(tr("&Installed"));
     installedMenu->addAction(installedStatusAct);
 }
 
 void MainWindow::disableActions()
 {
-    addModAct->setEnabled(false);
+    cacheUpdateAct->setEnabled(false);
+    cacheAddModAct->setEnabled(false);
     installedStatusAct->setEnabled(false);
 }
 
 void MainWindow::enableActions()
 {
-    addModAct->setEnabled(true);
+    cacheUpdateAct->setEnabled(true);
+    cacheAddModAct->setEnabled(true);
     installedStatusAct->setEnabled(true);
 }
 
-void MainWindow::addMod()
+void MainWindow::cacheUpdate()
+{
+    CacheUpdateCommand *command = new CacheUpdateCommand(app, textDisplay->textCursor(), this);
+    disableActions();
+    connect(command, &CacheUpdateCommand::finished, this, &MainWindow::enableActions);
+    command->execute();
+}
+
+void MainWindow::cacheAddMod()
 {}
 
 void MainWindow::installedStatus()

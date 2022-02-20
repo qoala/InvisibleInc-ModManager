@@ -1,5 +1,9 @@
 #include "modmanguiapplication.h"
 
+#include <modcache.h>
+#include <moddownloader.h>
+#include <modlist.h>
+
 namespace iimodmanager {
 
 ModManGuiApplication::ModManGuiApplication(int &argc, char **argv[])
@@ -12,6 +16,7 @@ ModManGuiApplication::ModManGuiApplication(int &argc, char **argv[])
     modList_ = new ModList(config_, cache_, this);
     cache_->refresh(ModCache::LATEST_ONLY);
     modList_->refresh();
+    modDownloader_ = new ModDownloader(config_, this);
 }
 
 }  // namespace iimodmanager

@@ -8,6 +8,8 @@
 
 namespace iimodmanager {
 
+class ModDownloader;
+
 class ModManGuiApplication: public QApplication
 {
 public:
@@ -16,11 +18,13 @@ public:
     inline ModManConfig &config() { return config_; }
     inline ModCache &cache() { return *cache_; }
     inline ModList &modList() { return *modList_; }
+    inline ModDownloader &modDownloader() { return *modDownloader_; }
 
 private:
     ModManConfig config_;
     ModCache *cache_;
     ModList *modList_;
+    ModDownloader *modDownloader_;
 };
 
 }  // namespace iimodmanager
