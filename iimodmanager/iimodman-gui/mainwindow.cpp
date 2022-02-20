@@ -1,3 +1,4 @@
+#include "installedstatuscommand.h"
 #include "mainwindow.h"
 #include "modmanguiapplication.h"
 
@@ -8,7 +9,6 @@
 #include <QTextCursor>
 #include <QTextTable>
 #include <QVBoxLayout>
-#include <modinfo.h>
 
 namespace iimodmanager {
 
@@ -66,37 +66,27 @@ void MainWindow::createMenus()
     installedMenu->addAction(installedStatusAct);
 }
 
+void MainWindow::disableActions()
+{
+    addModAct->setEnabled(false);
+    installedStatusAct->setEnabled(false);
+}
+
+void MainWindow::enableActions()
+{
+    addModAct->setEnabled(true);
+    installedStatusAct->setEnabled(true);
+}
+
 void MainWindow::addMod()
 {}
 
-bool compareModNames(const InstalledMod &a, const InstalledMod &b)
-{
-    return a.info().name() < b.info().name();
-}
-
 void MainWindow::installedStatus()
 {
-    QTextCursor cursor = textDisplay->textCursor();
-    cursor.movePosition(QTextCursor::End);
-    cursor.insertText("\n\n---\nCurrently Installed Mods\n\n");
-
-    QList<InstalledMod> mods(app.modList().mods());
-    std::sort(mods.begin(), mods.end(), compareModNames);
-    for (auto mod : mods) {
-        const ModInfo &info = mod.info();
-
-        cursor.insertText(info.name());
-        cursor.insertText("\t");
-        cursor.insertText(info.id());
-        cursor.insertText("\t");
-        cursor.insertText(mod.versionString());
-        if (!mod.hasCacheVersion())
-        {
-            cursor.insertText("\t");
-            cursor.insertText("(not in cache)");
-        }
-        cursor.insertBlock();
-    }
+    InstalledStatusCommand *command = new InstalledStatusCommand(app, textDisplay->textCursor(), this);
+    disableActions();
+    connect(command, &InstalledStatusCommand::finished, this, &MainWindow::enableActions);
+    command->execute();
 }
 
 } // namespace iimodmanager

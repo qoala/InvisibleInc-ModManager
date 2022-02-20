@@ -19,12 +19,14 @@ public:
     MainWindow(ModManGuiApplication &app);
 
 private slots:
+    void enableActions();
     void addMod();
     void installedStatus();
 
 private:
     void createActions();
     void createMenus();
+    void disableActions();
 
     ModManGuiApplication &app;
     QMenu *fileMenu;
