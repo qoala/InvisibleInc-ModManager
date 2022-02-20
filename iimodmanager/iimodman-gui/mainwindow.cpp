@@ -1,3 +1,4 @@
+#include "cachestatuscommand.h"
 #include "cacheupdatecommand.h"
 #include "installedstatuscommand.h"
 #include "mainwindow.h"
@@ -47,6 +48,9 @@ void MainWindow::createActions()
     quitAct->setShortcuts(QKeySequence::Quit);
     connect(quitAct, &QAction::triggered, QApplication::instance(), &QApplication::quit);
 
+    cacheStatusAct = new QAction(tr("&Status"), this);
+    cacheStatusAct->setStatusTip(tr("List mods in the cache"));
+    connect(cacheStatusAct, &QAction::triggered, this, &MainWindow::cacheStatus);
     cacheUpdateAct = new QAction(tr("&Update Cache"), this);
     cacheUpdateAct->setStatusTip(tr("Check for and download updates for all mods in the cache"));
     connect(cacheUpdateAct, &QAction::triggered, this, &MainWindow::cacheUpdate);
@@ -64,7 +68,9 @@ void MainWindow::createMenus()
     fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(quitAct);
     cacheMenu = menuBar()->addMenu(tr("&Cache"));
+    cacheMenu->addAction(cacheStatusAct);
     cacheMenu->addAction(cacheUpdateAct);
+    cacheMenu->addSeparator();
     cacheMenu->addAction(cacheAddModAct);
     installedMenu = menuBar()->addMenu(tr("&Installed"));
     installedMenu->addAction(installedStatusAct);
@@ -72,6 +78,7 @@ void MainWindow::createMenus()
 
 void MainWindow::disableActions()
 {
+    cacheStatusAct->setEnabled(false);
     cacheUpdateAct->setEnabled(false);
     cacheAddModAct->setEnabled(false);
     installedStatusAct->setEnabled(false);
@@ -79,6 +86,7 @@ void MainWindow::disableActions()
 
 void MainWindow::enableActions()
 {
+    cacheStatusAct->setEnabled(true);
     cacheUpdateAct->setEnabled(true);
     cacheAddModAct->setEnabled(true);
     installedStatusAct->setEnabled(true);
@@ -87,6 +95,16 @@ void MainWindow::enableActions()
 void MainWindow::writeText(QString value)
 {
     textDisplay->appendPlainText(value);
+}
+
+void MainWindow::cacheStatus()
+{
+    textDisplay->appendPlainText("\n--");
+    CacheStatusCommand *command = new CacheStatusCommand(app, this);
+    disableActions();
+    connect(command, &CacheStatusCommand::textOutput, this, &MainWindow::writeText);
+    connect(command, &CacheStatusCommand::finished, this, &MainWindow::enableActions);
+    command->execute();
 }
 
 void MainWindow::cacheUpdate()
