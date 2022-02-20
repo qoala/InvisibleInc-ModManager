@@ -7,15 +7,12 @@
 
 namespace iimodmanager {
 
-CacheUpdateCommand::CacheUpdateCommand(ModManGuiApplication  &app, QTextCursor cursor, QObject *parent)
-  : QObject(parent), app(app), cursor(cursor)
+CacheUpdateCommand::CacheUpdateCommand(ModManGuiApplication  &app, QObject *parent)
+  : QObject(parent), app(app)
 {}
 
 void CacheUpdateCommand::execute()
 {
-    cursor.movePosition(QTextCursor::End);
-    cursor.insertText("\n---\n");
-
     app.cache().refresh(ModCache::LATEST_ONLY);
     const QList<CachedMod> &mods = app.cache().mods();
     workshopIds.clear();
@@ -29,15 +26,13 @@ void CacheUpdateCommand::execute()
 
     if (workshopIds.empty())
     {
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertText("No workshop mods in the cache. Try adding new mods first.\n\n");
+        emit textOutput("No workshop mods in the cache. Try adding new mods first.");
         emit finished();
         deleteLater();
     }
     else
     {
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertText("Checking for updates...\n");
+        emit textOutput("Checking for updates...");
         startInfos();
     }
 }
@@ -68,8 +63,7 @@ void CacheUpdateCommand::nextSteamInfo()
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
 
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertText(QString("All workshop mods are up to date.\n"));
+        emit textOutput("All workshop mods are up to date.");
         emit finished();
         deleteLater();
     }
@@ -79,8 +73,7 @@ void CacheUpdateCommand::nextSteamInfo()
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
 
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertText(QString("Found %1 updates. Downloading...\n").arg(steamInfos.size()));
+        emit textOutput(QString("Found %1 updates. Downloading...").arg(steamInfos.size()));
         startDownloads();
     }
 }
@@ -90,8 +83,7 @@ void CacheUpdateCommand::steamInfoFinished()
     const SteamModInfo &steamInfo = steamInfoCall->result();
     if (!steamInfo.valid())
     {
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertText(QString("  workshop-%1 couldn't be retrieved. Skipping.\n").arg(steamInfoCall->workshopId()));
+        emit textOutput(QString("  workshop-%1 couldn't be retrieved. Skipping.").arg(steamInfoCall->workshopId()));
         nextSteamInfo();
         return;
     }
@@ -100,8 +92,7 @@ void CacheUpdateCommand::steamInfoFinished()
     const CachedMod *cachedMod = app.cache().mod(modId);
     if (!cachedMod)
     {
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertText(QString("  workshop-%1 cache error. Skipping.\n"));
+        emit textOutput(QString("  %1 cache error. Skipping.").arg(modId));
     }
     else if (!cachedMod->containsVersion(steamInfo.lastUpdated))
     {
@@ -133,8 +124,7 @@ void CacheUpdateCommand::nextDownload()
         steamDownloadCall->deleteLater();
         steamDownloadCall = nullptr;
 
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertText("All workshop mods are up to date.\n");
+        emit textOutput("All workshop mods are up to date.");
 
         app.cache().saveMetadata();
         emit finished();
@@ -145,11 +135,10 @@ void CacheUpdateCommand::nextDownload()
 void CacheUpdateCommand::steamDownloadFinished()
 {
     const CachedVersion *v = steamDownloadCall->resultVersion();
-    cursor.movePosition(QTextCursor::End);
     if (v)
-        cursor.insertText(QString("  %1 updated.\n").arg(v->info().toString()));
+        emit textOutput(QString("  %1 updated.").arg(v->info().toString()));
     else
-        cursor.insertText(QString("  %1 download failed.\n").arg(steamDownloadCall->steamInfo().modId()));
+        emit textOutput(QString("  %1 download failed.").arg(steamDownloadCall->steamInfo().modId()));
 
     nextDownload();
 }

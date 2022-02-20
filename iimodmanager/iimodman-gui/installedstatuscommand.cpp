@@ -6,8 +6,8 @@
 
 namespace iimodmanager {
 
-InstalledStatusCommand::InstalledStatusCommand(ModManGuiApplication  &app, QTextCursor cursor, QObject *parent)
-  : QObject(parent), app(app), cursor(cursor)
+InstalledStatusCommand::InstalledStatusCommand(ModManGuiApplication  &app, QObject *parent)
+  : QObject(parent), app(app)
 {}
 
 void InstalledStatusCommand::execute()
@@ -15,30 +15,23 @@ void InstalledStatusCommand::execute()
     app.cache().refresh(ModCache::LATEST_ONLY);
     app.modList().refresh();
 
-    cursor.movePosition(QTextCursor::End);
-    cursor.insertText("\n---\nCurrently Installed Mods\n\n");
+    emit textOutput("Currently Installed Mods\n(name)\t(id)\t(version)");
 
     QList<InstalledMod> mods(app.modList().mods());
     std::sort(mods.begin(), mods.end(), util::compareModNames);
     for (auto mod : mods) {
         const ModInfo &info = mod.info();
 
-        cursor.insertText(info.name());
-        cursor.insertText("\t");
-        cursor.insertText(info.id());
-        cursor.insertText("\t");
-        cursor.insertText(mod.versionString());
+        QString line = QString("%1\t%2\t%3").arg(info.name()).arg(info.id()).arg(mod.versionString());
         if (!mod.hasCacheVersion())
         {
-            cursor.insertText("\t");
-            cursor.insertText("(not in cache)");
+            line.append("\t(not in cache)");
         }
         else if (!app.cache().mod(mod.id())->latestVersion()->installed())
         {
-            cursor.insertText("\t");
-            cursor.insertText("(update available)");
+            line.append("\t(update available)");
         }
-        cursor.insertBlock();
+        emit textOutput(line);
     }
 
     emit finished();

@@ -20,6 +20,8 @@ public:
 
 private slots:
     void enableActions();
+    void writeText(QString value);
+
     void cacheUpdate();
     void cacheAddMod();
     void installedStatus();

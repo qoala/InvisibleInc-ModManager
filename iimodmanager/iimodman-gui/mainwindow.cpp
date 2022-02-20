@@ -7,7 +7,6 @@
 #include <QKeySequence>
 #include <QMenuBar>
 #include <QStatusBar>
-#include <QTextCursor>
 #include <QTextTable>
 #include <QVBoxLayout>
 
@@ -19,7 +18,7 @@ MainWindow::MainWindow(ModManGuiApplication &app)
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
 
-    QString message = QString("Mod Manager loaded.  \tInstalled: %1 mods  \tCache: %2 mods\n").arg(app.modList().mods().size()).arg(app.cache().mods().size());
+    QString message = QString("Mod Manager loaded.  \tInstalled: %1 mods  \tCache: %2 mods").arg(app.modList().mods().size()).arg(app.cache().mods().size());
     statusBar()->showMessage(message);
 
     textDisplay = new QPlainTextEdit(message);
@@ -85,10 +84,17 @@ void MainWindow::enableActions()
     installedStatusAct->setEnabled(true);
 }
 
+void MainWindow::writeText(QString value)
+{
+    textDisplay->appendPlainText(value);
+}
+
 void MainWindow::cacheUpdate()
 {
-    CacheUpdateCommand *command = new CacheUpdateCommand(app, textDisplay->textCursor(), this);
+    textDisplay->appendPlainText("\n--");
+    CacheUpdateCommand *command = new CacheUpdateCommand(app, this);
     disableActions();
+    connect(command, &CacheUpdateCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &CacheUpdateCommand::finished, this, &MainWindow::enableActions);
     command->execute();
 }
@@ -98,8 +104,10 @@ void MainWindow::cacheAddMod()
 
 void MainWindow::installedStatus()
 {
-    InstalledStatusCommand *command = new InstalledStatusCommand(app, textDisplay->textCursor(), this);
+    textDisplay->appendPlainText("\n--");
+    InstalledStatusCommand *command = new InstalledStatusCommand(app, this);
     disableActions();
+    connect(command, &InstalledStatusCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &InstalledStatusCommand::finished, this, &MainWindow::enableActions);
     command->execute();
 }

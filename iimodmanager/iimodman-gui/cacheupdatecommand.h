@@ -1,7 +1,7 @@
 #ifndef CACHEUPDATECOMMAND_H
 #define CACHEUPDATECOMMAND_H
 
-#include <QTextCursor>
+#include <QObject>
 #include <moddownloader.h>
 
 namespace iimodmanager {
@@ -17,11 +17,12 @@ class CacheUpdateCommand : public QObject
     Q_OBJECT
 
 public:
-    CacheUpdateCommand(ModManGuiApplication &app, QTextCursor cursor, QObject *parent = nullptr);
+    CacheUpdateCommand(ModManGuiApplication &app, QObject *parent = nullptr);
 
     void execute();
 
 signals:
+    void textOutput(QString value);
     void finished();
 
 private slots:
@@ -35,7 +36,6 @@ private:
     void nextDownload();
 
     ModManGuiApplication &app;
-    QTextCursor cursor;
 
     ModInfoCall *steamInfoCall;
     ModDownloadCall *steamDownloadCall;

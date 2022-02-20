@@ -1,7 +1,7 @@
 #ifndef INSTALLEDSTATUSCOMMAND_H
 #define INSTALLEDSTATUSCOMMAND_H
 
-#include <QTextCursor>
+# include<QObject>
 
 namespace iimodmanager {
 
@@ -13,17 +13,16 @@ class InstalledStatusCommand : public QObject
     Q_OBJECT
 
 public:
-    InstalledStatusCommand(ModManGuiApplication &app, QTextCursor cursor, QObject *parent = nullptr);
+    InstalledStatusCommand(ModManGuiApplication &app, QObject *parent = nullptr);
 
     void execute();
 
 signals:
+    void textOutput(QString value);
     void finished();
 
 private:
-
     ModManGuiApplication &app;
-    QTextCursor cursor;
 };
 
 } // namespace iimodmanager
