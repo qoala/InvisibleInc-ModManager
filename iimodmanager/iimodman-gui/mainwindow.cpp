@@ -39,7 +39,7 @@ MainWindow::MainWindow(ModManGuiApplication &app)
 
     setWindowTitle(tr("II Mod Manager"));
     setMinimumSize(160, 160);
-    resize(480, 320);
+    resize(980, 460);
 }
 
 void MainWindow::createActions()
