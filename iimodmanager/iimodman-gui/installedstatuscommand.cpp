@@ -12,6 +12,9 @@ InstalledStatusCommand::InstalledStatusCommand(ModManGuiApplication  &app, QText
 
 void InstalledStatusCommand::execute()
 {
+    app.cache().refresh(ModCache::LATEST_ONLY);
+    app.modList().refresh();
+
     cursor.movePosition(QTextCursor::End);
     cursor.insertText("\n---\nCurrently Installed Mods\n\n");
 
@@ -29,6 +32,11 @@ void InstalledStatusCommand::execute()
         {
             cursor.insertText("\t");
             cursor.insertText("(not in cache)");
+        }
+        else if (!app.cache().mod(mod.id())->latestVersion()->installed())
+        {
+            cursor.insertText("\t");
+            cursor.insertText("(update available)");
         }
         cursor.insertBlock();
     }
