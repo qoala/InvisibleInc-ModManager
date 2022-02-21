@@ -28,7 +28,7 @@ public:
     //! Index of mods by mod ID.
     QMap<QString, qsizetype> modIds;
 
-    bool appendFromFile(QIODevice &file, const QString &debugRef);
+    bool appendFromFile(QTextStream &in, const QString &debugRef);
 };
 
 class SpecMod::Impl
@@ -76,7 +76,18 @@ void ModSpec::append(const SpecMod &specMod)
 
 bool ModSpec::appendFromFile(QIODevice &file, const QString &debugRef)
 {
-    return impl->appendFromFile(file, debugRef);
+    if (file.isOpen() || file.open(QIODevice::ReadOnly|QIODevice::Text))
+    {
+        QTextStream in(&file);
+        return impl->appendFromFile(in, debugRef);
+    }
+    return false;
+}
+
+bool ModSpec::appendFromFile(const QByteArray &content, const QString &debugRef)
+{
+    QTextStream in(content);
+    return impl->appendFromFile(in, debugRef);
 }
 
 ModSpec::~ModSpec() = default;
@@ -85,30 +96,25 @@ ModSpec::Impl::Impl(const QList<SpecMod> &mods)
     : mods(mods)
 {}
 
-bool ModSpec::Impl::appendFromFile(QIODevice &file, const QString &debugRef)
+bool ModSpec::Impl::appendFromFile(QTextStream &in, const QString &debugRef)
 {
-    if (file.isOpen() || file.open(QIODevice::ReadOnly|QIODevice::Text))
+    qsizetype lineNo = 0;
+    while (!in.atEnd())
     {
-        QTextStream in(&file);
-        qsizetype lineNo = 0;
-        while (!in.atEnd())
-        {
-            QString line = in.readLine().simplified();
-            ++lineNo;
-            // skip blank lines and comment lines
-            if (line.isEmpty() || line.startsWith('#'))
-                continue;
+        QString line = in.readLine().simplified();
+        ++lineNo;
+        // skip blank lines and comment lines
+        if (line.isEmpty() || line.startsWith('#'))
+            continue;
 
-            std::optional<SpecMod> sm = SpecMod::fromSpecString(line, debugRef, lineNo);
-            if (sm)
-            {
-                modIds[sm->id()] = mods.size();
-                mods.append(*sm);
-            }
+        std::optional<SpecMod> sm = SpecMod::fromSpecString(line, debugRef, lineNo);
+        if (sm)
+        {
+            modIds[sm->id()] = mods.size();
+            mods.append(*sm);
         }
-        return true;
     }
-    return false;
+    return true;
 }
 
 SpecMod::SpecMod(const QString &id, const QString &name)

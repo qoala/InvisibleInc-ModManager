@@ -30,6 +30,7 @@ public:
     void append(const SpecMod &specMod);
 
     bool appendFromFile(QIODevice &file, const QString &debugRef = QString());
+    bool appendFromFile(const QByteArray &content, const QString &debugRef = QString());
 
     ~ModSpec();
 private:
