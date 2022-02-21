@@ -4,6 +4,7 @@
 
 #include <QFileDialog>
 #include <modinfo.h>
+#include <modlist.h>
 
 namespace iimodmanager {
 
@@ -13,9 +14,6 @@ InstalledSyncFileCommand::InstalledSyncFileCommand(ModManGuiApplication  &app, Q
 
 void InstalledSyncFileCommand::execute()
 {
-    app.cache().refresh(ModCache::LATEST_ONLY);
-    app.modList().refresh();
-
     auto fileContentReady = [this](const QString &fileName, const QByteArray &fileContent) {
         if (fileName.isEmpty())
         {
@@ -33,15 +31,126 @@ void InstalledSyncFileCommand::execute()
 
 void InstalledSyncFileCommand::handleFile(const QString &filename, const QByteArray &fileContent)
 {
+    app.cache().refresh(ModCache::LATEST_ONLY);
+    app.modList().refresh();
+
     inputSpec.reserve(app.cache().mods().size());
     inputSpec.appendFromFile(fileContent, filename);
 
     emit textOutput("\n--");
-    for (const auto mod : inputSpec.mods())
-        emit textOutput(mod.name());
+    bool success = true;
+    for (const auto &sm : inputSpec.mods())
+    {
+        std::optional<SpecMod> targetSpecMod = makeInstallTarget(sm);
+        if (targetSpecMod)
+            targetSpec.append(*targetSpecMod);
+        else
+            success = false;
+    }
+    for (const auto &im : app.modList().mods())
+        success &= checkInstalledMod(im);
+
+    if (success)
+      doSync();
+    else
+      emit textOutput("Sync aborted");
 
     emit finished();
     deleteLater();
+}
+
+std::optional<SpecMod> InstalledSyncFileCommand::makeInstallTarget(const SpecMod &sm)
+{
+    const InstalledMod *im = app.modList().mod(sm.id());
+    const CachedMod *cm = app.cache().mod(sm.id());
+    if (!cm && im && sm.versionId().isEmpty())
+    {
+        // Assume we're just using the existing version.
+        return im->asSpec();
+    }
+    else if (!cm)
+    {
+        emit textOutput(QString("  Mod does not exist in cache: %1 [%2]").arg(sm.name()).arg(sm.id()));
+        return {};
+    }
+    if (!cm->downloaded())
+    {
+        emit textOutput(QString("  Mod has no downloaded versions: %1").arg(cm->info().toString()));
+        return {};
+    }
+
+    const CachedVersion *cv = sm.versionId().isEmpty() ? cm->latestVersion() : app.cache().refreshVersion(sm.id(), sm.versionId());
+    if (!cv)
+    {
+        emit textOutput(QString("  Mod version is not in cache: %1 %2").arg(cm->info().toString()).arg(sm.versionId()));
+        return {};
+    }
+
+    SpecMod targetMod = cv->asSpec();
+
+    if (!im)
+        addedMods.append(targetMod);
+    else if (!cv->installed())
+        updatedMods.append(targetMod);
+
+    return targetMod;
+}
+
+bool InstalledSyncFileCommand::checkInstalledMod(const InstalledMod &im)
+{
+    const QString &modId = im.id();
+    if (targetSpec.contains(modId))
+        return true;
+
+    removedMods.append(im);
+
+    // if (!im.hasCacheVersion()) warning
+
+    return true;
+}
+
+void InstalledSyncFileCommand::doSync()
+{
+    emit textOutput("Syncing mods...");
+    for (const InstalledMod &sm : removedMods)
+        if (!removeMod(sm))
+            return;
+    for (const SpecMod &sm : addedMods)
+        if (!installMod(sm))
+            return;
+    for (const SpecMod &sm : updatedMods)
+        if (!installMod(sm))
+            return;
+    emit textOutput("Sync complete");
+}
+
+bool InstalledSyncFileCommand::removeMod(const InstalledMod &im)
+{
+    if (app.modList().removeMod(im.id()))
+    {
+        emit textOutput(QString("  %1 removed").arg(im.info().toString()));
+        return true;
+    }
+    else
+    {
+        emit textOutput(QString("Failed to remove %1").arg(im.info().toString()));
+        return false;
+    }
+}
+
+bool InstalledSyncFileCommand::installMod(const SpecMod &sm)
+{
+    const InstalledMod *im = app.modList().installMod(sm);
+    if (im)
+    {
+        emit textOutput(QString("  %1 installed").arg(im->info().toString()));
+    }
+    else
+    {
+        const CachedMod *cm = app.cache().mod(sm.id());
+        emit textOutput(QString("Failed to install %1").arg(cm ? cm->info().toString() : sm.id()));
+    }
+    return im;
 }
 
 } // namespace iimodmanager
