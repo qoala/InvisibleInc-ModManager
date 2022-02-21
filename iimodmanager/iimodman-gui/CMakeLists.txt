@@ -6,6 +6,7 @@ set(IIMODMAN_GUI_SOURCES
     cacheupdatecommand.cpp
     installedstatuscommand.cpp
     installedupdatecommand.cpp
+    installedsyncfilecommand.cpp
     main.cpp
     mainwindow.cpp
     modmanguiapplication.cpp

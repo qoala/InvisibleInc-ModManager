@@ -3,6 +3,7 @@
 #include "cacheupdatecommand.h"
 #include "installedstatuscommand.h"
 #include "installedupdatecommand.h"
+#include "installedsyncfilecommand.h"
 #include "mainwindow.h"
 #include "modmanguiapplication.h"
 
@@ -69,6 +70,9 @@ void MainWindow::createActions()
     installedUpdateAct = new QAction(tr("Install &Updates"), this);
     installedUpdateAct->setStatusTip(tr("Updates currently installed mods to the latest downloaded version."));
     connect(installedUpdateAct, &QAction::triggered, this, &MainWindow::installedUpdate);
+    installedSyncFileAct = new QAction(tr("Sync from &File"), this);
+    installedSyncFileAct->setStatusTip(tr("Installs/Updates/Uninstalls mods to match a modspec file."));
+    connect(installedSyncFileAct, &QAction::triggered, this, &MainWindow::installedSyncFile);
 }
 
 void MainWindow::createMenus()
@@ -84,24 +88,30 @@ void MainWindow::createMenus()
     installedMenu = menuBar()->addMenu(tr("&Installed"));
     installedMenu->addAction(installedStatusAct);
     installedMenu->addAction(installedUpdateAct);
+    installedMenu->addSeparator();
+    installedMenu->addAction(installedSyncFileAct);
 }
 
 void MainWindow::disableActions()
 {
     cacheStatusAct->setEnabled(false);
     cacheUpdateAct->setEnabled(false);
+    cacheSaveAct->setEnabled(false);
     cacheAddModAct->setEnabled(false);
     installedStatusAct->setEnabled(false);
     installedUpdateAct->setEnabled(false);
+    installedSyncFileAct->setEnabled(false);
 }
 
 void MainWindow::enableActions()
 {
     cacheStatusAct->setEnabled(true);
     cacheUpdateAct->setEnabled(true);
+    cacheSaveAct->setEnabled(true);
     cacheAddModAct->setEnabled(true);
     installedStatusAct->setEnabled(true);
     installedUpdateAct->setEnabled(true);
+    installedSyncFileAct->setEnabled(true);
 }
 
 void MainWindow::writeText(QString value)
@@ -131,7 +141,6 @@ void MainWindow::cacheUpdate()
 
 void MainWindow::cacheSave()
 {
-    textDisplay->appendPlainText("\n--");
     CacheSaveCommand *command = new CacheSaveCommand(app, this);
     disableActions();
     connect(command, &CacheSaveCommand::textOutput, this, &MainWindow::writeText);
@@ -159,6 +168,15 @@ void MainWindow::installedUpdate()
     disableActions();
     connect(command, &InstalledUpdateCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &InstalledUpdateCommand::finished, this, &MainWindow::enableActions);
+    command->execute();
+}
+
+void MainWindow::installedSyncFile()
+{
+    InstalledSyncFileCommand *command = new InstalledSyncFileCommand(app, this);
+    disableActions();
+    connect(command, &InstalledSyncFileCommand::textOutput, this, &MainWindow::writeText);
+    connect(command, &InstalledSyncFileCommand::finished, this, &MainWindow::enableActions);
     command->execute();
 }
 
