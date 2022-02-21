@@ -1,6 +1,7 @@
 #include "cachestatuscommand.h"
 #include "cacheupdatecommand.h"
 #include "installedstatuscommand.h"
+#include "installedupdatecommand.h"
 #include "mainwindow.h"
 #include "modmanguiapplication.h"
 
@@ -61,6 +62,9 @@ void MainWindow::createActions()
     installedStatusAct = new QAction(tr("&Status"), this);
     installedStatusAct->setStatusTip(tr("List currently installed mods"));
     connect(installedStatusAct, &QAction::triggered, this, &MainWindow::installedStatus);
+    installedUpdateAct = new QAction(tr("Install &Updates"), this);
+    installedUpdateAct->setStatusTip(tr("Updates currently installed mods to the latest downloaded version."));
+    connect(installedUpdateAct, &QAction::triggered, this, &MainWindow::installedUpdate);
 }
 
 void MainWindow::createMenus()
@@ -74,6 +78,7 @@ void MainWindow::createMenus()
     cacheMenu->addAction(cacheAddModAct);
     installedMenu = menuBar()->addMenu(tr("&Installed"));
     installedMenu->addAction(installedStatusAct);
+    installedMenu->addAction(installedUpdateAct);
 }
 
 void MainWindow::disableActions()
@@ -82,6 +87,7 @@ void MainWindow::disableActions()
     cacheUpdateAct->setEnabled(false);
     cacheAddModAct->setEnabled(false);
     installedStatusAct->setEnabled(false);
+    installedUpdateAct->setEnabled(false);
 }
 
 void MainWindow::enableActions()
@@ -90,6 +96,7 @@ void MainWindow::enableActions()
     cacheUpdateAct->setEnabled(true);
     cacheAddModAct->setEnabled(true);
     installedStatusAct->setEnabled(true);
+    installedUpdateAct->setEnabled(true);
 }
 
 void MainWindow::writeText(QString value)
@@ -127,6 +134,16 @@ void MainWindow::installedStatus()
     disableActions();
     connect(command, &InstalledStatusCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &InstalledStatusCommand::finished, this, &MainWindow::enableActions);
+    command->execute();
+}
+
+void MainWindow::installedUpdate()
+{
+    textDisplay->appendPlainText("\n--");
+    InstalledUpdateCommand *command = new InstalledUpdateCommand(app, this);
+    disableActions();
+    connect(command, &InstalledUpdateCommand::textOutput, this, &MainWindow::writeText);
+    connect(command, &InstalledUpdateCommand::finished, this, &MainWindow::enableActions);
     command->execute();
 }
 

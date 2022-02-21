@@ -26,6 +26,7 @@ private slots:
     void cacheUpdate();
     void cacheAddMod();
     void installedStatus();
+    void installedUpdate();
 
 private:
     void createActions();
@@ -41,6 +42,7 @@ private:
     QAction *cacheAddModAct;
     QMenu *installedMenu;
     QAction *installedStatusAct;
+    QAction *installedUpdateAct;
     QPlainTextEdit *textDisplay;
 };
 
