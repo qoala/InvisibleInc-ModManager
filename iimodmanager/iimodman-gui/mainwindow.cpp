@@ -1,3 +1,4 @@
+#include "cachesavecommand.h"
 #include "cachestatuscommand.h"
 #include "cacheupdatecommand.h"
 #include "installedstatuscommand.h"
@@ -55,6 +56,9 @@ void MainWindow::createActions()
     cacheUpdateAct = new QAction(tr("&Update Cache"), this);
     cacheUpdateAct->setStatusTip(tr("Check for and download updates for all mods in the cache"));
     connect(cacheUpdateAct, &QAction::triggered, this, &MainWindow::cacheUpdate);
+    cacheSaveAct = new QAction(tr("&Write all-mods file"), this);
+    cacheSaveAct->setStatusTip(tr("Write a modspec file listing all cached mods"));
+    connect(cacheSaveAct, &QAction::triggered, this, &MainWindow::cacheSave);
     cacheAddModAct = new QAction(tr("&Add Workshop Mod"), this);
     cacheAddModAct->setStatusTip(tr("Download and add a mod to the cache"));
     connect(cacheAddModAct, &QAction::triggered, this, &MainWindow::cacheAddMod);
@@ -74,6 +78,7 @@ void MainWindow::createMenus()
     cacheMenu = menuBar()->addMenu(tr("&Cache"));
     cacheMenu->addAction(cacheStatusAct);
     cacheMenu->addAction(cacheUpdateAct);
+    cacheMenu->addAction(cacheSaveAct);
     cacheMenu->addSeparator();
     cacheMenu->addAction(cacheAddModAct);
     installedMenu = menuBar()->addMenu(tr("&Installed"));
@@ -121,6 +126,16 @@ void MainWindow::cacheUpdate()
     disableActions();
     connect(command, &CacheUpdateCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &CacheUpdateCommand::finished, this, &MainWindow::enableActions);
+    command->execute();
+}
+
+void MainWindow::cacheSave()
+{
+    textDisplay->appendPlainText("\n--");
+    CacheSaveCommand *command = new CacheSaveCommand(app, this);
+    disableActions();
+    connect(command, &CacheSaveCommand::textOutput, this, &MainWindow::writeText);
+    connect(command, &CacheSaveCommand::finished, this, &MainWindow::enableActions);
     command->execute();
 }
 
