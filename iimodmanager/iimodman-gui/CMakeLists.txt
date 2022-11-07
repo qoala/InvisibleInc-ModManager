@@ -10,6 +10,7 @@ set(IIMODMAN_GUI_SOURCES
     main.cpp
     mainwindow.cpp
     modmanguiapplication.cpp
+    settingsdialog.cpp
     util.cpp
   )
 

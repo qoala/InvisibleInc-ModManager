@@ -22,6 +22,7 @@ private slots:
     void enableActions();
     void writeText(QString value);
 
+    void openSettings();
     void cacheStatus();
     void cacheUpdate();
     void cacheSave();
@@ -37,6 +38,7 @@ private:
 
     ModManGuiApplication &app;
     QMenu *fileMenu;
+    QAction *settingsAct;
     QAction *quitAct;
     QMenu *cacheMenu;
     QAction *cacheStatusAct;

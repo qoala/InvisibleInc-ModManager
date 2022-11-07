@@ -6,6 +6,7 @@
 #include "installedsyncfilecommand.h"
 #include "mainwindow.h"
 #include "modmanguiapplication.h"
+#include "settingsdialog.h"
 
 #include <QApplication>
 #include <QKeySequence>
@@ -47,6 +48,9 @@ MainWindow::MainWindow(ModManGuiApplication &app)
 
 void MainWindow::createActions()
 {
+    settingsAct = new QAction(tr("&Preferences"), this);
+    settingsAct->setShortcuts(QKeySequence::Preferences);
+    connect(settingsAct, &QAction::triggered, this, &MainWindow::openSettings);
     quitAct = new QAction(tr("&Quit"), this);
     quitAct->setShortcuts(QKeySequence::Quit);
     connect(quitAct, &QAction::triggered, QApplication::instance(), &QApplication::quit);
@@ -78,6 +82,7 @@ void MainWindow::createActions()
 void MainWindow::createMenus()
 {
     fileMenu = menuBar()->addMenu(tr("&File"));
+    fileMenu->addAction(settingsAct);
     fileMenu->addAction(quitAct);
     cacheMenu = menuBar()->addMenu(tr("&Cache"));
     cacheMenu->addAction(cacheStatusAct);
@@ -117,6 +122,20 @@ void MainWindow::enableActions()
 void MainWindow::writeText(QString value)
 {
     textDisplay->appendPlainText(value);
+}
+
+void MainWindow::openSettings()
+{
+    SettingsDialog dialog(app, this);
+    if (dialog.exec() == QDialog::Accepted)
+    {
+        app.cache().refresh(ModCache::LATEST_ONLY);
+        app.modList().refresh();
+        textDisplay->appendPlainText("\n--");
+        QString message = QString("Settings updated.  \tInstalled: %1 mods  \tCache: %2 mods").arg(app.modList().mods().size()).arg(app.cache().mods().size());
+        textDisplay->appendPlainText(message);
+        statusBar()->showMessage(message);
+    }
 }
 
 void MainWindow::cacheStatus()
