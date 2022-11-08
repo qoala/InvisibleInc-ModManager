@@ -9,8 +9,8 @@ namespace iimodmanager {
 class FileUtils
 {
 public:
-    static bool removeModDir(const QString &path);
-    static bool copyRecursively(const QString &srcPath, const QString &destPath);
+    static bool removeModDir(const QString &path, QString *errorInfo = nullptr);
+    static bool copyRecursively(const QString &srcPath, const QString &destPath, QString *errorInfo = nullptr);
 };
 
 } // namespace iimodmanager

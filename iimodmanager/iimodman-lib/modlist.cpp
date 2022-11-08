@@ -27,8 +27,8 @@ public:
     const InstalledMod *mod(const QString &id) const;
 
     void refresh(RefreshLevel level = FULL);
-    const InstalledMod *installMod(const SpecMod &specMod);
-    const InstalledMod *removeMod(const QString &modId);
+    const InstalledMod *installMod(const SpecMod &specMod, QString *errorInfo = nullptr);
+    const InstalledMod *removeMod(const QString &modId, QString *errorInfo = nullptr);
 
 // file-visibility:
     inline ModCache *cache() const { return cache_; }
@@ -92,14 +92,14 @@ void ModList::refresh(ModList::RefreshLevel level)
     impl->refresh(level);
 }
 
-const InstalledMod *ModList::installMod(const SpecMod &specMod)
+const InstalledMod *ModList::installMod(const SpecMod &specMod, QString *errorInfo)
 {
-    return impl->installMod(specMod);
+    return impl->installMod(specMod, errorInfo);
 }
 
-const InstalledMod *ModList::removeMod(const QString &modId)
+const InstalledMod *ModList::removeMod(const QString &modId, QString *errorInfo)
 {
-    return impl->removeMod(modId);
+    return impl->removeMod(modId, errorInfo);
 }
 
 ModList::~ModList() = default;
@@ -142,24 +142,29 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
     refreshIndex();
 }
 
-const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod)
+const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *errorInfo)
 {
     const QString &modId = specMod.id();
     const CachedMod *cm = cache()->mod(modId);
     if (!cm)
     {
+        if (errorInfo)
+            *errorInfo = QStringLiteral("Mod not in cache.");
         return nullptr;
     }
     const CachedVersion *cv = specMod.versionId().isEmpty() ? cm->latestVersion() : cm->version(specMod.versionId());
     if (!cv)
     {
+        if (errorInfo)
+            *errorInfo = specMod.versionId().isEmpty() ? QStringLiteral("Mod has no cached versions.") : QStringLiteral("Mod version not in cache: %1").arg(specMod.versionId());
         return nullptr;
     }
     const QString inputPath = cv->path();
     const QString outputPath = modPath(modId);
-    FileUtils::removeModDir(outputPath);
+    if (!FileUtils::removeModDir(outputPath, errorInfo))
+        return nullptr;
     qCDebug(modlist) << "Copying" << inputPath << "to" << outputPath;
-    if (!FileUtils::copyRecursively(inputPath, outputPath))
+    if (!FileUtils::copyRecursively(inputPath, outputPath, errorInfo))
     {
         qCWarning(modlist).noquote() << "Failed to copy" << inputPath << "to" << outputPath;
         return nullptr;
@@ -184,13 +189,14 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod)
     return nullptr;
 }
 
-const InstalledMod *ModList::Impl::removeMod(const QString &modId)
+const InstalledMod *ModList::Impl::removeMod(const QString &modId, QString *errorInfo)
 {
     InstalledMod *im = mod(modId);
     if (im)
     {
         const QString outputPath = modPath(modId);
-        FileUtils::removeModDir(outputPath);
+        if (!FileUtils::removeModDir(outputPath, errorInfo))
+            return nullptr;
     }
     return im;
 }

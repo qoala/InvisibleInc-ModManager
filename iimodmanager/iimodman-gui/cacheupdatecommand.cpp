@@ -83,7 +83,7 @@ void CacheUpdateCommand::steamInfoFinished()
     const SteamModInfo &steamInfo = steamInfoCall->result();
     if (!steamInfo.valid())
     {
-        emit textOutput(QString("  workshop-%1 couldn't be retrieved. Skipping.").arg(steamInfoCall->workshopId()));
+        emit textOutput(QString("  Skipping workshop-%1: %2").arg(steamInfoCall->workshopId(), steamInfoCall->errorDetail()));
         nextSteamInfo();
         return;
     }
@@ -92,7 +92,7 @@ void CacheUpdateCommand::steamInfoFinished()
     const CachedMod *cachedMod = app.cache().mod(modId);
     if (!cachedMod)
     {
-        emit textOutput(QString("  %1 cache error. Skipping.").arg(modId));
+        emit textOutput(QString("  Skipping %1: cache error.").arg(modId));
     }
     else if (!cachedMod->containsVersion(steamInfo.lastUpdated))
     {
@@ -138,7 +138,7 @@ void CacheUpdateCommand::steamDownloadFinished()
     if (v)
         emit textOutput(QString("  %1 updated.").arg(v->info().toString()));
     else
-        emit textOutput(QString("  %1 download failed.").arg(steamDownloadCall->steamInfo().modId()));
+        emit textOutput(QString("  %1 download failed: %2").arg(steamDownloadCall->steamInfo().modId(), steamDownloadCall->errorDetail()));
 
     nextDownload();
 }

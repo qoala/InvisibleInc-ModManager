@@ -35,7 +35,8 @@ void InstalledUpdateCommand::execute()
 
 void InstalledUpdateCommand::installMod(SpecMod specMod)
 {
-    const InstalledMod *installed = app.modList().installMod(specMod);
+    QString errorInfo;
+    const InstalledMod *installed = app.modList().installMod(specMod, &errorInfo);
     if (installed)
     {
         emit textOutput(QString("  %1 installed %2").arg(installed->info().toString()).arg(installed->info().version()));
@@ -43,7 +44,7 @@ void InstalledUpdateCommand::installMod(SpecMod specMod)
     else
     {
         const CachedMod *cm = app.cache().mod(specMod.id());
-        emit textOutput(QString("  Failed to install %1").arg(cm ? cm->info().toString() : specMod.id()));
+        emit textOutput(QString("  Failed to install %1: %2").arg(cm ? cm->info().toString() : specMod.id(), errorInfo));
     }
 }
 

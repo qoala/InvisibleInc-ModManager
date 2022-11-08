@@ -126,21 +126,23 @@ void InstalledSyncFileCommand::doSync()
 
 bool InstalledSyncFileCommand::removeMod(const InstalledMod &im)
 {
-    if (app.modList().removeMod(im.id()))
+    QString errorInfo;
+    if (app.modList().removeMod(im.id(), &errorInfo))
     {
         emit textOutput(QString("  %1 removed").arg(im.info().toString()));
         return true;
     }
     else
     {
-        emit textOutput(QString("Failed to remove %1").arg(im.info().toString()));
+        emit textOutput(QString("Failed to remove %1: %2").arg(im.info().toString(), errorInfo));
         return false;
     }
 }
 
 bool InstalledSyncFileCommand::installMod(const SpecMod &sm)
 {
-    const InstalledMod *im = app.modList().installMod(sm);
+    QString errorInfo;
+    const InstalledMod *im = app.modList().installMod(sm, &errorInfo);
     if (im)
     {
         emit textOutput(QString("  %1 installed").arg(im->info().toString()));
@@ -148,7 +150,7 @@ bool InstalledSyncFileCommand::installMod(const SpecMod &sm)
     else
     {
         const CachedMod *cm = app.cache().mod(sm.id());
-        emit textOutput(QString("Failed to install %1").arg(cm ? cm->info().toString() : sm.id()));
+        emit textOutput(QString("Failed to install %1: %2").arg(cm ? cm->info().toString() : sm.id(), errorInfo));
     }
     return im;
 }

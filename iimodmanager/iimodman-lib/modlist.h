@@ -45,8 +45,8 @@ public:
     const InstalledMod *mod(const QString &id) const;
 
     void refresh(RefreshLevel level = FULL);
-    const InstalledMod *installMod(const SpecMod &specMod);
-    const InstalledMod *removeMod(const QString &modId);
+    const InstalledMod *installMod(const SpecMod &specMod, QString *errorInfo = nullptr);
+    const InstalledMod *removeMod(const QString &modId, QString *errorInfo = nullptr);
 
     ~ModList();
 private:

@@ -179,7 +179,7 @@ bool compareVersionIds(const CachedVersion &a, const CachedVersion &b)
  * The Mod Uploader creates non-conforming ZIP files using the local path separator, but QuaZip::QuaZip explicitly does not support such files.
  * In that case, on non-Windows systems, files were incorrectly extracted with "path\filename".
  */
-void fixFileNames(const QDir &cacheDir, const QDir &dir, const QStringList &filePaths)
+bool fixFileNames(const QDir &cacheDir, const QDir &dir, const QStringList &filePaths, QString *errorInfo = nullptr)
 {
     for (const QString &absolutePath : filePaths)
     {
@@ -192,11 +192,20 @@ void fixFileNames(const QDir &cacheDir, const QDir &dir, const QStringList &file
             QString newPath = dir.absoluteFilePath(name.replace('\\', '/'));
 
             if (QDir().mkpath(QFileInfo(newPath).absolutePath()) && file.rename(newPath))
+            {
                 qCWarning(modcache).noquote() << QStringLiteral("Renamed %1 to %2").arg(cacheDir.relativeFilePath(absolutePath), cacheDir.relativeFilePath(newPath));
+            }
             else
-                qFatal("Failed to rename %s to %s", cacheDir.relativeFilePath(absolutePath).toUtf8().constData(), cacheDir.relativeFilePath(newPath).toUtf8().constData());
+            {
+                QString msg = QStringLiteral("Failed to rename %1 to %2").arg(cacheDir.relativeFilePath(absolutePath).toUtf8().constData(), cacheDir.relativeFilePath(newPath).toUtf8().constData());
+                qCCritical(modcache).noquote() << msg;
+                if (errorInfo)
+                    *errorInfo = msg;
+                return false;
+            }
         }
     }
+    return true;
 }
 
 ModCache::ModCache(const ModManConfig &config, QObject *parent)
@@ -317,12 +326,14 @@ const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo
     if (!m)
         qFatal("Couldn't add mod to cache %s", modId.toUtf8().constData());
 
-    FileUtils::removeModDir(outputPath);
+    if (!FileUtils::removeModDir(outputPath, errorInfo))
+        return nullptr;
 
     qCDebug(modcache).noquote() << modId << "Unzip Start" << outputPath;
     QStringList files = JlCompress::extractDir(&zipFile, outputPath);
-    fixFileNames(cacheDir, QDir(outputPath), files);
+    bool ok = fixFileNames(cacheDir, QDir(outputPath), files, errorInfo);
     qCDebug(modcache).noquote() << modId << "Unzip End";
+    if (!ok) return nullptr;
 
     return m->impl()->refreshVersion(versionId, ModCache::FULL, errorInfo);
 }
@@ -337,7 +348,8 @@ const CachedVersion *ModCache::Impl::addModVersion(const QString &modId, const Q
     }
 
     QString outputPath = modVersionPath(modId, versionId);
-    FileUtils::removeModDir(outputPath);
+    if (!FileUtils::removeModDir(outputPath))
+        return nullptr;
     qCDebug(modcache) << "Copying" << folderPath << "to" << outputPath;
     if (!FileUtils::copyRecursively(folderPath, outputPath))
     {
