@@ -2,9 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QAction>
+#include <QDockWidget>
 #include <QPlainTextEdit>
 #include <QMainWindow>
 #include <QMenu>
+#include <QTabWidget>
 
 namespace iimodmanager {
 
@@ -32,11 +34,19 @@ private slots:
     void installedSyncFile();
 
 private:
-    void createActions();
-    void createMenus();
+    void createTabs();
+    void createLogDock();
+    void createMenuActions();
     void disableActions();
 
     ModManGuiApplication &app;
+
+    QTabWidget *tabWidget;
+    // TODO: Add the important elements from tab pages, when defined.
+
+    QDockWidget *logDock;
+    QPlainTextEdit *logDisplay;
+
     QMenu *fileMenu;
     QAction *settingsAct;
     QAction *quitAct;
@@ -49,7 +59,6 @@ private:
     QAction *installedStatusAct;
     QAction *installedUpdateAct;
     QAction *installedSyncFileAct;
-    QPlainTextEdit *textDisplay;
 };
 
 } // namespace iimodmanager
