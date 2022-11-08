@@ -33,7 +33,7 @@ public:
     CachedMod *mod(const QString &id);
 
     CachedMod *addUnloaded(const SteamModInfo &steamInfo);
-    const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile);
+    const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo = nullptr);
     const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
     void refresh(RefreshLevel = FULL);
     const CachedVersion *refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level = FULL);
@@ -72,7 +72,7 @@ public:
     CachedVersion *version(const QString &versionId);
 
     bool refresh(ModCache::RefreshLevel = ModCache::FULL);
-    CachedVersion *refreshVersion(const QString &versionId, ModCache::RefreshLevel = ModCache::FULL);
+    CachedVersion *refreshVersion(const QString &versionId, ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr);
     bool updateFromSteam(const SteamModInfo &steamInfo);
     const CachedVersion *markInstalledVersion(const QString &hash, const QString expectedVersionId);
 
@@ -111,7 +111,7 @@ public:
 
 // file-visibility:
     void setInstalled(bool value) { installed_ = value; };
-    bool refresh(ModCache::RefreshLevel = ModCache::FULL);
+    bool refresh(ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr);
 
 private:
     const ModCache::Impl &cache;
@@ -223,9 +223,9 @@ const CachedMod *ModCache::addUnloaded(const SteamModInfo &steamInfo)
     return impl->addUnloaded(steamInfo);
 }
 
-const CachedVersion *ModCache::addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile)
+const CachedVersion *ModCache::addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo)
 {
-    return impl->addZipVersion(steamInfo, zipFile);
+    return impl->addZipVersion(steamInfo, zipFile, errorInfo);
 }
 
 const CachedVersion *ModCache::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath)
@@ -301,7 +301,7 @@ CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo)
     return nullptr;
 }
 
-const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile)
+const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo)
 {
     if (steamInfo.id.isEmpty())
         return nullptr;
@@ -324,7 +324,7 @@ const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo
     fixFileNames(cacheDir, QDir(outputPath), files);
     qCDebug(modcache).noquote() << modId << "Unzip End";
 
-    return m->impl()->refreshVersion(versionId);
+    return m->impl()->refreshVersion(versionId, ModCache::FULL, errorInfo);
 }
 
 const CachedVersion *ModCache::Impl::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath)
@@ -607,7 +607,7 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
     return false;
 }
 
-CachedVersion *CachedMod::Impl::refreshVersion(const QString &versionId, ModCache::RefreshLevel level)
+CachedVersion *CachedMod::Impl::refreshVersion(const QString &versionId, ModCache::RefreshLevel level, QString *errorInfo)
 {
     if (CachedVersion *v = version(versionId))
     {
@@ -617,7 +617,7 @@ CachedVersion *CachedMod::Impl::refreshVersion(const QString &versionId, ModCach
     else
     {
         CachedVersion newVersion(cache, id(), versionId);
-        if (newVersion.impl()->refresh(level))
+        if (newVersion.impl()->refresh(level, errorInfo))
         {
             versions_.append(newVersion);
             sortVersions();
@@ -798,12 +798,14 @@ QString CachedVersion::Impl::path() const
     return cache.modVersionPath(modId, id_);
 }
 
-bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level)
+bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level, QString *errorInfo)
 {
     QDir modVersionDir(cache.modVersionPath(modId, id_));
     if (!modVersionDir.exists("modinfo.txt"))
     {
         qCDebug(modcache).noquote() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << "skipped: No modinfo.txt";
+        if (errorInfo)
+            *errorInfo = QStringLiteral("No modinfo.txt");
         return false;
     }
 

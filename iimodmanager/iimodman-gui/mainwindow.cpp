@@ -1,3 +1,4 @@
+#include "cacheaddcommand.h"
 #include "cachesavecommand.h"
 #include "cachestatuscommand.h"
 #include "cacheupdatecommand.h"
@@ -99,6 +100,7 @@ void MainWindow::createMenus()
 
 void MainWindow::disableActions()
 {
+    settingsAct->setEnabled(false);
     cacheStatusAct->setEnabled(false);
     cacheUpdateAct->setEnabled(false);
     cacheSaveAct->setEnabled(false);
@@ -110,6 +112,7 @@ void MainWindow::disableActions()
 
 void MainWindow::enableActions()
 {
+    settingsAct->setEnabled(true);
     cacheStatusAct->setEnabled(true);
     cacheUpdateAct->setEnabled(true);
     cacheSaveAct->setEnabled(true);
@@ -168,7 +171,13 @@ void MainWindow::cacheSave()
 }
 
 void MainWindow::cacheAddMod()
-{}
+{
+    CacheAddCommand *command = new CacheAddCommand(app, this);
+    disableActions();
+    connect(command, &CacheAddCommand::textOutput, this, &MainWindow::writeText);
+    connect(command, &CacheAddCommand::finished, this, &MainWindow::enableActions);
+    command->execute();
+}
 
 void MainWindow::installedStatus()
 {

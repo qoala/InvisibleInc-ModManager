@@ -60,7 +60,7 @@ public:
     //! If the mod is already in the cache, returns nullptr as the result wouldn't be a non-downloaded mod.
     const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
     //! Extract the zip contents into a new or existing CachedVersion
-    const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile);
+    const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo = nullptr);
     //! Copy the given folder's contents into a new or existing CachedVersion
     const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
     //! Refresh all mods from disk to the specified level.

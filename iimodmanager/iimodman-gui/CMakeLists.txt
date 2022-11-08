@@ -1,6 +1,7 @@
 project(IIModManager_GUI VERSION ${IIMODMAN_VERSION})
 
 set(IIMODMAN_GUI_SOURCES
+    cacheaddcommand.cpp
     cachesavecommand.cpp
     cachestatuscommand.cpp
     cacheupdatecommand.cpp
