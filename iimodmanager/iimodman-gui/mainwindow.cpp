@@ -6,6 +6,7 @@
 #include "installedupdatecommand.h"
 #include "installedsyncfilecommand.h"
 #include "mainwindow.h"
+#include "modcachemodel.h"
 #include "modmanguiapplication.h"
 #include "settingsdialog.h"
 
@@ -13,8 +14,6 @@
 #include <QKeySequence>
 #include <QLabel>
 #include <QMenuBar>
-#include <QStatusBar>
-#include <QTextTable>
 #include <QVBoxLayout>
 
 namespace iimodmanager {
@@ -35,8 +34,30 @@ void MainWindow::createTabs()
     tabWidget = new QTabWidget;
     setCentralWidget(tabWidget);
 
-    QWidget *cachePage = new QLabel("Hello");
+    // Cache
+    cacheModel = new ModCacheModel(app.cache());
+    cacheProxyModel = new QSortFilterProxyModel;
+    cacheProxyModel->setSourceModel(cacheModel);
+    cacheProxyModel->setFilterKeyColumn(0);
+    cacheProxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    cacheView = new QTreeView;
+    cacheView->setModel(cacheProxyModel);
+    cacheView->setColumnWidth(0, 300);
+    cacheView->setColumnWidth(1, 160);
+    cacheView->sortByColumn(0, Qt::AscendingOrder); // Name, ascending.
+    cacheView->setSortingEnabled(true);
+
+    cacheSearchInput = new QLineEdit;
+    connect(cacheSearchInput, &QLineEdit::textChanged, cacheProxyModel, &QSortFilterProxyModel::setFilterFixedString);
+
+    QVBoxLayout *cacheLayout = new QVBoxLayout;
+    cacheLayout->addWidget(cacheSearchInput);
+    cacheLayout->addWidget(cacheView);
+    QWidget *cachePage = new QWidget;
+    cachePage->setLayout(cacheLayout);
     tabWidget->addTab(cachePage, tr("&Downloaded Mods"));
+
+    // Installed
 
     QWidget *installedPage = new QLabel("World");
     tabWidget->addTab(installedPage, tr("&Installed Mods"));

@@ -135,7 +135,7 @@ const QString formatVersionTime(const QDateTime &versionTime)
 
 const QDateTime parseVersionTime(const QString &versionId)
 {
-    return QDateTime::fromString(QString(versionId).replace('_', ':'), Qt::ISODate);
+    return QDateTime::fromString(QString(versionId).left(20).replace('_', ':'), Qt::ISODate);
 }
 
 const QJsonObject readJSON(QIODevice &file)

@@ -3,13 +3,17 @@
 
 #include <QAction>
 #include <QDockWidget>
-#include <QPlainTextEdit>
+#include <QLineEdit>
 #include <QMainWindow>
 #include <QMenu>
+#include <QPlainTextEdit>
+#include <QSortFilterProxyModel>
 #include <QTabWidget>
+#include <QTreeView>
 
 namespace iimodmanager {
 
+class ModCacheModel;
 class ModManGuiApplication;
 
 
@@ -42,7 +46,10 @@ private:
     ModManGuiApplication &app;
 
     QTabWidget *tabWidget;
-    // TODO: Add the important elements from tab pages, when defined.
+    ModCacheModel *cacheModel;
+    QSortFilterProxyModel *cacheProxyModel;
+    QTreeView *cacheView;
+    QLineEdit *cacheSearchInput;
 
     QDockWidget *logDock;
     QPlainTextEdit *logDisplay;

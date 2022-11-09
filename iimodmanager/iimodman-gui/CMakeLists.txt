@@ -10,6 +10,7 @@ set(IIMODMAN_GUI_SOURCES
     installedsyncfilecommand.cpp
     main.cpp
     mainwindow.cpp
+    modcachemodel.cpp
     modmanguiapplication.cpp
     settingsdialog.cpp
     util.cpp
