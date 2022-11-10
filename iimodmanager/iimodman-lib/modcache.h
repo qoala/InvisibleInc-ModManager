@@ -35,9 +35,12 @@ enum StringFormat {
 //! Mods cached locally, but not installed. May be downloaded or just have an ID-to-name registration.
 class IIMODMANLIBSHARED_EXPORT ModCache : public QObject
 {
+    Q_OBJECT
+
 public:
     //! Private implementation. Only accessible to classes in this file.
     class Impl;
+    //! Specifies how deeply a cache refresh should check the filesystem.
     enum RefreshLevel
     {
         //! Refresh all fields on all mods and all versions.
@@ -46,6 +49,14 @@ public:
         ID_ONLY,
         //! Refresh the latest version of each mod fully, with available IDs for older versions.
         LATEST_ONLY,
+    };
+    //! Specifies restrictions on what may change in a refresh event.
+    enum ChangeHint
+    {
+        //! Anything may change.
+        NO_HINT = 0,
+        //! Mods and Versions will be re-sorted, without adding/removing any.
+        SORT_ONLY_HINT = 1,
     };
 
     ModCache(const ModManConfig &config, QObject *parent = nullptr);
@@ -67,6 +78,7 @@ public:
     void refresh(RefreshLevel level = FULL);
     //! Refresh and return the specific mod version from disk. Nullptr if not present.
     const CachedVersion *refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level = FULL);
+    //! Re-sorts the cache and persists metadata to disk.
     void saveMetadata();
 
     //! Find the currently installed version by hash and set its installed flag.
@@ -75,6 +87,20 @@ public:
     const CachedVersion *markInstalledVersion(const QString &modId, const QString &hash, const QString expectedVersionId = QString());
 
     ~ModCache();
+
+signals:
+    //! Emitted just before new mods are appended to the end of the cache.
+    void aboutToAppendMods(QStringList newModIds);
+    //! Emitted after an append operation has completed.
+    void appendedMods();
+    //! Emitted before mods are arbitrarily changed. Indicates which mods are affected, or an empty list for all.
+    //! Notably adding new versions is a refresh event.
+    void aboutToRefresh(QStringList pendingModIds = QStringList(), ChangeHint hint = NO_HINT);
+    //! Emitted after mods are arbitrarily changed.
+    void refreshed(QStringList updatedModIds = QStringList(), ChangeHint hint = NO_HINT);
+    //! Emitted after a metadata-only change. Indicates which mods are affected, or an empty list for all.
+    void metadataChanged(QStringList updatedModIds = QStringList());
+
 private:
     std::experimental::propagate_const<std::unique_ptr<Impl>> impl;
 };
