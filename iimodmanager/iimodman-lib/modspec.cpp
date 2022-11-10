@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QList>
+#include <QIODevice>
 #include <QMap>
 #include <QString>
 #include <stdexcept>
