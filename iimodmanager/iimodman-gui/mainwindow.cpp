@@ -42,9 +42,9 @@ void MainWindow::createTabs()
     cacheProxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     cacheView = new QTreeView;
     cacheView->setModel(cacheProxyModel);
-    cacheView->setColumnWidth(0, 300);
-    cacheView->setColumnWidth(1, 160);
-    cacheView->sortByColumn(0, Qt::AscendingOrder); // Name, ascending.
+    cacheView->setColumnWidth(ModCacheModel::NAME, 300);
+    cacheView->setColumnWidth(ModCacheModel::ID, 160);
+    cacheView->sortByColumn(ModCacheModel::NAME, Qt::AscendingOrder);
     cacheView->setSortingEnabled(true);
 
     cacheSearchInput = new QLineEdit;

@@ -11,6 +11,7 @@ class ModCacheModel : public QAbstractListModel
 {
     Q_OBJECT
 
+public:
     enum Columns
     {
         NAME = 0,
@@ -23,7 +24,6 @@ class ModCacheModel : public QAbstractListModel
         COLUMN_COUNT = 4,
     };
 
-public:
     ModCacheModel(ModCache &cache, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
