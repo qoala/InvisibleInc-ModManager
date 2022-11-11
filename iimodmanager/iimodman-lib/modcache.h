@@ -54,15 +54,19 @@ public:
     enum ChangeHint
     {
         //! Anything may change.
-        NO_HINT = 0,
-        //! Mods and Versions will be re-sorted, without adding/removing any.
-        SORT_ONLY_HINT = 1,
+        NO_HINT,
+        //! Mods will be re-sorted. No mods will be added or removed.
+        SORT_ONLY_HINT,
+        //! Only metadata and versions will change. No mods will be added or removed.
+        VERSION_ONLY_HINT,
     };
 
     ModCache(const ModManConfig &config, QObject *parent = nullptr);
 
     const QList<CachedMod> mods() const;
     bool contains(const QString &id) const;
+    //! The position of the mod with the given ID in the mods list, or -1 if it isn't in the cache.
+    int modIndex(const QString &id) const;
     //! The mod with the given ID, or nullptr if it isn't in the cache.
     const CachedMod *mod(const QString &id) const;
 
@@ -90,16 +94,17 @@ public:
 
 signals:
     //! Emitted just before new mods are appended to the end of the cache.
-    void aboutToAppendMods(QStringList newModIds);
+    void aboutToAppendMods(const QStringList &newModIds);
     //! Emitted after an append operation has completed.
     void appendedMods();
     //! Emitted before mods are arbitrarily changed. Indicates which mods are affected, or an empty list for all.
+    //! Indicates mods, both by their mod ID and current index within the mods list.
     //! Notably adding new versions is a refresh event.
-    void aboutToRefresh(QStringList pendingModIds = QStringList(), ChangeHint hint = NO_HINT);
+    void aboutToRefresh(const QStringList &pendingModIds = QStringList(), const QList<int> &pendingModIdxs = QList<int>(), ChangeHint hint = NO_HINT);
     //! Emitted after mods are arbitrarily changed.
-    void refreshed(QStringList updatedModIds = QStringList(), ChangeHint hint = NO_HINT);
+    void refreshed(const QStringList &updatedModIds = QStringList(), const QList<int> &updatedModIdxs = QList<int>(), ChangeHint hint = NO_HINT);
     //! Emitted after a metadata-only change. Indicates which mods are affected, or an empty list for all.
-    void metadataChanged(QStringList updatedModIds = QStringList());
+    void metadataChanged(const QStringList &updatedModIds = QStringList(), const QList<int> &updatedModIdxs = QList<int>());
 
 private:
     std::experimental::propagate_const<std::unique_ptr<Impl>> impl;

@@ -34,15 +34,16 @@ public:
 
     inline const QList<CachedMod> mods() const { return mods_; };
     bool contains(const QString &id) const;
-    const CachedMod *mod(const QString &id) const;
+    //! Returns index of the given mod within the mods list, or -1 if not present.
+    int modIndex(const QString &id) const;
+    const CachedMod *mod(const QString &id, int *modIdx = nullptr) const;
 
-    CachedMod *mod(const QString &id);
+    CachedMod *mod(const QString &id, int *modIdx = nullptr);
 
-    CachedMod *addUnloaded(const SteamModInfo &steamInfo, OperationContext context);
+    CachedMod *addUnloaded(const SteamModInfo &steamInfo, OperationContext context, int *modIdx = nullptr);
     const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo = nullptr);
     const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
     void refresh(RefreshLevel = FULL);
-    const CachedVersion *refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level = FULL);
     inline void save();
 
 // file-visibility:
@@ -231,6 +232,11 @@ bool ModCache::contains(const QString &id) const
     return impl->contains(id);
 }
 
+int ModCache::modIndex(const QString &id) const
+{
+    return impl->modIndex(id);
+}
+
 const CachedMod *ModCache::mod(const QString &id) const
 {
     return impl->mod(id);
@@ -258,10 +264,14 @@ void ModCache::refresh(ModCache::RefreshLevel level)
 
 const CachedVersion *ModCache::refreshVersion(const QString &modId, const QString &versionId, ModCache::RefreshLevel level)
 {
-    QStringList refreshIds(modId);
-    emit aboutToRefresh(refreshIds);
-    const CachedVersion *v = impl->refreshVersion(modId, versionId, level);
-    emit refreshed(refreshIds);
+    int modIdx;
+    CachedMod *m = impl->mod(modId, &modIdx);
+    if (!m)
+        return nullptr;
+
+    emit aboutToRefresh({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
+    const CachedVersion *v = m->impl()->refreshVersion(versionId, level);
+    emit refreshed({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
     return v;
 }
 
@@ -272,11 +282,12 @@ void ModCache::saveMetadata()
 
 const CachedVersion *ModCache::markInstalledVersion(const QString &modId, const QString &hash, const QString expectedVersionId)
 {
-    CachedMod *mod = impl->mod(modId);
-    if (mod)
+    int modIdx;
+    CachedMod *m = impl->mod(modId, &modIdx);
+    if (m)
     {
-        const CachedVersion *v = mod->impl()->markInstalledVersion(hash, expectedVersionId);
-        emit metadataChanged(QStringList(modId));
+        const CachedVersion *v = m->impl()->markInstalledVersion(hash, expectedVersionId);
+        emit metadataChanged({modId}, {modIdx});
         return v;
     }
     return nullptr;
@@ -293,21 +304,38 @@ bool ModCache::Impl::contains(const QString &id) const
     return modIds_.contains(id);
 }
 
-const CachedMod *ModCache::Impl::mod(const QString &id) const
+int ModCache::Impl::modIndex(const QString &id) const
 {
     if (modIds_.contains(id))
-        return &mods_.at(modIds_[id]);
+        return modIds_[id];
+    return -1;
+}
+
+const CachedMod *ModCache::Impl::mod(const QString &id, int *modIdx) const
+{
+    if (modIds_.contains(id))
+    {
+        int idx = modIds_[id];
+        if (modIdx)
+            *modIdx = idx;
+        return &mods_.at(idx);
+    }
     return nullptr;
 }
 
-CachedMod *ModCache::Impl::mod(const QString &id)
+CachedMod *ModCache::Impl::mod(const QString &id, int *modIdx)
 {
     if (modIds_.contains(id))
+    {
+        int idx = modIds_[id];
+        if (modIdx)
+            *modIdx = idx;
         return &mods_[modIds_[id]];
+    }
     return nullptr;
 }
 
-CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo, OperationContext context)
+CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo, OperationContext context, int *modIdx)
 {
     if (steamInfo.id.isEmpty())
         return nullptr;
@@ -319,8 +347,11 @@ CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo, OperationC
     CachedMod mod(*this, modId);
     if (mod.impl()->updateFromSteam(steamInfo))
     {
-        emit q->aboutToAppendMods(QStringList(mod.id()));
-        modIds_[mod.id()] = mods_.size();
+        emit q->aboutToAppendMods({mod.id()});
+        int idx = mods_.size();
+        if (modIdx)
+            *modIdx = idx;
+        modIds_[mod.id()] = idx;
         mods_.append(mod);
         if (context == COMPLETE_OP) // else, caller will emit the completion signal.
             emit q->appendedMods();
@@ -340,10 +371,11 @@ const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo
     const QDir cacheDir(config_.cachePath());
     QString outputPath = modVersionPath(modId, versionId);
 
-    CachedMod *m = mod(modId);
+    int modIdx;
+    CachedMod *m = mod(modId, &modIdx);
     bool isNewMod = !m;
     if (isNewMod)
-        m = addUnloaded(steamInfo, PARTIAL_OP);
+        m = addUnloaded(steamInfo, PARTIAL_OP, &modIdx);
     if (!m)
     {
         qCCritical(modcache).noquote() << "Couldn't add mod to cache " << modId;
@@ -361,14 +393,13 @@ const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo
     qCDebug(modcache).noquote() << modId << "Unzip End";
     if (!ok) return nullptr;
 
-    QStringList refreshIds(modId);
     if (!isNewMod)
-        emit q->aboutToRefresh(refreshIds);
+        emit q->aboutToRefresh({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
     const CachedVersion *v = m->impl()->refreshVersion(versionId, ModCache::FULL, errorInfo);
     if (isNewMod)
         emit q->appendedMods();
     else
-        emit q->refreshed(refreshIds);
+        emit q->refreshed({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
     return v;
 }
 
@@ -391,13 +422,13 @@ const CachedVersion *ModCache::Impl::addModVersion(const QString &modId, const Q
         return nullptr;
     }
 
-    CachedMod *m = mod(modId);
+    int modIdx;
+    CachedMod *m = mod(modId, &modIdx);
     if (m)
     {
-        QStringList refreshIds(modId);
-        emit q->aboutToRefresh(refreshIds);
+        emit q->aboutToRefresh({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
         const CachedVersion *v = m->impl()->refreshVersion(versionId);
-        emit q->refreshed(refreshIds);
+        emit q->refreshed({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
         return v;
     }
     else
@@ -406,7 +437,7 @@ const CachedVersion *ModCache::Impl::addModVersion(const QString &modId, const Q
         const CachedVersion *v = newMod.impl()->refreshVersion(versionId);
         if (v)
         {
-            emit q->aboutToAppendMods(QStringList(modId));
+            emit q->aboutToAppendMods({modId});
             modIds_[modId] = mods_.size();
             mods_.append(newMod);
             emit q->appendedMods();
@@ -450,19 +481,11 @@ void ModCache::Impl::refresh(RefreshLevel level)
     emit q->refreshed();
 }
 
-const CachedVersion *ModCache::Impl::refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level)
-{
-    CachedMod *m = mod(modId);
-    if (!m)
-        return nullptr;
-    return m->impl()->refreshVersion(versionId);
-}
-
 void ModCache::Impl::save()
 {
-    emit q->aboutToRefresh(QStringList(), ModCache::SORT_ONLY_HINT);
+    emit q->aboutToRefresh(QStringList(), QList<int>(), ModCache::SORT_ONLY_HINT);
     sortMods();
-    emit q->refreshed(QStringList(), ModCache::SORT_ONLY_HINT);
+    emit q->refreshed(QStringList(), QList<int>(), ModCache::SORT_ONLY_HINT);
     writeModManDb();
 }
 
