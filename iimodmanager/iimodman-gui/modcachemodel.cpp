@@ -6,10 +6,25 @@
 namespace iimodmanager {
 
 namespace ColumnData {
+    typedef ModCacheModel::Status Status;
+
+    //! Returns row-level status flags.
+    Status modStatus(const CachedMod &mod)
+    {
+        ModCacheModel::Status status = ModCacheModel::NO_STATUS;
+        if (!mod.downloaded())
+            status |= ModCacheModel::NO_DOWNLOAD_STATUS;
+        if (!mod.installedVersion())
+            status |= ModCacheModel::INSTALLED_STATUS;
+        return status;
+    }
+
     QVariant modName(const CachedMod &mod, int role)
     {
         if (role == Qt::DisplayRole)
             return mod.info().name();
+        else if (role == ModCacheModel::STATUS_ROLE)
+            return QVariant::fromValue<Status>(modStatus(mod));
         else
             return QVariant();
     }
@@ -18,6 +33,8 @@ namespace ColumnData {
     {
         if (role == Qt::DisplayRole)
             return mod.id();
+        else if (role == ModCacheModel::STATUS_ROLE)
+            return QVariant::fromValue<Status>(modStatus(mod));
         else
             return QVariant();
     }
@@ -31,6 +48,9 @@ namespace ColumnData {
                 return QStringLiteral("N/A");
             else if (role == Qt::ToolTipRole)
                 return QStringLiteral("(needs download)");
+            else if (role == ModCacheModel::STATUS_ROLE)
+                // NO_DOWNLOAD is covered by the mod status flags.
+                return QVariant::fromValue<Status>(modStatus(mod));
             else
                 return QVariant();
         }
@@ -42,33 +62,46 @@ namespace ColumnData {
                 return QStringLiteral("-");
             else if (role == Qt::ToolTipRole)
                 return QStringLiteral("(unlabeled)");
+            else if (role == ModCacheModel::STATUS_ROLE)
+                return QVariant::fromValue<Status>(modStatus(mod) | ModCacheModel::UNLABELLED_STATUS);
             else
                 return QVariant();
         }
 
         if (role == Qt::DisplayRole)
             return *version;
+        else if (role == ModCacheModel::STATUS_ROLE)
+            return QVariant::fromValue<Status>(modStatus(mod));
         else
             return QVariant();
     }
 
-    QVariant modLatestUpdateTime(const CachedMod &mod, int role)
+    QVariant modUpdateTime(const CachedMod &mod, int role)
     {
         const CachedVersion *cv = mod.latestVersion();
         if (!cv)
-            return QVariant();
+        {
+            if (role == ModCacheModel::STATUS_ROLE)
+                return QVariant::fromValue<Status>(modStatus(mod));
+            else
+                return QVariant();
+        }
 
         const std::optional<QDateTime> timestamp = cv->timestamp();
         if (!timestamp)
         {
             if (role == Qt::DisplayRole)
                 return cv->id();
+            else if (role == ModCacheModel::STATUS_ROLE)
+                return QVariant::fromValue<Status>(modStatus(mod) | ModCacheModel::UNLABELLED_STATUS);
             else
                 return QVariant();
         }
 
         if (role == Qt::DisplayRole)
             return *timestamp;
+        else if (role == ModCacheModel::STATUS_ROLE)
+            return QVariant::fromValue<Status>(modStatus(mod));
         else
             return QVariant();
     }
@@ -114,7 +147,7 @@ QVariant ModCacheModel::data(const QModelIndex &index, int role) const
         case LATEST_VERSION:
             return ColumnData::modLatestVersion(cm, role);
         case UPDATE_TIME:
-            return ColumnData::modLatestUpdateTime(cm, role);
+            return ColumnData::modUpdateTime(cm, role);
         default:
             return QVariant();
     }
@@ -126,7 +159,6 @@ QVariant ModCacheModel::headerData(int section, Qt::Orientation orientation, int
         return QVariant();
 
     if (role == Qt::DisplayRole)
-    {
         switch (section)
         {
             case NAME:
@@ -137,12 +169,22 @@ QVariant ModCacheModel::headerData(int section, Qt::Orientation orientation, int
                 return QStringLiteral("Latest Version");
             case UPDATE_TIME:
                 return QStringLiteral("Update Time");
-            default:
-                return QVariant();
         }
-    }
-    else
-        return QVariant();
+    else if (role == Qt::InitialSortOrderRole)
+        switch (section)
+        {
+            case NAME:
+                return Qt::AscendingOrder;
+            case ID:
+                return Qt::AscendingOrder;
+            case LATEST_VERSION:
+                return Qt::DescendingOrder;
+            case UPDATE_TIME:
+                return Qt::DescendingOrder;
+        }
+    // TODO: Qt::BackgroundRole with different backgrounds based on mod status.
+
+    return QVariant();
 }
 
 void ModCacheModel::sourceAboutToAppendMods(const QStringList &modIds)

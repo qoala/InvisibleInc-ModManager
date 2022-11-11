@@ -12,6 +12,7 @@ set(IIMODMAN_GUI_SOURCES
     mainwindow.cpp
     modcachemodel.cpp
     modmanguiapplication.cpp
+    modsortfilterproxymodel.cpp
     settingsdialog.cpp
     util.cpp
   )

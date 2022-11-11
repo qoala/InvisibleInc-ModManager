@@ -7,7 +7,6 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QPlainTextEdit>
-#include <QSortFilterProxyModel>
 #include <QTabWidget>
 #include <QTreeView>
 
@@ -15,6 +14,7 @@ namespace iimodmanager {
 
 class ModCacheModel;
 class ModManGuiApplication;
+class ModSortFilterProxyModel;
 
 
 class MainWindow : public QMainWindow
@@ -47,7 +47,7 @@ private:
 
     QTabWidget *tabWidget;
     ModCacheModel *cacheModel;
-    QSortFilterProxyModel *cacheProxyModel;
+    ModSortFilterProxyModel *cacheFilterProxy;
     QTreeView *cacheView;
     QLineEdit *cacheSearchInput;
 

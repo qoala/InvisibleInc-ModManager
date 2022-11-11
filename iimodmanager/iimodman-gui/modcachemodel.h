@@ -12,7 +12,7 @@ class ModCacheModel : public QAbstractListModel
     Q_OBJECT
 
 public:
-    enum Columns
+    enum Column
     {
         NAME = 0,
         ID = 1,
@@ -23,6 +23,23 @@ public:
         COLUMN_MAX = 3,
         COLUMN_COUNT = 4,
     };
+    enum UserDataRole
+    {
+        STATUS_ROLE = 0x100,
+    };
+    enum StatusFlag
+    {
+        NO_STATUS = 0,
+        //! The row is a mod that's installed.
+        INSTALLED_STATUS = 1,
+        //! The row is a mod that's not downloaded.
+        NO_DOWNLOAD_STATUS = 2,
+
+        //! The requested column is unlabelled for the requested mod.
+        UNLABELLED_STATUS = 0x10,
+    };
+    Q_DECLARE_FLAGS(Status, StatusFlag)
+    Q_FLAG(Status)
 
     ModCacheModel(ModCache &cache, QObject *parent = nullptr);
 
@@ -44,6 +61,8 @@ private:
     QModelIndexList savedPersistentIndexes;
     QVector<QString> savedPersistentMappings;
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(ModCacheModel::Status)
 
 }  // namespace iimodmanager
 

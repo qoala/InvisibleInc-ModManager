@@ -8,9 +8,11 @@
 #include "mainwindow.h"
 #include "modcachemodel.h"
 #include "modmanguiapplication.h"
+#include "modsortfilterproxymodel.h"
 #include "settingsdialog.h"
 
 #include <QApplication>
+#include <QHeaderView>
 #include <QKeySequence>
 #include <QLabel>
 #include <QMenuBar>
@@ -36,19 +38,22 @@ void MainWindow::createTabs()
 
     // Cache
     cacheModel = new ModCacheModel(app.cache());
-    cacheProxyModel = new QSortFilterProxyModel;
-    cacheProxyModel->setSourceModel(cacheModel);
-    cacheProxyModel->setFilterKeyColumn(0);
-    cacheProxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    cacheFilterProxy = new ModSortFilterProxyModel;
+    cacheFilterProxy->setSourceModel(cacheModel);
+    cacheFilterProxy->setFilterKeyColumn(0);
+    cacheFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    cacheFilterProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
     cacheView = new QTreeView;
-    cacheView->setModel(cacheProxyModel);
+    cacheView->setModel(cacheFilterProxy);
+    cacheView->header()->setStretchLastSection(false);
     cacheView->setColumnWidth(ModCacheModel::NAME, 300);
     cacheView->setColumnWidth(ModCacheModel::ID, 160);
+    cacheView->setColumnWidth(ModCacheModel::UPDATE_TIME, 160);
     cacheView->sortByColumn(ModCacheModel::NAME, Qt::AscendingOrder);
     cacheView->setSortingEnabled(true);
 
     cacheSearchInput = new QLineEdit;
-    connect(cacheSearchInput, &QLineEdit::textChanged, cacheProxyModel, &QSortFilterProxyModel::setFilterFixedString);
+    connect(cacheSearchInput, &QLineEdit::textChanged, cacheFilterProxy, &QSortFilterProxyModel::setFilterFixedString);
 
     QVBoxLayout *cacheLayout = new QVBoxLayout;
     cacheLayout->addWidget(cacheSearchInput);
