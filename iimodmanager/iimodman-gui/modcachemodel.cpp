@@ -216,13 +216,26 @@ void ModCacheModel::sourceMetadataChanged(const QStringList &modIds, const QList
 {
     Q_UNUSED(modIds);
 
-    // TODO: For modIdxs size > 1, check if consecutive, then emit a properly bounded change event.
-    if (modIdxs.size() == 1)
+    if (modIdxs.size() == 0)
+        // Any/All rows changed.
+        emit dataChanged(createIndex(0, COLUMN_MIN), createIndex(cache.mods().size()-1, COLUMN_MAX));
+    else if (modIdxs.size() == 1)
         // One row changed.
         emit dataChanged(createIndex(modIdxs[0], COLUMN_MIN), createIndex(modIdxs[0], COLUMN_MAX));
     else
-        // Any/All rows changed.
-        emit dataChanged(createIndex(0, COLUMN_MIN), createIndex(cache.mods().size()-1, COLUMN_MAX));
+    {
+        // Multiple rows changed. Declare a bounding rectangle.
+        int minRow = modIdxs[0];
+        int maxRow = minRow;
+        for (int idx : modIdxs)
+        {
+            if (idx < minRow)
+                minRow = idx;
+            else if (idx > maxRow)
+                maxRow = idx;
+        }
+        emit dataChanged(createIndex(minRow, COLUMN_MIN), createIndex(maxRow, COLUMN_MAX));
+    }
 }
 
 }  // namespace iimodmanager
