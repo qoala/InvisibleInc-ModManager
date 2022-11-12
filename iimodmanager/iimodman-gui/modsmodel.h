@@ -16,7 +16,7 @@ public:
         NAME = 0,
         ID = 1,
         LATEST_VERSION = 2,
-        UPDATE_TIME = 3,
+        CACHE_UPDATE_TIME = 3,
 
         COLUMN_MIN = 0,
         COLUMN_MAX = 3,
@@ -52,11 +52,11 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
 private slots:
-    void sourceAboutToAppendMods(const QStringList &modIds);
-    void sourceAppendedMods();
-    void sourceAboutToRefresh(const QStringList &modIds, const QList<int> &modIdxs, ModCache::ChangeHint hint);
-    void sourceRefreshed(const QStringList &modIds, const QList<int> &modIdxs, ModCache::ChangeHint hint);
-    void sourceMetadataChanged(const QStringList &modIds, const QList<int> &modIdxs);
+    void cacheAboutToAppendMods(const QStringList &modIds);
+    void cacheAppendedMods();
+    void cacheAboutToRefresh(const QStringList &modIds, const QList<int> &modIdxs, ModCache::ChangeHint hint);
+    void cacheRefreshed(const QStringList &modIds, const QList<int> &modIdxs, ModCache::ChangeHint hint);
+    void cacheMetadataChanged(const QStringList &modIds, const QList<int> &modIdxs);
 
 private:
     ModCache &cache;

@@ -96,7 +96,7 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
     switch(left.column())
     {
         case ModsModel::LATEST_VERSION:
-        case ModsModel::UPDATE_TIME:
+        case ModsModel::CACHE_UPDATE_TIME:
             break;
         default:
             // Skip the extraction if we're falling through to superclass method.
@@ -117,7 +117,7 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
     {
         case ModsModel::LATEST_VERSION:
             return ColumnLessThan::modVersion(leftData, leftStatus, rightData, rightStatus);
-        case ModsModel::UPDATE_TIME:
+        case ModsModel::CACHE_UPDATE_TIME:
             return ColumnLessThan::modUpdateTime(leftData, leftStatus, rightData, rightStatus);
         default:
             return QSortFilterProxyModel::lessThan(left, right);

@@ -49,7 +49,7 @@ void MainWindow::createTabs()
     modsView->header()->setStretchLastSection(false);
     modsView->setColumnWidth(ModsModel::NAME, 300);
     modsView->setColumnWidth(ModsModel::ID, 160);
-    modsView->setColumnWidth(ModsModel::UPDATE_TIME, 160);
+    modsView->setColumnWidth(ModsModel::CACHE_UPDATE_TIME, 160);
     modsView->sortByColumn(ModsModel::NAME, Qt::AscendingOrder);
     modsView->setSortingEnabled(true);
 
