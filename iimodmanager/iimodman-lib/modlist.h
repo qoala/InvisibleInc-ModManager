@@ -26,6 +26,8 @@ class InstalledMod;
 //! Mods installed to the Invisible Inc application.
 class IIMODMANLIBSHARED_EXPORT ModList : public QObject
 {
+    Q_OBJECT
+
 public:
     //! Private implementation. Only accessible to classes in this file.
     class Impl;
@@ -45,10 +47,21 @@ public:
     const InstalledMod *mod(const QString &id) const;
 
     void refresh(RefreshLevel level = FULL);
+    //! Installs the specified mod from the cache.
+    //! Does not re-sort the mods list.
     const InstalledMod *installMod(const SpecMod &specMod, QString *errorInfo = nullptr);
-    const InstalledMod *removeMod(const QString &modId, QString *errorInfo = nullptr);
+    //! Uninstalls the specified mod.
+    //! Requires a refresh before the removal is reflected in the mods list and cache.
+    bool removeMod(const QString &modId, QString *errorInfo = nullptr);
 
     ~ModList();
+
+signals:
+    //! Emitted before mods are arbitrarily changed.
+    void aboutToRefresh();
+    //! Emitted after mods are arbitrarily changed.
+    void refreshed();
+
 private:
     std::experimental::propagate_const<std::unique_ptr<Impl>> impl;
 };

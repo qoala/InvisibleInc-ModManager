@@ -28,9 +28,10 @@ public:
 
     void refresh(RefreshLevel level = FULL);
     const InstalledMod *installMod(const SpecMod &specMod, QString *errorInfo = nullptr);
-    const InstalledMod *removeMod(const QString &modId, QString *errorInfo = nullptr);
+    bool removeMod(const QString &modId, QString *errorInfo = nullptr);
 
 // file-visibility:
+    ModList *q;
     inline const ModCache *cache() const { return cache_; }
     inline ModCache *cache() { return cache_; }
     QString modPath(const QString &modId) const;
@@ -80,7 +81,9 @@ private:
 
 ModList::ModList(const ModManConfig &config, ModCache *cache, QObject *parent)
     : QObject(parent), impl{std::make_unique<Impl>(config, cache)}
-{}
+{
+    impl->q = this;
+}
 
 const QList<InstalledMod> &ModList::mods() const
 {
@@ -102,7 +105,7 @@ const InstalledMod *ModList::installMod(const SpecMod &specMod, QString *errorIn
     return impl->installMod(specMod, errorInfo);
 }
 
-const InstalledMod *ModList::removeMod(const QString &modId, QString *errorInfo)
+bool ModList::removeMod(const QString &modId, QString *errorInfo)
 {
     return impl->removeMod(modId, errorInfo);
 }
@@ -146,6 +149,8 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
 
     const QHash<QString, QString> cacheVersionIds = saveCacheVersionIds();
 
+    emit q->aboutToRefresh();
+
     installDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     installDir.setSorting(QDir::Name);
     const QStringList modIds = installDir.entryList();
@@ -167,6 +172,8 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
         if (!modIds_.contains(modId))
             cache()->unmarkInstalledMod(modId);
     }
+
+    emit q->refreshed();
 }
 
 const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *errorInfo)
@@ -216,14 +223,14 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *e
     return nullptr;
 }
 
-const InstalledMod *ModList::Impl::removeMod(const QString &modId, QString *errorInfo)
+bool ModList::Impl::removeMod(const QString &modId, QString *errorInfo)
 {
     InstalledMod *im = mod(modId);
     if (im)
     {
         const QString outputPath = modPath(modId);
         if (!FileUtils::removeModDir(outputPath, errorInfo))
-            return nullptr;
+            return false;
     }
     return im;
 }
