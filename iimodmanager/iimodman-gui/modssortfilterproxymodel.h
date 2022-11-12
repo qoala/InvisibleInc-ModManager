@@ -19,14 +19,15 @@ public:
     ModsSortFilterProxyModel(QObject *parent = nullptr);
 
 public slots:
-    void setFilterStatus(ModsModel::Status status);
+    void setFilterStatus(ModsModel::Status requiredStatuses, ModsModel::Status maskedStatuses);
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
 
 private:
-    ModsModel::Status filterStatus;
+    ModsModel::Status requiredStatuses;
+    ModsModel::Status maskedStatuses;
 };
 
 } // namespace iimodmanager

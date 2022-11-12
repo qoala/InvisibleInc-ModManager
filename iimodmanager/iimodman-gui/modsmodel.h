@@ -6,6 +6,11 @@
 
 namespace iimodmanager {
 
+class ModList;
+
+//! Data model representing the union of the download-cached and installed mods.
+//! Changes to the download cache are reflected immediately.
+//! Changes to the installed mods require a refresh of the mod list.
 class ModsModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -31,12 +36,17 @@ public:
         NO_STATUS = 0,
         //! The row is a mod that's installed.
         INSTALLED_STATUS = 1,
+        //! The row is a mod that's in the cache.
+        CACHED_STATUS = 2,
+        //! The row is a steam workshop mod.
+        STEAM_STATUS = 4,
+
         //! The row is a mod that's not downloaded.
-        NO_DOWNLOAD_STATUS = 2,
+        NO_DOWNLOAD_STATUS = 0x10,
         //! The row is a mod that's not downloaded.
-        CAN_INSTALL_UPDATE_STATUS = 4,
+        CAN_DOWNLOAD_UPDATE_STATUS = 0x11,
         //! The row is a mod that's not downloaded.
-        CAN_DOWNLOAD_UPDATE_STATUS = 8,
+        CAN_INSTALL_UPDATE_STATUS = 0x12,
 
         //! The requested column is unlabelled for the requested mod.
         UNLABELLED_STATUS = 0x100,
@@ -44,7 +54,7 @@ public:
     Q_DECLARE_FLAGS(Status, StatusFlag)
     Q_FLAG(Status)
 
-    ModsModel(ModCache &cache, QObject *parent = nullptr);
+    ModsModel(ModCache &cache, ModList &modList, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -54,15 +64,47 @@ public:
 private slots:
     void cacheAboutToAppendMods(const QStringList &modIds);
     void cacheAppendedMods();
-    void cacheAboutToRefresh(const QStringList &modIds, const QList<int> &modIdxs, ModCache::ChangeHint hint);
-    void cacheRefreshed(const QStringList &modIds, const QList<int> &modIdxs, ModCache::ChangeHint hint);
-    void cacheMetadataChanged(const QStringList &modIds, const QList<int> &modIdxs);
+    void cacheAboutToRefresh(const QStringList &modIds = QStringList(), const QList<int> &modIdxs = QList<int>(), ModCache::ChangeHint hint = ModCache::NO_HINT);
+    void cacheRefreshed(const QStringList &modIds = QStringList(), const QList<int> &modIdxs = QList<int>(), ModCache::ChangeHint hint = ModCache::NO_HINT);
+    void cacheMetadataChanged(const QStringList &modIds = QStringList(), const QList<int> &modIdxs = QList<int>());
+    void installedModsAboutToRefresh();
+    void installedModsRefreshed();
 
 private:
+    enum AppendType
+    {
+        //! The current cache-append event is adding zero rows.
+        EMPTY_APPEND,
+        //! The current cache-append event is adding new mods to the cache.
+        NORMAL_APPEND,
+        //! The current cache-append event is transferring installed-only mods to the cache.
+        MOVE_APPEND,
+        //! The current cache-append event is transferring installed-only mods to the cache without reordering the visible rows.
+        TRIVIAL_MOVE_APPEND,
+        //! The current cache-append event has a non-simple intersection with installed-only mods.
+        //! Treated as a full refresh.
+        REFRESH_APPEND,
+    };
+
     ModCache &cache;
-    // Temporary storage between aboutToRefresh and refresh signals.
+    ModList &modList;
+    // Persistent tracking of mods in the installed, but not download-cached lists.
+    QVector<int> uncachedIdxs_;
+    QHash<QString, int> uncachedIds_; // Mod ID to index in uncachedIdxs.
+
+    // Temporary storage between aboutTo and completion signals.
+    AppendType appendType;
     QModelIndexList savedPersistentIndexes;
     QVector<QString> savedPersistentMappings;
+
+    inline const QVector<int> &uncachedIdxs() const { return uncachedIdxs_; };
+    //! Returns the row number for an uncached mod ID, or -1 if not found.
+    //! \sa ModCache::modIndex
+    int uncachedIndex(const QString &modId) const;
+
+    void reindexUncachedMods();
+    void savePersistentIndexes();
+    void updatePersistentIndexes();
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(ModsModel::Status)

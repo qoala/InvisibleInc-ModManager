@@ -70,9 +70,10 @@ namespace ColumnLessThan {
 ModsSortFilterProxyModel::ModsSortFilterProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent) {}
 
-void ModsSortFilterProxyModel::setFilterStatus(ModsModel::Status status)
+void ModsSortFilterProxyModel::setFilterStatus(ModsModel::Status requiredStatuses, ModsModel::Status maskedStatuses)
 {
-    filterStatus = status;
+    this->requiredStatuses = requiredStatuses;
+    this->maskedStatuses = maskedStatuses;
     invalidateFilter();
 }
 
@@ -80,13 +81,12 @@ bool ModsSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex
 {
     QModelIndex nameIndex = sourceModel()->index(sourceRow, ModsModel::NAME, sourceParent);
     QModelIndex modIdIndex = sourceModel()->index(sourceRow, ModsModel::ID, sourceParent);
-
-    bool filterMatch = (!filterStatus || (sourceModel()->data(nameIndex, ModsModel::STATUS_ROLE).value<Status>() & filterStatus) == filterStatus);
+    ModsModel::Status rowStatus = (requiredStatuses || maskedStatuses) ? sourceModel()->data(nameIndex, ModsModel::STATUS_ROLE).value<Status>() : ModsModel::NO_STATUS;
 
     return (sourceModel()->data(nameIndex).toString().contains(filterRegExp())
             || sourceModel()->data(modIdIndex).toString().contains(filterRegExp()))
-        && filterMatch;
-            //&& (!filterStatus || (sourceModel()->data(nameIndex, ModsModel::STATUS_ROLE).value<Status>() & filterStatus) == filterStatus);
+        && (!requiredStatuses || (rowStatus & requiredStatuses) == requiredStatuses)
+        && (!maskedStatuses || !(rowStatus & maskedStatuses));
 }
 
 bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
@@ -95,12 +95,12 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
         return QSortFilterProxyModel::lessThan(left, right);
     switch(left.column())
     {
-        case ModsModel::LATEST_VERSION:
-        case ModsModel::CACHE_UPDATE_TIME:
-            break;
-        default:
-            // Skip the extraction if we're falling through to superclass method.
-            return QSortFilterProxyModel::lessThan(left, right);
+    case ModsModel::LATEST_VERSION:
+    case ModsModel::CACHE_UPDATE_TIME:
+        break;
+    default:
+        // Skip the extraction if we're falling through to superclass method.
+        return QSortFilterProxyModel::lessThan(left, right);
     }
 
     const QVariant leftData = sourceModel()->data(left);
@@ -115,12 +115,12 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
 
     switch (left.column())
     {
-        case ModsModel::LATEST_VERSION:
-            return ColumnLessThan::modVersion(leftData, leftStatus, rightData, rightStatus);
-        case ModsModel::CACHE_UPDATE_TIME:
-            return ColumnLessThan::modUpdateTime(leftData, leftStatus, rightData, rightStatus);
-        default:
-            return QSortFilterProxyModel::lessThan(left, right);
+    case ModsModel::LATEST_VERSION:
+        return ColumnLessThan::modVersion(leftData, leftStatus, rightData, rightStatus);
+    case ModsModel::CACHE_UPDATE_TIME:
+        return ColumnLessThan::modUpdateTime(leftData, leftStatus, rightData, rightStatus);
+    default:
+        return QSortFilterProxyModel::lessThan(left, right);
     }
 }
 

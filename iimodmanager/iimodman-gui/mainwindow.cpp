@@ -38,7 +38,7 @@ void MainWindow::createTabs()
     setCentralWidget(tabWidget);
 
     // Main mods tab.
-    modsModel = new ModsModel(app.cache());
+    modsModel = new ModsModel(app.cache(), app.modList());
     modsSortFilterProxy = new ModsSortFilterProxyModel;
     modsSortFilterProxy->setSourceModel(modsModel);
     modsSortFilterProxy->setFilterKeyColumn(0);
@@ -57,6 +57,8 @@ void MainWindow::createTabs()
     connect(modsSearchInput, &QLineEdit::textChanged, modsSortFilterProxy, &QSortFilterProxyModel::setFilterFixedString);
 
     modsInstalledCheckBox = new QCheckBox(tr("Installed"));
+    modsInstalledCheckBox->setTristate(true);
+    modsInstalledCheckBox->setCheckState(Qt::PartiallyChecked);
     connect(modsInstalledCheckBox, &QCheckBox::stateChanged, this, &MainWindow::modsFilterStatusChanged);
     modsHasCachedUpdateCheckBox = new QCheckBox(tr("Update Ready"));
     modsHasCachedUpdateCheckBox->setToolTip(tr("A new version is downloaded and ready to install."));
@@ -118,7 +120,7 @@ void MainWindow::createMenuActions()
     cacheStatusAct = new QAction(tr("&Log Status"), this);
     cacheStatusAct->setStatusTip(tr("List downloaded mods to the log."));
     connect(cacheStatusAct, &QAction::triggered, this, &MainWindow::cacheStatus);
-    cacheUpdateAct = new QAction(tr("Check for &updates"), this);
+    cacheUpdateAct = new QAction(tr("Download &updates"), this);
     cacheUpdateAct->setStatusTip(tr("Check for and download updates for all mods in the cache"));
     connect(cacheUpdateAct, &QAction::triggered, this, &MainWindow::cacheUpdate);
     cacheSaveAct = new QAction(tr("&Save all-mods file"), this);
@@ -128,7 +130,7 @@ void MainWindow::createMenuActions()
     cacheAddModAct->setStatusTip(tr("Download and add a mod to the cache"));
     connect(cacheAddModAct, &QAction::triggered, this, &MainWindow::cacheAddMod);
 
-    installedStatusAct = new QAction(tr("Log &Status"), this);
+    installedStatusAct = new QAction(tr("&Log Status"), this);
     installedStatusAct->setStatusTip(tr("List currently installed mods to the log."));
     connect(installedStatusAct, &QAction::triggered, this, &MainWindow::installedStatus);
     installedUpdateAct = new QAction(tr("Install &Updates"), this);
@@ -168,14 +170,24 @@ void MainWindow::setActionsEnabled(bool enabled)
 
 void MainWindow::modsFilterStatusChanged()
 {
-    ModsModel::Status status;
+    ModsModel::Status requiredStatuses, maskedStatuses;
 
-    if (modsInstalledCheckBox->isChecked())
-        status |= ModsModel::INSTALLED_STATUS;
+    switch (modsInstalledCheckBox->checkState())
+    {
+    case Qt::Unchecked:
+        maskedStatuses |= ModsModel::INSTALLED_STATUS;
+        break;
+    case Qt::Checked:
+        requiredStatuses |= ModsModel::INSTALLED_STATUS;
+        break;
+    case Qt::PartiallyChecked:
+        break;
+    }
+
     if (modsHasCachedUpdateCheckBox->isChecked())
-        status |= ModsModel::CAN_INSTALL_UPDATE_STATUS;
+        requiredStatuses |= ModsModel::CAN_INSTALL_UPDATE_STATUS;
 
-    modsSortFilterProxy->setFilterStatus(status);
+    modsSortFilterProxy->setFilterStatus(requiredStatuses, maskedStatuses);
 }
 
 void MainWindow::actionFinished()
