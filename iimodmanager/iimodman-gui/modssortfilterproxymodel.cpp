@@ -25,12 +25,12 @@ namespace ColumnLessThan {
             return !leftMatch.hasMatch();
 
         // Parse out individual version number components.
-        auto leftNumberParts = leftMatch.capturedRef(1).split('.');
+        auto leftNumberParts = leftMatch.capturedView(1).split('.');
         QVector<int> leftNumbers;
         leftNumbers.reserve(leftNumberParts.size());
         for (const auto &p : leftNumberParts)
             leftNumbers << p.toInt();
-        auto rightNumberParts = rightMatch.capturedRef(1).split('.');
+        auto rightNumberParts = rightMatch.capturedView(1).split('.');
         QVector<int> rightNumbers;
         rightNumbers.reserve(rightNumberParts.size());
         for (const auto &p : rightNumberParts)
@@ -44,7 +44,7 @@ namespace ColumnLessThan {
         if (leftNumbers.size() != rightNumbers.size())
             return leftNumbers.size() < rightNumbers.size();
 
-        return leftMatch.capturedRef(2) < rightMatch.capturedRef(3);
+        return leftMatch.capturedView(2) < rightMatch.capturedView(3);
     }
 
     bool modUpdateTime(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
@@ -52,8 +52,13 @@ namespace ColumnLessThan {
         if (leftStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS) || rightStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS))
             return leftStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS) && !rightStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS);
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         bool leftIsDateTime = static_cast<QMetaType::Type>(leftData.type()) == QMetaType::QDateTime;
         bool rightIsDateTime = static_cast<QMetaType::Type>(rightData.type()) == QMetaType::QDateTime;
+#else
+        bool leftIsDateTime = leftData.typeId() == QMetaType::QDateTime;
+        bool rightIsDateTime = rightData.typeId() == QMetaType::QDateTime;
+#endif
         if (leftIsDateTime && rightIsDateTime)
             return leftData.toDateTime() < rightData.toDateTime();
         else
@@ -83,8 +88,15 @@ bool ModsSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex
     QModelIndex modIdIndex = sourceModel()->index(sourceRow, ModsModel::ID, sourceParent);
     ModsModel::Status rowStatus = (requiredStatuses || maskedStatuses) ? sourceModel()->data(nameIndex, ModsModel::STATUS_ROLE).value<Status>() : ModsModel::NO_STATUS;
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    // Pre-QT6: setFilterFixedString sets RegExp.
     return (sourceModel()->data(nameIndex).toString().contains(filterRegExp())
             || sourceModel()->data(modIdIndex).toString().contains(filterRegExp()))
+#else
+    // QT6: RegExp retired. setFilterFixedString sets RegularExpression.
+    return (sourceModel()->data(nameIndex).toString().contains(filterRegularExpression())
+            || sourceModel()->data(modIdIndex).toString().contains(filterRegularExpression()))
+#endif
         && (!requiredStatuses || (rowStatus & requiredStatuses) == requiredStatuses)
         && (!maskedStatuses || !(rowStatus & maskedStatuses));
 }
