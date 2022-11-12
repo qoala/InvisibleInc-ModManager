@@ -27,7 +27,7 @@ public:
     MainWindow(ModManGuiApplication &app);
 
 private slots:
-    void cacheFilterStatusChanged();
+    void modsFilterStatusChanged();
 
     void actionFinished();
     void writeText(QString value);
@@ -48,12 +48,12 @@ private:
     ModManGuiApplication &app;
 
     QTabWidget *tabWidget;
-    ModCacheModel *cacheModel;
-    ModSortFilterProxyModel *cacheSortFilterProxy;
-    QTreeView *cacheView;
-    QLineEdit *cacheSearchInput;
-    QCheckBox *cacheInstalledCheckBox;
-    QCheckBox *cacheHasCachedUpdateCheckBox;
+    ModCacheModel *modsModel;
+    ModSortFilterProxyModel *modsSortFilterProxy;
+    QTreeView *modsView;
+    QLineEdit *modsSearchInput;
+    QCheckBox *modsInstalledCheckBox;
+    QCheckBox *modsHasCachedUpdateCheckBox;
 
     QDockWidget *logDock;
     QPlainTextEdit *logDisplay;

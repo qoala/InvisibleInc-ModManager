@@ -37,46 +37,43 @@ void MainWindow::createTabs()
     tabWidget = new QTabWidget;
     setCentralWidget(tabWidget);
 
-    // Cache
-    cacheModel = new ModCacheModel(app.cache());
-    cacheSortFilterProxy = new ModSortFilterProxyModel;
-    cacheSortFilterProxy->setSourceModel(cacheModel);
-    cacheSortFilterProxy->setFilterKeyColumn(0);
-    cacheSortFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
-    cacheSortFilterProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
-    cacheView = new QTreeView;
-    cacheView->setModel(cacheSortFilterProxy);
-    cacheView->header()->setStretchLastSection(false);
-    cacheView->setColumnWidth(ModCacheModel::NAME, 300);
-    cacheView->setColumnWidth(ModCacheModel::ID, 160);
-    cacheView->setColumnWidth(ModCacheModel::UPDATE_TIME, 160);
-    cacheView->sortByColumn(ModCacheModel::NAME, Qt::AscendingOrder);
-    cacheView->setSortingEnabled(true);
+    // Main mods tab.
+    modsModel = new ModCacheModel(app.cache());
+    modsSortFilterProxy = new ModSortFilterProxyModel;
+    modsSortFilterProxy->setSourceModel(modsModel);
+    modsSortFilterProxy->setFilterKeyColumn(0);
+    modsSortFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    modsSortFilterProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
+    modsView = new QTreeView;
+    modsView->setModel(modsSortFilterProxy);
+    modsView->header()->setStretchLastSection(false);
+    modsView->setColumnWidth(ModCacheModel::NAME, 300);
+    modsView->setColumnWidth(ModCacheModel::ID, 160);
+    modsView->setColumnWidth(ModCacheModel::UPDATE_TIME, 160);
+    modsView->sortByColumn(ModCacheModel::NAME, Qt::AscendingOrder);
+    modsView->setSortingEnabled(true);
 
-    cacheSearchInput = new QLineEdit;
-    connect(cacheSearchInput, &QLineEdit::textChanged, cacheSortFilterProxy, &QSortFilterProxyModel::setFilterFixedString);
+    modsSearchInput = new QLineEdit;
+    connect(modsSearchInput, &QLineEdit::textChanged, modsSortFilterProxy, &QSortFilterProxyModel::setFilterFixedString);
 
-    cacheInstalledCheckBox = new QCheckBox(tr("Installed"));
-    connect(cacheInstalledCheckBox, &QCheckBox::stateChanged, this, &MainWindow::cacheFilterStatusChanged);
-    cacheHasCachedUpdateCheckBox = new QCheckBox(tr("Update Ready"));
-    cacheHasCachedUpdateCheckBox->setToolTip(tr("A new version is downloaded and ready to install."));
-    connect(cacheHasCachedUpdateCheckBox, &QCheckBox::stateChanged, this, &MainWindow::cacheFilterStatusChanged);
+    modsInstalledCheckBox = new QCheckBox(tr("Installed"));
+    connect(modsInstalledCheckBox, &QCheckBox::stateChanged, this, &MainWindow::modsFilterStatusChanged);
+    modsHasCachedUpdateCheckBox = new QCheckBox(tr("Update Ready"));
+    modsHasCachedUpdateCheckBox->setToolTip(tr("A new version is downloaded and ready to install."));
+    connect(modsHasCachedUpdateCheckBox, &QCheckBox::stateChanged, this, &MainWindow::modsFilterStatusChanged);
 
-    QHBoxLayout *cacheFilterBtnLayout = new QHBoxLayout;
-    cacheFilterBtnLayout->addWidget(cacheInstalledCheckBox);
-    cacheFilterBtnLayout->addWidget(cacheHasCachedUpdateCheckBox);
-    QVBoxLayout *cacheLayout = new QVBoxLayout;
-    cacheLayout->addWidget(cacheSearchInput);
-    cacheLayout->addLayout(cacheFilterBtnLayout);
-    cacheLayout->addWidget(cacheView);
-    QWidget *cachePage = new QWidget;
-    cachePage->setLayout(cacheLayout);
-    tabWidget->addTab(cachePage, tr("&Downloaded Mods"));
+    QHBoxLayout *modsFilterBtnLayout = new QHBoxLayout;
+    modsFilterBtnLayout->addWidget(modsInstalledCheckBox);
+    modsFilterBtnLayout->addWidget(modsHasCachedUpdateCheckBox);
+    QVBoxLayout *modsLayout = new QVBoxLayout;
+    modsLayout->addWidget(modsSearchInput);
+    modsLayout->addLayout(modsFilterBtnLayout);
+    modsLayout->addWidget(modsView);
+    QWidget *modsPage = new QWidget;
+    modsPage->setLayout(modsLayout);
+    tabWidget->addTab(modsPage, tr("Mods"));
 
-    // Installed
-
-    QWidget *installedPage = new QLabel("World");
-    tabWidget->addTab(installedPage, tr("&Installed Mods"));
+    // TODO: expanded cache management tab.
 }
 
 void MainWindow::createLogDock()
@@ -169,16 +166,16 @@ void MainWindow::setActionsEnabled(bool enabled)
     installedSyncFileAct->setEnabled(enabled);
 }
 
-void MainWindow::cacheFilterStatusChanged()
+void MainWindow::modsFilterStatusChanged()
 {
     ModCacheModel::Status status;
 
-    if (cacheInstalledCheckBox->isChecked())
+    if (modsInstalledCheckBox->isChecked())
         status |= ModCacheModel::INSTALLED_STATUS;
-    if (cacheHasCachedUpdateCheckBox->isChecked())
+    if (modsHasCachedUpdateCheckBox->isChecked())
         status |= ModCacheModel::CAN_INSTALL_UPDATE_STATUS;
 
-    cacheSortFilterProxy->setFilterStatus(status);
+    modsSortFilterProxy->setFilterStatus(status);
 }
 
 void MainWindow::actionFinished()
