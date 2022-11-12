@@ -39,7 +39,7 @@ public:
         ID_ONLY,
     };
 
-    ModList(const ModManConfig &config, ModCache *cache = nullptr, QObject *parent = nullptr);
+    ModList(const ModManConfig &config, ModCache *cache, QObject *parent = nullptr);
 
     const QList<InstalledMod> &mods() const;
     const InstalledMod *mod(const QString &id) const;

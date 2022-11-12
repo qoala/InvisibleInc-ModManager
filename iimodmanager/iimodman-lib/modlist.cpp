@@ -42,7 +42,7 @@ private:
     QMap<QString, qsizetype> modIds_;
 
     void refreshIndex();
-    const QHash<QString, QString> saveCacheVersionIds();
+    const QHash<QString, QString> saveCacheVersionIds() const;
 };
 
 //! Private implementation of InstalledMod.
@@ -124,7 +124,7 @@ const InstalledMod *ModList::Impl::mod(const QString &id) const
     return nullptr;
 }
 
-const QHash<QString, QString> ModList::Impl::saveCacheVersionIds()
+const QHash<QString, QString> ModList::Impl::saveCacheVersionIds() const
 {
     QHash<QString, QString> map;
     for (const auto &im : mods())
