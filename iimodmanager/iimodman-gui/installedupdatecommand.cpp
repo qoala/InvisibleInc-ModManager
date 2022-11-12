@@ -25,7 +25,7 @@ void InstalledUpdateCommand::execute()
         const CachedMod *cm = app.cache().mod(im.id());
         const CachedVersion *cv = cm ? cm->latestVersion() : nullptr;
         if (cv && !cv->installed())
-            if (!installMod(cv->asSpec()))
+            if (!installMod(cv->asSpec(), cm))
             {
                 ok = false;
                 break;
@@ -40,19 +40,24 @@ void InstalledUpdateCommand::execute()
     deleteLater();
 }
 
-bool InstalledUpdateCommand::installMod(SpecMod specMod)
+bool InstalledUpdateCommand::installMod(SpecMod specMod, const CachedMod *from)
 {
+    QString fromVersion = from->info().version();
+
     QString errorInfo;
     const InstalledMod *installed = app.modList().installMod(specMod, &errorInfo);
     if (installed)
     {
-        emit textOutput(QString("  %1 installed %2").arg(installed->info().toString()).arg(installed->info().version()));
+        emit textOutput(QStringLiteral("  %1 installed \t%2 => %3").arg(
+                    installed->info().toString(),
+                    util::displayVersion(fromVersion),
+                    util::displayVersion(installed->info().version())));
         return true;
     }
     else
     {
         const CachedMod *cm = app.cache().mod(specMod.id());
-        emit textOutput(QString("  Failed to install %1: %2").arg(cm ? cm->info().toString() : specMod.id(), errorInfo));
+        emit textOutput(QStringLiteral("  Failed to install %1: %2").arg(cm ? cm->info().toString() : specMod.id(), errorInfo));
         return false;
     }
 }

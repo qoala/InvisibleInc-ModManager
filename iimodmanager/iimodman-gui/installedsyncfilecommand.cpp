@@ -73,19 +73,19 @@ std::optional<SpecMod> InstalledSyncFileCommand::makeInstallTarget(const SpecMod
     }
     else if (!cm)
     {
-        emit textOutput(QString("  Mod does not exist in cache: %1 [%2]").arg(sm.name()).arg(sm.id()));
+        emit textOutput(QStringLiteral("  Mod does not exist in cache: %1 [%2]").arg(sm.name()).arg(sm.id()));
         return {};
     }
     if (!cm->downloaded())
     {
-        emit textOutput(QString("  Mod has no downloaded versions: %1").arg(cm->info().toString()));
+        emit textOutput(QStringLiteral("  Mod has no downloaded versions: %1").arg(cm->info().toString()));
         return {};
     }
 
     const CachedVersion *cv = sm.versionId().isEmpty() ? cm->latestVersion() : app.cache().refreshVersion(sm.id(), sm.versionId());
     if (!cv)
     {
-        emit textOutput(QString("  Mod version is not in cache: %1 %2").arg(cm->info().toString()).arg(sm.versionId()));
+        emit textOutput(QStringLiteral("  Mod version is not in cache: %1 %2").arg(cm->info().toString()).arg(sm.versionId()));
         return {};
     }
 
@@ -122,7 +122,7 @@ bool InstalledSyncFileCommand::doSync()
         if (!installMod(sm))
             return false;
     for (const SpecMod &sm : updatedMods)
-        if (!installMod(sm))
+        if (!updateMod(sm))
             return false;
     emit textOutput("Sync complete");
     return true;
@@ -133,12 +133,15 @@ bool InstalledSyncFileCommand::removeMod(const InstalledMod &im)
     QString errorInfo;
     if (app.modList().removeMod(im.id(), &errorInfo))
     {
-        emit textOutput(QString("  %1 removed").arg(im.info().toString()));
+        emit textOutput(QStringLiteral("  %1 removed \t%2").arg(
+                    im.info().toString(),
+                    util::displayVersion(im.info().version())));
         return true;
     }
     else
     {
-        emit textOutput(QString("Failed to remove %1: %2").arg(im.info().toString(), errorInfo));
+        emit textOutput(QStringLiteral("Failed to remove %1: %2").arg(
+                    im.info().toString(), errorInfo));
         return false;
     }
 }
@@ -149,12 +152,38 @@ bool InstalledSyncFileCommand::installMod(const SpecMod &sm)
     const InstalledMod *im = app.modList().installMod(sm, &errorInfo);
     if (im)
     {
-        emit textOutput(QString("  %1 installed").arg(im->info().toString()));
+        emit textOutput(QStringLiteral("  %1 installed \t%2").arg(
+                    im->info().toString(),
+                    util::displayVersion(im->info().version())));
     }
     else
     {
         const CachedMod *cm = app.cache().mod(sm.id());
-        emit textOutput(QString("Failed to install %1: %2").arg(cm ? cm->info().toString() : sm.id(), errorInfo));
+        emit textOutput(QStringLiteral("Failed to install %1: %2").arg(
+                    cm ? cm->info().toString() : sm.id(), errorInfo));
+    }
+    return im;
+}
+
+bool InstalledSyncFileCommand::updateMod(const SpecMod &sm)
+{
+    const InstalledMod *from = app.modList().mod(sm.id());
+    QString fromVersion = from ? from->info().version() : QString();
+
+    QString errorInfo;
+    const InstalledMod *im = app.modList().installMod(sm, &errorInfo);
+    if (im)
+    {
+        emit textOutput(QStringLiteral("  %1 installed \t%2 => %3").arg(
+                    im->info().toString(),
+                    util::displayVersion(fromVersion),
+                    util::displayVersion(im->info().version())));
+    }
+    else
+    {
+        const CachedMod *cm = app.cache().mod(sm.id());
+        emit textOutput(QStringLiteral("Failed to install %1: %2").arg(
+                    cm ? cm->info().toString() : sm.id(), errorInfo));
     }
     return im;
 }

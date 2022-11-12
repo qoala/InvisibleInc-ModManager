@@ -30,6 +30,7 @@ private:
     bool doSync();
     bool removeMod(const InstalledMod &installedMod);
     bool installMod(const SpecMod &specMod);
+    bool updateMod(const SpecMod &specMod);
 
     ModManGuiApplication &app;
 

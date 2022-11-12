@@ -18,6 +18,13 @@ bool compareModNames(const InstalledMod &a, const InstalledMod &b)
     return a.info().name() < b.info().name();
 }
 
+const QString EMPTY_VERSION = QStringLiteral("-");
+
+const QString &displayVersion(const QString &version)
+{
+    return version.isNull() ? EMPTY_VERSION : version;
+}
+
 } // namespace util
 
 } // namespace iimodmanager

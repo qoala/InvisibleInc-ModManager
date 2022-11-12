@@ -5,6 +5,7 @@
 
 namespace iimodmanager {
 
+class CachedMod;
 class ModManGuiApplication;
 class SpecMod;
 
@@ -23,7 +24,7 @@ signals:
     void textOutput(QString value);
 
 private:
-    bool installMod(SpecMod sm);
+    bool installMod(SpecMod sm, const CachedMod *from);
 
     ModManGuiApplication &app;
 };
