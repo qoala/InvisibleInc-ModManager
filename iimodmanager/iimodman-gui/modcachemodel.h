@@ -6,7 +6,6 @@
 
 namespace iimodmanager {
 
-
 class ModCacheModel : public QAbstractListModel
 {
     Q_OBJECT

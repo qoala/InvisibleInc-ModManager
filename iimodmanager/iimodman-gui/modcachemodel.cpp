@@ -1,6 +1,7 @@
 #include "modcachemodel.h"
 
 #include <QDateTime>
+#include <modcache.h>
 #include <modinfo.h>
 
 namespace iimodmanager {

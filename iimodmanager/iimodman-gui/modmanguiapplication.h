@@ -3,11 +3,11 @@
 
 #include <QApplication>
 #include <modmanconfig.h>
-#include <modcache.h>
-#include <modlist.h>
 
 namespace iimodmanager {
 
+class ModCache;
+class ModList;
 class ModDownloader;
 
 class ModManGuiApplication: public QApplication

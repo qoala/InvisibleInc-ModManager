@@ -17,6 +17,7 @@
 #include <QLabel>
 #include <QMenuBar>
 #include <QVBoxLayout>
+#include <modcache.h>
 
 namespace iimodmanager {
 

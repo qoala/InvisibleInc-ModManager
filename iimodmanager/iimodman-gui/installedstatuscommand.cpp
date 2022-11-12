@@ -2,7 +2,9 @@
 #include "modmanguiapplication.h"
 #include "util.h"
 
+#include <modcache.h>
 #include <modinfo.h>
+#include <modlist.h>
 
 namespace iimodmanager {
 

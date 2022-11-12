@@ -2,6 +2,7 @@
 #include "modmanguiapplication.h"
 #include "util.h"
 
+#include <modcache.h>
 #include <modinfo.h>
 
 namespace iimodmanager {

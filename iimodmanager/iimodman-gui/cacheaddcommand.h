@@ -2,7 +2,6 @@
 #define CACHEADDCOMMAND_H
 
 #include <QObject>
-#include <moddownloader.h>
 
 namespace iimodmanager {
 

@@ -3,6 +3,7 @@
 #include "util.h"
 
 #include <QFileDialog>
+#include <modcache.h>
 #include <modinfo.h>
 #include <modlist.h>
 

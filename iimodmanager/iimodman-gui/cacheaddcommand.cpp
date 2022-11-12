@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QRegularExpression>
 #include <QUrl>
+#include <modcache.h>
 #include <moddownloader.h>
 #include <modinfo.h>
 
