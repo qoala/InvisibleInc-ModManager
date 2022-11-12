@@ -22,7 +22,7 @@ class ModList::Impl
 public:
     Impl(const ModManConfig &config, ModCache *cache);
 
-    inline const QList<InstalledMod> mods() const { return mods_; }
+    inline const QList<InstalledMod> &mods() const { return mods_; }
     InstalledMod *mod(const QString &id);
     const InstalledMod *mod(const QString &id) const;
 
@@ -42,6 +42,7 @@ private:
     QMap<QString, qsizetype> modIds_;
 
     void refreshIndex();
+    const QHash<QString, QString> saveCacheVersionIds();
 };
 
 //! Private implementation of InstalledMod.
@@ -61,7 +62,8 @@ public:
     QString path() const;
 
 // file-visibility:
-    bool refresh(ModList::RefreshLevel level = ModList::FULL);
+    inline const QString &cacheVersionId() const { return cacheVersionId_; }
+    bool refresh(ModList::RefreshLevel level = ModList::FULL, const QString &expectedCacheVersionId = QString());
 
 private:
     const ModList::Impl &parent;
@@ -77,7 +79,7 @@ ModList::ModList(const ModManConfig &config, ModCache *cache, QObject *parent)
     : QObject(parent), impl{std::make_unique<Impl>(config, cache)}
 {}
 
-const QList<InstalledMod> ModList::mods() const
+const QList<InstalledMod> &ModList::mods() const
 {
     return impl->mods();
 }
@@ -122,10 +124,25 @@ const InstalledMod *ModList::Impl::mod(const QString &id) const
     return nullptr;
 }
 
+const QHash<QString, QString> ModList::Impl::saveCacheVersionIds()
+{
+    QHash<QString, QString> map;
+    for (const auto &im : mods())
+    {
+        const QString &cvId = im.impl()->cacheVersionId();
+        if (!cvId.isNull())
+            map.insert(im.id(), cvId);
+    }
+
+    return map;
+}
+
 void ModList::Impl::refresh(ModList::RefreshLevel level)
 {
     QDir installDir(config_.modPath());
     qCDebug(modlist).noquote() << "installed:refresh() Start" << installDir.path();
+
+    const QHash<QString, QString> cacheVersionIds = saveCacheVersionIds();
 
     installDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     installDir.setSorting(QDir::Name);
@@ -135,7 +152,7 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
     for (auto modId : modIds)
     {
         InstalledMod mod(*this, modId);
-        if (mod.impl()->refresh(level))
+        if (mod.impl()->refresh(level, cacheVersionIds.value(modId)))
             mods_.append(mod);
     }
 
@@ -173,13 +190,13 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *e
     InstalledMod *im = mod(modId);
     if (im)
     {
-        if (im->impl()->refresh())
+        if (im->impl()->refresh(FULL, cv->id()))
             return im;
     }
     else
     {
         InstalledMod newMod(*this, modId);
-        if (newMod.impl()->refresh())
+        if (newMod.impl()->refresh(FULL, cv->id()))
         {
             modIds_[modId] = mods_.size();
             mods_.append(newMod);
@@ -280,14 +297,14 @@ const QString &InstalledMod::Impl::hash() const
 
 bool InstalledMod::Impl::hasCacheVersion() const
 {
-    if (auto cachedMod = parent.cache()->mod(id_))
+    if (const auto cachedMod = parent.cache()->mod(id_))
         return cachedMod->installedVersion();
     return false;
 }
 
 const CachedVersion *InstalledMod::Impl::cacheVersion() const
 {
-    if (auto cachedMod = parent.cache()->mod(id_))
+    if (const auto cachedMod = parent.cache()->mod(id_))
         return cachedMod->installedVersion();
     return nullptr;
 }
@@ -308,7 +325,7 @@ QString InstalledMod::Impl::path() const
     return parent.modPath(id_);
 }
 
-bool InstalledMod::Impl::refresh(ModList::RefreshLevel level)
+bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &expectedCacheVersionId)
 {
     QDir modDir(parent.modPath(id_));
     if (!modDir.exists("modinfo.txt"))
@@ -340,10 +357,15 @@ bool InstalledMod::Impl::refresh(ModList::RefreshLevel level)
     if (cache->contains(id_))
     {
         hash_ = ModSignature::hashModPath(modDir.path());
-        const CachedVersion *version = cache->markInstalledVersion(id_, hash_);
+        const CachedVersion *version = cache->markInstalledVersion(id_, hash_, expectedCacheVersionId);
         if (version)
             cacheVersionId_ = version->id();
+        else
+            cacheVersionId_.clear();
     }
+    else
+        cacheVersionId_.clear();
+
 
     return true;
 }

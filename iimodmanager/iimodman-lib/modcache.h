@@ -63,7 +63,7 @@ public:
 
     ModCache(const ModManConfig &config, QObject *parent = nullptr);
 
-    const QList<CachedMod> mods() const;
+    const QList<CachedMod> &mods() const;
     bool contains(const QString &id) const;
     //! The position of the mod with the given ID in the mods list, or -1 if it isn't in the cache.
     int modIndex(const QString &id) const;
@@ -88,7 +88,7 @@ public:
     //! Find the currently installed version by hash and set its installed flag.
     //! Returns the version, or nullptr if there is no match in the cache.
     //! If an expected version ID is provided, that version is compared first.
-    const CachedVersion *markInstalledVersion(const QString &modId, const QString &hash, const QString expectedVersionId = QString());
+    const CachedVersion *markInstalledVersion(const QString &modId, const QString &hash, const QString &expectedVersionId = QString());
 
     ~ModCache();
 

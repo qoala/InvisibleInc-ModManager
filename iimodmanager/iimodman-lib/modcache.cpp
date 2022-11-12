@@ -32,7 +32,7 @@ class ModCache::Impl
 public:
     Impl(const ModManConfig &config);
 
-    inline const QList<CachedMod> mods() const { return mods_; };
+    inline const QList<CachedMod> &mods() const { return mods_; };
     bool contains(const QString &id) const;
     //! Returns index of the given mod within the mods list, or -1 if not present.
     int modIndex(const QString &id) const;
@@ -82,7 +82,7 @@ public:
     bool refresh(ModCache::RefreshLevel = ModCache::FULL);
     CachedVersion *refreshVersion(const QString &versionId, ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr);
     bool updateFromSteam(const SteamModInfo &steamInfo);
-    const CachedVersion *markInstalledVersion(const QString &hash, const QString expectedVersionId);
+    const CachedVersion *markInstalledVersion(const QString &hash, const QString &expectedVersionId);
 
     bool readDb(const QJsonObject &modObject);
     void writeDb(QJsonObject &modObject) const;
@@ -95,7 +95,7 @@ private:
 
     CachedVersion *installedVersion_;
 
-    CachedVersion *findVersionByHash(const QString &hash, const QString expectedVersionId);
+    CachedVersion *findVersionByHash(const QString &hash, const QString &expectedVersionId);
     void sortVersions();
 };
 
@@ -222,7 +222,7 @@ ModCache::ModCache(const ModManConfig &config, QObject *parent)
     impl->q = this;
 }
 
-const QList<CachedMod> ModCache::mods() const
+const QList<CachedMod> &ModCache::mods() const
 {
     return impl->mods();
 }
@@ -280,7 +280,7 @@ void ModCache::saveMetadata()
     impl->save();
 }
 
-const CachedVersion *ModCache::markInstalledVersion(const QString &modId, const QString &hash, const QString expectedVersionId)
+const CachedVersion *ModCache::markInstalledVersion(const QString &modId, const QString &hash, const QString &expectedVersionId)
 {
     int modIdx;
     CachedMod *m = impl->mod(modId, &modIdx);
@@ -719,7 +719,7 @@ bool CachedMod::Impl::updateFromSteam(const SteamModInfo &steamInfo)
     return false;
 }
 
-const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, const QString expectedVersionId)
+const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, const QString &expectedVersionId)
 {
     CachedVersion *cachedVersion = findVersionByHash(hash, expectedVersionId);
 
@@ -762,7 +762,7 @@ void CachedMod::Impl::writeDb(QJsonObject &modObject) const
     modObject["modName"] = info().name();
 }
 
-CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QString expectedVersionId)
+CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QString &expectedVersionId)
 {
     // Check the expected version first, to avoid hashing folders unnecessarily.
     if (!expectedVersionId.isEmpty())

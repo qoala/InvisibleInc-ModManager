@@ -41,7 +41,7 @@ public:
 
     ModList(const ModManConfig &config, ModCache *cache = nullptr, QObject *parent = nullptr);
 
-    const QList<InstalledMod> mods() const;
+    const QList<InstalledMod> &mods() const;
     const InstalledMod *mod(const QString &id) const;
 
     void refresh(RefreshLevel level = FULL);
