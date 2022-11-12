@@ -20,14 +20,14 @@ public:
     void execute();
 
 signals:
-    void textOutput(QString value);
     void finished();
+    void textOutput(QString value);
 
 private:
     void handleFile(const QString &filename, const QByteArray &fileContent);
     std::optional<SpecMod> makeInstallTarget(const SpecMod &specMod);
     bool checkInstalledMod(const InstalledMod &installedMod);
-    void doSync();
+    bool doSync();
     bool removeMod(const InstalledMod &installedMod);
     bool installMod(const SpecMod &specMod);
 

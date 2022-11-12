@@ -21,8 +21,10 @@ public:
     void execute();
 
 signals:
-    void textOutput(QString value);
     void finished();
+    void textOutput(QString value);
+    void beginProgress(int maximum);
+    void updateProgress(int value);
 
 private slots:
     void steamInfoFinished();

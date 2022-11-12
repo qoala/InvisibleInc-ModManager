@@ -8,6 +8,7 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QPlainTextEdit>
+#include <QProgressBar>
 #include <QTabWidget>
 #include <QTreeView>
 
@@ -28,8 +29,11 @@ public:
 private slots:
     void cacheFilterStatusChanged();
 
-    void enableActions();
+    void actionFinished();
     void writeText(QString value);
+    //! Start a progress bar. May be called multiple times without finishing.
+    void beginProgress(int maximum);
+    void endProgress();
 
     void openSettings();
     void cacheStatus();
@@ -41,11 +45,6 @@ private slots:
     void installedSyncFile();
 
 private:
-    void createTabs();
-    void createLogDock();
-    void createMenuActions();
-    void disableActions();
-
     ModManGuiApplication &app;
 
     QTabWidget *tabWidget;
@@ -58,6 +57,7 @@ private:
 
     QDockWidget *logDock;
     QPlainTextEdit *logDisplay;
+    QProgressBar *logProgress;
 
     QMenu *fileMenu;
     QAction *settingsAct;
@@ -71,6 +71,11 @@ private:
     QAction *installedStatusAct;
     QAction *installedUpdateAct;
     QAction *installedSyncFileAct;
+
+    void createTabs();
+    void createLogDock();
+    void createMenuActions();
+    void setActionsEnabled(bool enabled);
 };
 
 } // namespace iimodmanager

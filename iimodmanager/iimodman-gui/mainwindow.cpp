@@ -90,9 +90,13 @@ void MainWindow::createLogDock()
     logDisplay->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     logDisplay->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
+    logProgress = new QProgressBar();
+    logProgress->setVisible(false);
+
     QVBoxLayout *layout = new QVBoxLayout;
     layout->setContentsMargins(5, 5, 5, 5);
     layout->addWidget(logDisplay);
+    layout->addWidget(logProgress);
     QWidget *dockContents = new QWidget;
     dockContents->setLayout(layout);
     dockContents->setMinimumWidth(50);
@@ -153,33 +157,16 @@ void MainWindow::createMenuActions()
     installedMenu->addAction(installedSyncFileAct);
 }
 
-void MainWindow::disableActions()
+void MainWindow::setActionsEnabled(bool enabled)
 {
-    settingsAct->setEnabled(false);
-    cacheStatusAct->setEnabled(false);
-    cacheUpdateAct->setEnabled(false);
-    cacheSaveAct->setEnabled(false);
-    cacheAddModAct->setEnabled(false);
-    installedStatusAct->setEnabled(false);
-    installedUpdateAct->setEnabled(false);
-    installedSyncFileAct->setEnabled(false);
-}
-
-void MainWindow::enableActions()
-{
-    settingsAct->setEnabled(true);
-    cacheStatusAct->setEnabled(true);
-    cacheUpdateAct->setEnabled(true);
-    cacheSaveAct->setEnabled(true);
-    cacheAddModAct->setEnabled(true);
-    installedStatusAct->setEnabled(true);
-    installedUpdateAct->setEnabled(true);
-    installedSyncFileAct->setEnabled(true);
-}
-
-void MainWindow::writeText(QString value)
-{
-    logDisplay->appendPlainText(value);
+    settingsAct->setEnabled(enabled);
+    cacheStatusAct->setEnabled(enabled);
+    cacheUpdateAct->setEnabled(enabled);
+    cacheSaveAct->setEnabled(enabled);
+    cacheAddModAct->setEnabled(enabled);
+    installedStatusAct->setEnabled(enabled);
+    installedUpdateAct->setEnabled(enabled);
+    installedSyncFileAct->setEnabled(enabled);
 }
 
 void MainWindow::cacheFilterStatusChanged()
@@ -192,6 +179,30 @@ void MainWindow::cacheFilterStatusChanged()
         status |= ModCacheModel::CAN_INSTALL_UPDATE_STATUS;
 
     cacheSortFilterProxy->setFilterStatus(status);
+}
+
+void MainWindow::actionFinished()
+{
+    setActionsEnabled(true);
+    endProgress();
+}
+
+void MainWindow::writeText(QString value)
+{
+    logDisplay->appendPlainText(value);
+}
+
+void MainWindow::beginProgress(int maximum)
+{
+    logProgress->setMaximum(maximum);
+    logProgress->reset();
+    logProgress->setVisible(true);
+}
+
+void MainWindow::endProgress()
+{
+    logProgress->setVisible(false);
+    logProgress->reset();
 }
 
 void MainWindow::openSettings()
@@ -211,9 +222,9 @@ void MainWindow::cacheStatus()
 {
     logDisplay->appendPlainText("\n--");
     CacheStatusCommand *command = new CacheStatusCommand(app, this);
-    disableActions();
+    setActionsEnabled(false);
     connect(command, &CacheStatusCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &CacheStatusCommand::finished, this, &MainWindow::enableActions);
+    connect(command, &CacheStatusCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 
@@ -221,27 +232,31 @@ void MainWindow::cacheUpdate()
 {
     logDisplay->appendPlainText("\n--");
     CacheUpdateCommand *command = new CacheUpdateCommand(app, this);
-    disableActions();
+    setActionsEnabled(false);
     connect(command, &CacheUpdateCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &CacheUpdateCommand::finished, this, &MainWindow::enableActions);
+    connect(command, &CacheUpdateCommand::finished, this, &MainWindow::actionFinished);
+    connect(command, &CacheUpdateCommand::beginProgress, this, &MainWindow::beginProgress);
+    connect(command, &CacheUpdateCommand::updateProgress, this->logProgress, &QProgressBar::setValue);
     command->execute();
 }
 
 void MainWindow::cacheSave()
 {
     CacheSaveCommand *command = new CacheSaveCommand(app, this);
-    disableActions();
+    setActionsEnabled(false);
     connect(command, &CacheSaveCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &CacheSaveCommand::finished, this, &MainWindow::enableActions);
+    connect(command, &CacheSaveCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 
 void MainWindow::cacheAddMod()
 {
     CacheAddCommand *command = new CacheAddCommand(app, this);
-    disableActions();
+    setActionsEnabled(false);
     connect(command, &CacheAddCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &CacheAddCommand::finished, this, &MainWindow::enableActions);
+    connect(command, &CacheAddCommand::finished, this, &MainWindow::actionFinished);
+    connect(command, &CacheAddCommand::beginProgress, this, &MainWindow::beginProgress);
+    connect(command, &CacheAddCommand::updateProgress, this->logProgress, &QProgressBar::setValue);
     command->execute();
 }
 
@@ -249,9 +264,9 @@ void MainWindow::installedStatus()
 {
     logDisplay->appendPlainText("\n--");
     InstalledStatusCommand *command = new InstalledStatusCommand(app, this);
-    disableActions();
+    setActionsEnabled(false);
     connect(command, &InstalledStatusCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &InstalledStatusCommand::finished, this, &MainWindow::enableActions);
+    connect(command, &InstalledStatusCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 
@@ -259,18 +274,18 @@ void MainWindow::installedUpdate()
 {
     logDisplay->appendPlainText("\n--");
     InstalledUpdateCommand *command = new InstalledUpdateCommand(app, this);
-    disableActions();
+    setActionsEnabled(false);
     connect(command, &InstalledUpdateCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &InstalledUpdateCommand::finished, this, &MainWindow::enableActions);
+    connect(command, &InstalledUpdateCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 
 void MainWindow::installedSyncFile()
 {
     InstalledSyncFileCommand *command = new InstalledSyncFileCommand(app, this);
-    disableActions();
+    setActionsEnabled(false);
     connect(command, &InstalledSyncFileCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &InstalledSyncFileCommand::finished, this, &MainWindow::enableActions);
+    connect(command, &InstalledSyncFileCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 

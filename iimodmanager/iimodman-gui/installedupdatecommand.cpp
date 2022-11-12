@@ -19,31 +19,41 @@ void InstalledUpdateCommand::execute()
 
     emit textOutput("Checking cache for downloaded updates...");
 
+    bool ok = true;
     for (const InstalledMod &im : app.modList().mods())
     {
         const CachedMod *cm = app.cache().mod(im.id());
         const CachedVersion *cv = cm ? cm->latestVersion() : nullptr;
         if (cv && !cv->installed())
-            installMod(cv->asSpec());
+            if (!installMod(cv->asSpec()))
+            {
+                ok = false;
+                break;
+            }
     }
 
-    emit textOutput("All mods up to date.");
+    if (ok)
+        emit textOutput("All mods up to date.");
+    else
+        emit textOutput("Update aborted.");
     emit finished();
     deleteLater();
 }
 
-void InstalledUpdateCommand::installMod(SpecMod specMod)
+bool InstalledUpdateCommand::installMod(SpecMod specMod)
 {
     QString errorInfo;
     const InstalledMod *installed = app.modList().installMod(specMod, &errorInfo);
     if (installed)
     {
         emit textOutput(QString("  %1 installed %2").arg(installed->info().toString()).arg(installed->info().version()));
+        return true;
     }
     else
     {
         const CachedMod *cm = app.cache().mod(specMod.id());
         emit textOutput(QString("  Failed to install %1: %2").arg(cm ? cm->info().toString() : specMod.id(), errorInfo));
+        return false;
     }
 }
 

@@ -18,8 +18,8 @@ public:
     void execute();
 
 signals:
-    void textOutput(QString value);
     void finished();
+    void textOutput(QString value);
 
 private:
     QString generateContent();

@@ -38,21 +38,22 @@ void InstalledSyncFileCommand::handleFile(const QString &filename, const QByteAr
     inputSpec.appendFromFile(fileContent, filename);
 
     emit textOutput("\n--");
-    bool success = true;
+    bool ok = true;
     for (const auto &sm : inputSpec.mods())
     {
         std::optional<SpecMod> targetSpecMod = makeInstallTarget(sm);
         if (targetSpecMod)
             targetSpec.append(*targetSpecMod);
         else
-            success = false;
+            ok = false;
     }
     for (const auto &im : app.modList().mods())
-        success &= checkInstalledMod(im);
+        ok &= checkInstalledMod(im);
 
-    if (success)
-      doSync();
-    else
+    if (ok)
+      ok = doSync();
+
+    if (!ok)
       emit textOutput("Sync aborted");
 
     app.refreshMods();
@@ -111,19 +112,20 @@ bool InstalledSyncFileCommand::checkInstalledMod(const InstalledMod &im)
     return true;
 }
 
-void InstalledSyncFileCommand::doSync()
+bool InstalledSyncFileCommand::doSync()
 {
     emit textOutput("Syncing mods...");
     for (const InstalledMod &sm : removedMods)
         if (!removeMod(sm))
-            return;
+            return false;
     for (const SpecMod &sm : addedMods)
         if (!installMod(sm))
-            return;
+            return false;
     for (const SpecMod &sm : updatedMods)
         if (!installMod(sm))
-            return;
+            return false;
     emit textOutput("Sync complete");
+    return true;
 }
 
 bool InstalledSyncFileCommand::removeMod(const InstalledMod &im)

@@ -150,6 +150,7 @@ void CacheAddCommand::startInfos()
 
     steamInfos.clear();
     steamInfos.reserve(workshopIds.size());
+    emit beginProgress(workshopIds.size());
 
     loopIndex = 0;
     steamInfoCall->start(workshopIds.first());
@@ -160,6 +161,7 @@ void CacheAddCommand::nextSteamInfo()
     if (++loopIndex < workshopIds.size())
     {
         // Next steamInfo
+        emit updateProgress(loopIndex);
         steamInfoCall->start(workshopIds.at(loopIndex));
     }
     else if (steamInfos.empty())
@@ -168,6 +170,7 @@ void CacheAddCommand::nextSteamInfo()
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
 
+        emit updateProgress(loopIndex);
         emit textOutput("No downloadable mods.");
         emit finished();
         deleteLater();
@@ -178,6 +181,7 @@ void CacheAddCommand::nextSteamInfo()
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
 
+        emit beginProgress(steamInfos.size());
         emit textOutput(QString("Downloading %1 mods...").arg(steamInfos.size()));
         startDownloads();
     }
@@ -221,6 +225,7 @@ void CacheAddCommand::nextDownload()
     if (++loopIndex < steamInfos.size())
     {
         // Next download.
+        emit updateProgress(loopIndex);
         steamDownloadCall->start(steamInfos.at(loopIndex));
     }
     else
@@ -229,6 +234,7 @@ void CacheAddCommand::nextDownload()
         steamDownloadCall->deleteLater();
         steamDownloadCall = nullptr;
 
+        emit updateProgress(loopIndex);
         emit textOutput("Finished downloading new mods.");
 
         app.cache().saveMetadata();

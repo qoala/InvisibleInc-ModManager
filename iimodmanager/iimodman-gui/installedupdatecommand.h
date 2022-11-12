@@ -19,11 +19,11 @@ public:
     void execute();
 
 signals:
-    void textOutput(QString value);
     void finished();
+    void textOutput(QString value);
 
 private:
-    void installMod(SpecMod sm);
+    bool installMod(SpecMod sm);
 
     ModManGuiApplication &app;
 };

@@ -46,6 +46,7 @@ void CacheUpdateCommand::startInfos()
 
     steamInfos.clear();
     steamInfos.reserve(workshopIds.size());
+    emit beginProgress(workshopIds.size());
 
     loopIndex = 0;
     steamInfoCall->start(workshopIds.first());
@@ -56,6 +57,7 @@ void CacheUpdateCommand::nextSteamInfo()
     if (++loopIndex < workshopIds.size())
     {
         // Next steamInfo
+        emit updateProgress(loopIndex);
         steamInfoCall->start(workshopIds.at(loopIndex));
     }
     else if (steamInfos.empty())
@@ -64,6 +66,7 @@ void CacheUpdateCommand::nextSteamInfo()
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
 
+        emit updateProgress(loopIndex);
         emit textOutput("All workshop mods are up to date.");
         emit finished();
         deleteLater();
@@ -74,6 +77,7 @@ void CacheUpdateCommand::nextSteamInfo()
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
 
+        emit beginProgress(steamInfos.size());
         emit textOutput(QString("Found %1 updates. Downloading...").arg(steamInfos.size()));
         startDownloads();
     }
@@ -117,6 +121,7 @@ void CacheUpdateCommand::nextDownload()
     if (++loopIndex < steamInfos.size())
     {
         // Next download.
+        emit updateProgress(loopIndex);
         steamDownloadCall->start(steamInfos.at(loopIndex));
     }
     else
@@ -125,6 +130,7 @@ void CacheUpdateCommand::nextDownload()
         steamDownloadCall->deleteLater();
         steamDownloadCall = nullptr;
 
+        emit updateProgress(loopIndex);
         emit textOutput("All workshop mods are up to date.");
 
         app.cache().saveMetadata();
