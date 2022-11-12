@@ -31,7 +31,8 @@ public:
     const InstalledMod *removeMod(const QString &modId, QString *errorInfo = nullptr);
 
 // file-visibility:
-    inline ModCache *cache() const { return cache_; }
+    inline const ModCache *cache() const { return cache_; }
+    inline ModCache *cache() { return cache_; }
     QString modPath(const QString &modId) const;
 
 private:
@@ -50,7 +51,7 @@ private:
 class InstalledMod::Impl
 {
 public:
-    Impl(const ModList::Impl &parent, const QString &id);
+    Impl(ModList::Impl &parent, const QString &id);
 
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
@@ -66,13 +67,15 @@ public:
     bool refresh(ModList::RefreshLevel level = ModList::FULL, const QString &expectedCacheVersionId = QString());
 
 private:
-    const ModList::Impl &parent;
+    ModList::Impl &parent_;
     QString id_;
     ModInfo info_;
     QString cacheVersionId_;
 
     mutable QString hash_;
     mutable std::optional<SpecMod> specMod;
+
+    inline const ModList::Impl &parent() const { return parent_; }
 };
 
 ModList::ModList(const ModManConfig &config, ModCache *cache, QObject *parent)
@@ -130,8 +133,7 @@ const QHash<QString, QString> ModList::Impl::saveCacheVersionIds() const
     for (const auto &im : mods())
     {
         const QString &cvId = im.impl()->cacheVersionId();
-        if (!cvId.isNull())
-            map.insert(im.id(), cvId);
+        map.insert(im.id(), cvId);
     }
 
     return map;
@@ -149,7 +151,7 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
     const QStringList modIds = installDir.entryList();
     mods_.clear();
     mods_.reserve(modIds.size());
-    for (auto modId : modIds)
+    for (const auto &modId : modIds)
     {
         InstalledMod mod(*this, modId);
         if (mod.impl()->refresh(level, cacheVersionIds.value(modId)))
@@ -157,6 +159,14 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
     }
 
     refreshIndex();
+
+    // Unmark previously installed mods.
+    for (auto it = cacheVersionIds.keyBegin(), endIt = cacheVersionIds.keyEnd(); it != endIt; ++it)
+    {
+        const QString &modId = *it;
+        if (!modIds_.contains(modId))
+            cache()->unmarkInstalledMod(modId);
+    }
 }
 
 const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *errorInfo)
@@ -235,7 +245,7 @@ void ModList::Impl::refreshIndex()
     }
 }
 
-InstalledMod::InstalledMod(const ModList::Impl &parent, const QString &id)
+InstalledMod::InstalledMod(ModList::Impl &parent, const QString &id)
     : impl_{std::make_shared<Impl>(parent, id)}
 {}
 
@@ -284,27 +294,27 @@ QString InstalledMod::versionString() const
     return QString();
 }
 
-InstalledMod::Impl::Impl(const ModList::Impl &parent, const QString &id)
-    : parent(parent), id_(id)
+InstalledMod::Impl::Impl(ModList::Impl &parent, const QString &id)
+    : parent_(parent), id_(id)
 {}
 
 const QString &InstalledMod::Impl::hash() const
 {
     if (hash_.isEmpty())
-        hash_ = ModSignature::hashModPath(parent.modPath(id_));
+        hash_ = ModSignature::hashModPath(parent().modPath(id_));
     return hash_;
 }
 
 bool InstalledMod::Impl::hasCacheVersion() const
 {
-    if (const auto cachedMod = parent.cache()->mod(id_))
+    if (const auto cachedMod = parent().cache()->mod(id_))
         return cachedMod->installedVersion();
     return false;
 }
 
 const CachedVersion *InstalledMod::Impl::cacheVersion() const
 {
-    if (const auto cachedMod = parent.cache()->mod(id_))
+    if (const auto cachedMod = parent().cache()->mod(id_))
         return cachedMod->installedVersion();
     return nullptr;
 }
@@ -322,12 +332,12 @@ const SpecMod InstalledMod::Impl::asSpec() const
 
 QString InstalledMod::Impl::path() const
 {
-    return parent.modPath(id_);
+    return parent().modPath(id_);
 }
 
 bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &expectedCacheVersionId)
 {
-    QDir modDir(parent.modPath(id_));
+    QDir modDir(parent().modPath(id_));
     if (!modDir.exists("modinfo.txt"))
     {
         qCDebug(modlist).noquote() << QString("installedmod:refresh(%1)").arg(id_) << "skipped: No modinfo.txt";
@@ -352,7 +362,7 @@ bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &exp
         return true;
     }
 
-    ModCache *cache = parent.cache();
+    ModCache *cache = parent_.cache();
     assert(cache);
     if (cache->contains(id_))
     {

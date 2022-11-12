@@ -59,7 +59,7 @@ public:
     //! Private implementation. Only accessible to classes in this file.
     class Impl;
 
-    InstalledMod(const ModList::Impl &parent, const QString &id);
+    InstalledMod(ModList::Impl &parent, const QString &id);
 
     const QString &id() const;
     const ModInfo &info() const;

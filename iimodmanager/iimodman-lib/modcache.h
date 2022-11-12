@@ -70,25 +70,27 @@ public:
     //! The mod with the given ID, or nullptr if it isn't in the cache.
     const CachedMod *mod(const QString &id) const;
 
-    //! Add a CachedMod for the given Steam Workshop details.
+    //! Adds a CachedMod for the given Steam Workshop details.
     //! Returns the mod if successful, or nullptr otherwise.
     //! If the mod is already in the cache, returns nullptr as the result wouldn't be a non-downloaded mod.
     const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
-    //! Extract the zip contents into a new or existing CachedVersion
+    //! Extracts the zip contents into a new or existing CachedVersion
     const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo = nullptr);
-    //! Copy the given folder's contents into a new or existing CachedVersion
+    //! Copies the given folder's contents into a new or existing CachedVersion
     const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
-    //! Refresh all mods from disk to the specified level.
+    //! Refreshes all mods from disk to the specified level.
     void refresh(RefreshLevel level = FULL);
-    //! Refresh and return the specific mod version from disk. Nullptr if not present.
+    //! Refreshes and returns the specific mod version from disk. Nullptr if not present.
     const CachedVersion *refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level = FULL);
     //! Re-sorts the cache and persists metadata to disk.
     void saveMetadata();
 
-    //! Find the currently installed version by hash and set its installed flag.
+    //! Finds the currently installed version by hash and set its installed flag.
     //! Returns the version, or nullptr if there is no match in the cache.
     //! If an expected version ID is provided, that version is compared first.
     const CachedVersion *markInstalledVersion(const QString &modId, const QString &hash, const QString &expectedVersionId = QString());
+    //! Clears the given mod's installed version.
+    void unmarkInstalledMod(const QString &modId);
 
     ~ModCache();
 

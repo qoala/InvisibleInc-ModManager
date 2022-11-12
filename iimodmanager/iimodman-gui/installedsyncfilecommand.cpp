@@ -54,6 +54,8 @@ void InstalledSyncFileCommand::handleFile(const QString &filename, const QByteAr
     else
       emit textOutput("Sync aborted");
 
+    app.refreshMods();
+
     emit finished();
     deleteLater();
 }

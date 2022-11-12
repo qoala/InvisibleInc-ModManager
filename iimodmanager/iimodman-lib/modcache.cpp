@@ -84,6 +84,7 @@ public:
     CachedVersion *refreshVersion(const QString &versionId, ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr);
     bool updateFromSteam(const SteamModInfo &steamInfo);
     const CachedVersion *markInstalledVersion(const QString &hash, const QString &expectedVersionId);
+    inline void unmarkInstalled() { installedVersion_ = nullptr; };
 
     bool readDb(const QJsonObject &modObject);
     void writeDb(QJsonObject &modObject) const;
@@ -294,6 +295,17 @@ const CachedVersion *ModCache::markInstalledVersion(const QString &modId, const 
     return nullptr;
 }
 
+void ModCache::unmarkInstalledMod(const QString &modId)
+{
+    int modIdx;
+    CachedMod *m = impl->mod(modId, &modIdx);
+    if (m)
+    {
+        m->impl()->unmarkInstalled();
+        emit metadataChanged({modId}, {modIdx});
+    }
+}
+
 ModCache::~ModCache() = default;
 
 ModCache::Impl::Impl(const ModManConfig &config)
@@ -477,7 +489,7 @@ void ModCache::Impl::refresh(RefreshLevel level)
     cacheDir.setSorting(QDir::Name);
     const QStringList modIds = cacheDir.entryList();
     mods_.reserve(mods_.size() + modIds.size());
-    for (auto modId : modIds)
+    for (const auto &modId : modIds)
     {
         if (CachedMod *m = mod(modId))
         {
@@ -675,7 +687,7 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level, const QString &previ
     versions_.clear();
     versions_.reserve(versionPaths.size());
     ModCache::RefreshLevel versionLevel = level == ModCache::LATEST_ONLY ? ModCache::FULL : level;
-    for (auto versionPath : versionPaths)
+    for (const auto &versionPath : versionPaths)
     {
         CachedVersion cachedVersion(cache, id(), versionPath.fileName());
         if (cachedVersion.impl()->refresh(versionLevel))
