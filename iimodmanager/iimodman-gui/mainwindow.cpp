@@ -38,13 +38,13 @@ void MainWindow::createTabs()
 
     // Cache
     cacheModel = new ModCacheModel(app.cache());
-    cacheFilterProxy = new ModSortFilterProxyModel;
-    cacheFilterProxy->setSourceModel(cacheModel);
-    cacheFilterProxy->setFilterKeyColumn(0);
-    cacheFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
-    cacheFilterProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
+    cacheSortFilterProxy = new ModSortFilterProxyModel;
+    cacheSortFilterProxy->setSourceModel(cacheModel);
+    cacheSortFilterProxy->setFilterKeyColumn(0);
+    cacheSortFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    cacheSortFilterProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
     cacheView = new QTreeView;
-    cacheView->setModel(cacheFilterProxy);
+    cacheView->setModel(cacheSortFilterProxy);
     cacheView->header()->setStretchLastSection(false);
     cacheView->setColumnWidth(ModCacheModel::NAME, 300);
     cacheView->setColumnWidth(ModCacheModel::ID, 160);
@@ -53,10 +53,20 @@ void MainWindow::createTabs()
     cacheView->setSortingEnabled(true);
 
     cacheSearchInput = new QLineEdit;
-    connect(cacheSearchInput, &QLineEdit::textChanged, cacheFilterProxy, &QSortFilterProxyModel::setFilterFixedString);
+    connect(cacheSearchInput, &QLineEdit::textChanged, cacheSortFilterProxy, &QSortFilterProxyModel::setFilterFixedString);
 
+    cacheInstalledCheckBox = new QCheckBox(tr("Installed"));
+    connect(cacheInstalledCheckBox, &QCheckBox::stateChanged, this, &MainWindow::cacheFilterStatusChanged);
+    cacheHasCachedUpdateCheckBox = new QCheckBox(tr("Update Ready"));
+    cacheHasCachedUpdateCheckBox->setToolTip(tr("A new version is downloaded and ready to install."));
+    connect(cacheHasCachedUpdateCheckBox, &QCheckBox::stateChanged, this, &MainWindow::cacheFilterStatusChanged);
+
+    QHBoxLayout *cacheFilterBtnLayout = new QHBoxLayout;
+    cacheFilterBtnLayout->addWidget(cacheInstalledCheckBox);
+    cacheFilterBtnLayout->addWidget(cacheHasCachedUpdateCheckBox);
     QVBoxLayout *cacheLayout = new QVBoxLayout;
     cacheLayout->addWidget(cacheSearchInput);
+    cacheLayout->addLayout(cacheFilterBtnLayout);
     cacheLayout->addWidget(cacheView);
     QWidget *cachePage = new QWidget;
     cachePage->setLayout(cacheLayout);
@@ -169,6 +179,18 @@ void MainWindow::enableActions()
 void MainWindow::writeText(QString value)
 {
     logDisplay->appendPlainText(value);
+}
+
+void MainWindow::cacheFilterStatusChanged()
+{
+    ModCacheModel::Status status;
+
+    if (cacheInstalledCheckBox->isChecked())
+        status |= ModCacheModel::INSTALLED_STATUS;
+    if (cacheHasCachedUpdateCheckBox->isChecked())
+        status |= ModCacheModel::CAN_INSTALL_UPDATE_STATUS;
+
+    cacheSortFilterProxy->setFilterStatus(status);
 }
 
 void MainWindow::openSettings()

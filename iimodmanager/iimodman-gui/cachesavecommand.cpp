@@ -16,8 +16,7 @@ CacheSaveCommand::CacheSaveCommand(ModManGuiApplication  &app, QObject *parent)
 
 void CacheSaveCommand::execute()
 {
-    app.cache().refresh(ModCache::LATEST_ONLY);
-    app.modList().refresh();
+    app.refreshMods();
 
     QString content = generateContent();
     writeFile(content);

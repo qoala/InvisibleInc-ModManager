@@ -11,11 +11,21 @@ namespace ColumnData {
     //! Returns row-level status flags.
     Status modStatus(const CachedMod &mod)
     {
-        ModCacheModel::Status status = ModCacheModel::NO_STATUS;
+        ModCacheModel::Status status;
         if (!mod.downloaded())
             status |= ModCacheModel::NO_DOWNLOAD_STATUS;
-        if (!mod.installedVersion())
+        // TODO: Store recent SteamModInfo in ModCache and track CAN_DOWNLOAD_UPDATE_STATUS.
+
+        if (mod.installedVersion())
+        {
             status |= ModCacheModel::INSTALLED_STATUS;
+            const auto *iv = mod.installedVersion();
+            const auto *lv = mod.latestVersion();
+            if (iv != lv)
+            //if (mod.installedVersion() != mod.latestVersion())
+                status |= ModCacheModel::CAN_INSTALL_UPDATE_STATUS;
+        }
+
         return status;
     }
 

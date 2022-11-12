@@ -12,8 +12,7 @@ CacheStatusCommand::CacheStatusCommand(ModManGuiApplication  &app, QObject *pare
 
 void CacheStatusCommand::execute()
 {
-    app.cache().refresh(ModCache::LATEST_ONLY);
-    app.modList().refresh();
+    app.refreshMods();
 
     emit textOutput("Cached Mods\n(name)\t(id)\t(version)");
 

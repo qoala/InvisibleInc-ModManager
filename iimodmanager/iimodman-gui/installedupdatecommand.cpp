@@ -15,8 +15,7 @@ InstalledUpdateCommand::InstalledUpdateCommand(ModManGuiApplication  &app, QObje
 
 void InstalledUpdateCommand::execute()
 {
-    app.cache().refresh(ModCache::LATEST_ONLY);
-    app.modList().refresh();
+    app.refreshMods();
 
     emit textOutput("Checking cache for downloaded updates...");
 

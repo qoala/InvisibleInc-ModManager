@@ -20,6 +20,13 @@ public:
     inline ModList &modList() { return *modList_; }
     inline ModDownloader &modDownloader() { return *modDownloader_; }
 
+    //! Refresh cache and mod list at the GUI's default level.
+    //! (LATEST_ONLY for cache, FULL for installed)
+    //!
+    //! Commands should call this immediately before making changes,
+    //! in case of external changes.
+    void refreshMods();
+
 private:
     ModManConfig config_;
     ModCache *cache_;

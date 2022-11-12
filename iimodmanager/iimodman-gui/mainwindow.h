@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QAction>
+#include <QCheckBox>
 #include <QDockWidget>
 #include <QLineEdit>
 #include <QMainWindow>
@@ -25,6 +26,8 @@ public:
     MainWindow(ModManGuiApplication &app);
 
 private slots:
+    void cacheFilterStatusChanged();
+
     void enableActions();
     void writeText(QString value);
 
@@ -47,9 +50,11 @@ private:
 
     QTabWidget *tabWidget;
     ModCacheModel *cacheModel;
-    ModSortFilterProxyModel *cacheFilterProxy;
+    ModSortFilterProxyModel *cacheSortFilterProxy;
     QTreeView *cacheView;
     QLineEdit *cacheSearchInput;
+    QCheckBox *cacheInstalledCheckBox;
+    QCheckBox *cacheHasCachedUpdateCheckBox;
 
     QDockWidget *logDock;
     QPlainTextEdit *logDisplay;

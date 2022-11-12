@@ -9,7 +9,7 @@ namespace iimodmanager {
 typedef ModCacheModel::Status Status;
 
 namespace ColumnLessThan {
-    bool modLatestVersion(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
+    bool modVersion(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
     {
         if (leftStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS) || rightStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS))
             return leftStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS) && !rightStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS);
@@ -70,8 +70,24 @@ namespace ColumnLessThan {
 ModSortFilterProxyModel::ModSortFilterProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent) {}
 
-// bool ModSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
-// {}
+void ModSortFilterProxyModel::setFilterStatus(ModCacheModel::Status status)
+{
+    filterStatus = status;
+    invalidateFilter();
+}
+
+bool ModSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+{
+    QModelIndex nameIndex = sourceModel()->index(sourceRow, ModCacheModel::NAME, sourceParent);
+    QModelIndex modIdIndex = sourceModel()->index(sourceRow, ModCacheModel::ID, sourceParent);
+
+    bool filterMatch = (!filterStatus || (sourceModel()->data(nameIndex, ModCacheModel::STATUS_ROLE).value<Status>() & filterStatus) == filterStatus);
+
+    return (sourceModel()->data(nameIndex).toString().contains(filterRegExp())
+            || sourceModel()->data(modIdIndex).toString().contains(filterRegExp()))
+        && filterMatch;
+            //&& (!filterStatus || (sourceModel()->data(nameIndex, ModCacheModel::STATUS_ROLE).value<Status>() & filterStatus) == filterStatus);
+}
 
 bool ModSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
@@ -100,7 +116,7 @@ bool ModSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInde
     switch (left.column())
     {
         case ModCacheModel::LATEST_VERSION:
-            return ColumnLessThan::modLatestVersion(leftData, leftStatus, rightData, rightStatus);
+            return ColumnLessThan::modVersion(leftData, leftStatus, rightData, rightStatus);
         case ModCacheModel::UPDATE_TIME:
             return ColumnLessThan::modUpdateTime(leftData, leftStatus, rightData, rightStatus);
         default:

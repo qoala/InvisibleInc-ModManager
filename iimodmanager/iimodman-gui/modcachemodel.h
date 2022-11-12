@@ -34,9 +34,13 @@ public:
         INSTALLED_STATUS = 1,
         //! The row is a mod that's not downloaded.
         NO_DOWNLOAD_STATUS = 2,
+        //! The row is a mod that's not downloaded.
+        CAN_INSTALL_UPDATE_STATUS = 4,
+        //! The row is a mod that's not downloaded.
+        CAN_DOWNLOAD_UPDATE_STATUS = 8,
 
         //! The requested column is unlabelled for the requested mod.
-        UNLABELLED_STATUS = 0x10,
+        UNLABELLED_STATUS = 0x100,
     };
     Q_DECLARE_FLAGS(Status, StatusFlag)
     Q_FLAG(Status)

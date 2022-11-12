@@ -31,8 +31,7 @@ void InstalledSyncFileCommand::execute()
 
 void InstalledSyncFileCommand::handleFile(const QString &filename, const QByteArray &fileContent)
 {
-    app.cache().refresh(ModCache::LATEST_ONLY);
-    app.modList().refresh();
+    app.refreshMods();
 
     inputSpec.reserve(app.cache().mods().size());
     inputSpec.appendFromFile(fileContent, filename);

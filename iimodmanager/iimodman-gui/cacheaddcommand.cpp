@@ -50,7 +50,7 @@ void CacheAddCommand::execute()
 
     emit textOutput("\n--");
 
-    app.cache().refresh(ModCache::LATEST_ONLY);
+    app.refreshMods();
     filterNewWorkshopIds(modIds);
     if (workshopIds.isEmpty())
     {

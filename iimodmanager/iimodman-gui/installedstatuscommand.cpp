@@ -12,8 +12,7 @@ InstalledStatusCommand::InstalledStatusCommand(ModManGuiApplication  &app, QObje
 
 void InstalledStatusCommand::execute()
 {
-    app.cache().refresh(ModCache::LATEST_ONLY);
-    app.modList().refresh();
+    app.refreshMods();
 
     emit textOutput("Currently Installed Mods\n(name)\t(id)\t(version)");
 

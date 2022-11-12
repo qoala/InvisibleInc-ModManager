@@ -13,7 +13,7 @@ CacheUpdateCommand::CacheUpdateCommand(ModManGuiApplication  &app, QObject *pare
 
 void CacheUpdateCommand::execute()
 {
-    app.cache().refresh(ModCache::LATEST_ONLY);
+    app.refreshMods();
     const QList<CachedMod> &mods = app.cache().mods();
     workshopIds.clear();
     workshopIds.reserve(mods.size());
