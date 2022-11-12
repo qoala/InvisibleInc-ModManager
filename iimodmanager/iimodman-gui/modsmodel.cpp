@@ -1,4 +1,4 @@
-#include "modcachemodel.h"
+#include "modsmodel.h"
 
 #include <QDateTime>
 #include <modcache.h>
@@ -7,24 +7,24 @@
 namespace iimodmanager {
 
 namespace ColumnData {
-    typedef ModCacheModel::Status Status;
+    typedef ModsModel::Status Status;
 
     //! Returns row-level status flags.
     Status modStatus(const CachedMod &mod)
     {
-        ModCacheModel::Status status;
+        ModsModel::Status status;
         if (!mod.downloaded())
-            status |= ModCacheModel::NO_DOWNLOAD_STATUS;
+            status |= ModsModel::NO_DOWNLOAD_STATUS;
         // TODO: Store recent SteamModInfo in ModCache and track CAN_DOWNLOAD_UPDATE_STATUS.
 
         if (mod.installedVersion())
         {
-            status |= ModCacheModel::INSTALLED_STATUS;
+            status |= ModsModel::INSTALLED_STATUS;
             const auto *iv = mod.installedVersion();
             const auto *lv = mod.latestVersion();
             if (iv != lv)
             //if (mod.installedVersion() != mod.latestVersion())
-                status |= ModCacheModel::CAN_INSTALL_UPDATE_STATUS;
+                status |= ModsModel::CAN_INSTALL_UPDATE_STATUS;
         }
 
         return status;
@@ -34,7 +34,7 @@ namespace ColumnData {
     {
         if (role == Qt::DisplayRole)
             return mod.info().name();
-        else if (role == ModCacheModel::STATUS_ROLE)
+        else if (role == ModsModel::STATUS_ROLE)
             return QVariant::fromValue<Status>(modStatus(mod));
         else
             return QVariant();
@@ -44,7 +44,7 @@ namespace ColumnData {
     {
         if (role == Qt::DisplayRole)
             return mod.id();
-        else if (role == ModCacheModel::STATUS_ROLE)
+        else if (role == ModsModel::STATUS_ROLE)
             return QVariant::fromValue<Status>(modStatus(mod));
         else
             return QVariant();
@@ -59,7 +59,7 @@ namespace ColumnData {
                 return QStringLiteral("N/A");
             else if (role == Qt::ToolTipRole)
                 return QStringLiteral("(needs download)");
-            else if (role == ModCacheModel::STATUS_ROLE)
+            else if (role == ModsModel::STATUS_ROLE)
                 // NO_DOWNLOAD is covered by the mod status flags.
                 return QVariant::fromValue<Status>(modStatus(mod));
             else
@@ -73,15 +73,15 @@ namespace ColumnData {
                 return QStringLiteral("-");
             else if (role == Qt::ToolTipRole)
                 return QStringLiteral("(unlabeled)");
-            else if (role == ModCacheModel::STATUS_ROLE)
-                return QVariant::fromValue<Status>(modStatus(mod) | ModCacheModel::UNLABELLED_STATUS);
+            else if (role == ModsModel::STATUS_ROLE)
+                return QVariant::fromValue<Status>(modStatus(mod) | ModsModel::UNLABELLED_STATUS);
             else
                 return QVariant();
         }
 
         if (role == Qt::DisplayRole)
             return *version;
-        else if (role == ModCacheModel::STATUS_ROLE)
+        else if (role == ModsModel::STATUS_ROLE)
             return QVariant::fromValue<Status>(modStatus(mod));
         else
             return QVariant();
@@ -92,7 +92,7 @@ namespace ColumnData {
         const CachedVersion *cv = mod.latestVersion();
         if (!cv)
         {
-            if (role == ModCacheModel::STATUS_ROLE)
+            if (role == ModsModel::STATUS_ROLE)
                 return QVariant::fromValue<Status>(modStatus(mod));
             else
                 return QVariant();
@@ -103,44 +103,44 @@ namespace ColumnData {
         {
             if (role == Qt::DisplayRole)
                 return cv->id();
-            else if (role == ModCacheModel::STATUS_ROLE)
-                return QVariant::fromValue<Status>(modStatus(mod) | ModCacheModel::UNLABELLED_STATUS);
+            else if (role == ModsModel::STATUS_ROLE)
+                return QVariant::fromValue<Status>(modStatus(mod) | ModsModel::UNLABELLED_STATUS);
             else
                 return QVariant();
         }
 
         if (role == Qt::DisplayRole)
             return *timestamp;
-        else if (role == ModCacheModel::STATUS_ROLE)
+        else if (role == ModsModel::STATUS_ROLE)
             return QVariant::fromValue<Status>(modStatus(mod));
         else
             return QVariant();
     }
 }
 
-ModCacheModel::ModCacheModel(ModCache &cache, QObject *parent)
+ModsModel::ModsModel(ModCache &cache, QObject *parent)
     : QAbstractListModel(parent), cache(cache)
 {
-    connect(&cache, &ModCache::aboutToAppendMods, this, &ModCacheModel::sourceAboutToAppendMods);
-    connect(&cache, &ModCache::appendedMods, this, &ModCacheModel::sourceAppendedMods);
-    connect(&cache, &ModCache::aboutToRefresh, this, &ModCacheModel::sourceAboutToRefresh);
-    connect(&cache, &ModCache::refreshed, this, &ModCacheModel::sourceRefreshed);
-    connect(&cache, &ModCache::metadataChanged, this, &ModCacheModel::sourceMetadataChanged);
+    connect(&cache, &ModCache::aboutToAppendMods, this, &ModsModel::sourceAboutToAppendMods);
+    connect(&cache, &ModCache::appendedMods, this, &ModsModel::sourceAppendedMods);
+    connect(&cache, &ModCache::aboutToRefresh, this, &ModsModel::sourceAboutToRefresh);
+    connect(&cache, &ModCache::refreshed, this, &ModsModel::sourceRefreshed);
+    connect(&cache, &ModCache::metadataChanged, this, &ModsModel::sourceMetadataChanged);
 }
 
-int ModCacheModel::rowCount(const QModelIndex &parent) const
+int ModsModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
     return cache.mods().size();
 }
 
-int ModCacheModel::columnCount(const QModelIndex &parent) const
+int ModsModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
     return COLUMN_COUNT;
 }
 
-QVariant ModCacheModel::data(const QModelIndex &index, int role) const
+QVariant ModsModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
@@ -164,7 +164,7 @@ QVariant ModCacheModel::data(const QModelIndex &index, int role) const
     }
 }
 
-QVariant ModCacheModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant ModsModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (orientation == Qt::Vertical)
         return QVariant();
@@ -198,18 +198,18 @@ QVariant ModCacheModel::headerData(int section, Qt::Orientation orientation, int
     return QVariant();
 }
 
-void ModCacheModel::sourceAboutToAppendMods(const QStringList &modIds)
+void ModsModel::sourceAboutToAppendMods(const QStringList &modIds)
 {
     int start = cache.mods().size();
     beginInsertRows(QModelIndex(), start, start + modIds.size());
 }
 
-void ModCacheModel::sourceAppendedMods()
+void ModsModel::sourceAppendedMods()
 {
     endInsertRows();
 }
 
-void ModCacheModel::sourceAboutToRefresh(const QStringList &modIds, const QList<int> &modIdxs, ModCache::ChangeHint hint)
+void ModsModel::sourceAboutToRefresh(const QStringList &modIds, const QList<int> &modIdxs, ModCache::ChangeHint hint)
 {
     Q_UNUSED(modIds);
     Q_UNUSED(modIdxs);
@@ -234,7 +234,7 @@ void ModCacheModel::sourceAboutToRefresh(const QStringList &modIds, const QList<
     }
 }
 
-void ModCacheModel::sourceRefreshed(const QStringList &modIds, const QList<int> &modIdxs, ModCache::ChangeHint hint)
+void ModsModel::sourceRefreshed(const QStringList &modIds, const QList<int> &modIdxs, ModCache::ChangeHint hint)
 {
     if (hint == ModCache::VERSION_ONLY_HINT)
     {
@@ -265,7 +265,7 @@ void ModCacheModel::sourceRefreshed(const QStringList &modIds, const QList<int> 
         emit layoutChanged();
 }
 
-void ModCacheModel::sourceMetadataChanged(const QStringList &modIds, const QList<int> &modIdxs)
+void ModsModel::sourceMetadataChanged(const QStringList &modIds, const QList<int> &modIdxs)
 {
     Q_UNUSED(modIds);
 

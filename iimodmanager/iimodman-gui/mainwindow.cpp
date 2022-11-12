@@ -6,9 +6,9 @@
 #include "installedupdatecommand.h"
 #include "installedsyncfilecommand.h"
 #include "mainwindow.h"
-#include "modcachemodel.h"
 #include "modmanguiapplication.h"
-#include "modsortfilterproxymodel.h"
+#include "modsmodel.h"
+#include "modssortfilterproxymodel.h"
 #include "settingsdialog.h"
 
 #include <QApplication>
@@ -38,8 +38,8 @@ void MainWindow::createTabs()
     setCentralWidget(tabWidget);
 
     // Main mods tab.
-    modsModel = new ModCacheModel(app.cache());
-    modsSortFilterProxy = new ModSortFilterProxyModel;
+    modsModel = new ModsModel(app.cache());
+    modsSortFilterProxy = new ModsSortFilterProxyModel;
     modsSortFilterProxy->setSourceModel(modsModel);
     modsSortFilterProxy->setFilterKeyColumn(0);
     modsSortFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
@@ -47,10 +47,10 @@ void MainWindow::createTabs()
     modsView = new QTreeView;
     modsView->setModel(modsSortFilterProxy);
     modsView->header()->setStretchLastSection(false);
-    modsView->setColumnWidth(ModCacheModel::NAME, 300);
-    modsView->setColumnWidth(ModCacheModel::ID, 160);
-    modsView->setColumnWidth(ModCacheModel::UPDATE_TIME, 160);
-    modsView->sortByColumn(ModCacheModel::NAME, Qt::AscendingOrder);
+    modsView->setColumnWidth(ModsModel::NAME, 300);
+    modsView->setColumnWidth(ModsModel::ID, 160);
+    modsView->setColumnWidth(ModsModel::UPDATE_TIME, 160);
+    modsView->sortByColumn(ModsModel::NAME, Qt::AscendingOrder);
     modsView->setSortingEnabled(true);
 
     modsSearchInput = new QLineEdit;
@@ -168,12 +168,12 @@ void MainWindow::setActionsEnabled(bool enabled)
 
 void MainWindow::modsFilterStatusChanged()
 {
-    ModCacheModel::Status status;
+    ModsModel::Status status;
 
     if (modsInstalledCheckBox->isChecked())
-        status |= ModCacheModel::INSTALLED_STATUS;
+        status |= ModsModel::INSTALLED_STATUS;
     if (modsHasCachedUpdateCheckBox->isChecked())
-        status |= ModCacheModel::CAN_INSTALL_UPDATE_STATUS;
+        status |= ModsModel::CAN_INSTALL_UPDATE_STATUS;
 
     modsSortFilterProxy->setFilterStatus(status);
 }

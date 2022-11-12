@@ -1,20 +1,20 @@
-#include "modcachemodel.h"
-#include "modsortfilterproxymodel.h"
+#include "modsmodel.h"
+#include "modssortfilterproxymodel.h"
 
 #include <QDateTime>
 #include <QRegularExpression>
 
 namespace iimodmanager {
 
-typedef ModCacheModel::Status Status;
+typedef ModsModel::Status Status;
 
 namespace ColumnLessThan {
     bool modVersion(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
     {
-        if (leftStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS) || rightStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS))
-            return leftStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS) && !rightStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS);
-        if (leftStatus.testFlag(ModCacheModel::UNLABELLED_STATUS) || rightStatus.testFlag(ModCacheModel::UNLABELLED_STATUS))
-            return leftStatus.testFlag(ModCacheModel::UNLABELLED_STATUS) && !rightStatus.testFlag(ModCacheModel::UNLABELLED_STATUS);
+        if (leftStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS) || rightStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS))
+            return leftStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS) && !rightStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS);
+        if (leftStatus.testFlag(ModsModel::UNLABELLED_STATUS) || rightStatus.testFlag(ModsModel::UNLABELLED_STATUS))
+            return leftStatus.testFlag(ModsModel::UNLABELLED_STATUS) && !rightStatus.testFlag(ModsModel::UNLABELLED_STATUS);
 
         QRegularExpression versionRe(QStringLiteral("^v?(\\d+(?:\\.\\d+)*)([^\\d.]\\S*)?"));
         QRegularExpressionMatch leftMatch = versionRe.match(leftData.toString());
@@ -49,8 +49,8 @@ namespace ColumnLessThan {
 
     bool modUpdateTime(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
     {
-        if (leftStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS) || rightStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS))
-            return leftStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS) && !rightStatus.testFlag(ModCacheModel::NO_DOWNLOAD_STATUS);
+        if (leftStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS) || rightStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS))
+            return leftStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS) && !rightStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS);
 
         bool leftIsDateTime = static_cast<QMetaType::Type>(leftData.type()) == QMetaType::QDateTime;
         bool rightIsDateTime = static_cast<QMetaType::Type>(rightData.type()) == QMetaType::QDateTime;
@@ -67,36 +67,36 @@ namespace ColumnLessThan {
 }
 
 
-ModSortFilterProxyModel::ModSortFilterProxyModel(QObject *parent)
+ModsSortFilterProxyModel::ModsSortFilterProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent) {}
 
-void ModSortFilterProxyModel::setFilterStatus(ModCacheModel::Status status)
+void ModsSortFilterProxyModel::setFilterStatus(ModsModel::Status status)
 {
     filterStatus = status;
     invalidateFilter();
 }
 
-bool ModSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+bool ModsSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    QModelIndex nameIndex = sourceModel()->index(sourceRow, ModCacheModel::NAME, sourceParent);
-    QModelIndex modIdIndex = sourceModel()->index(sourceRow, ModCacheModel::ID, sourceParent);
+    QModelIndex nameIndex = sourceModel()->index(sourceRow, ModsModel::NAME, sourceParent);
+    QModelIndex modIdIndex = sourceModel()->index(sourceRow, ModsModel::ID, sourceParent);
 
-    bool filterMatch = (!filterStatus || (sourceModel()->data(nameIndex, ModCacheModel::STATUS_ROLE).value<Status>() & filterStatus) == filterStatus);
+    bool filterMatch = (!filterStatus || (sourceModel()->data(nameIndex, ModsModel::STATUS_ROLE).value<Status>() & filterStatus) == filterStatus);
 
     return (sourceModel()->data(nameIndex).toString().contains(filterRegExp())
             || sourceModel()->data(modIdIndex).toString().contains(filterRegExp()))
         && filterMatch;
-            //&& (!filterStatus || (sourceModel()->data(nameIndex, ModCacheModel::STATUS_ROLE).value<Status>() & filterStatus) == filterStatus);
+            //&& (!filterStatus || (sourceModel()->data(nameIndex, ModsModel::STATUS_ROLE).value<Status>() & filterStatus) == filterStatus);
 }
 
-bool ModSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
+bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
     if (left.column() != right.column())
         return QSortFilterProxyModel::lessThan(left, right);
     switch(left.column())
     {
-        case ModCacheModel::LATEST_VERSION:
-        case ModCacheModel::UPDATE_TIME:
+        case ModsModel::LATEST_VERSION:
+        case ModsModel::UPDATE_TIME:
             break;
         default:
             // Skip the extraction if we're falling through to superclass method.
@@ -105,8 +105,8 @@ bool ModSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInde
 
     const QVariant leftData = sourceModel()->data(left);
     const QVariant rightData = sourceModel()->data(right);
-    const QVariant leftStatusData = sourceModel()->data(left, ModCacheModel::STATUS_ROLE);
-    const QVariant rightStatusData = sourceModel()->data(right, ModCacheModel::STATUS_ROLE);
+    const QVariant leftStatusData = sourceModel()->data(left, ModsModel::STATUS_ROLE);
+    const QVariant rightStatusData = sourceModel()->data(right, ModsModel::STATUS_ROLE);
     if (!leftStatusData.isValid() || !rightStatusData.isValid())
         return QSortFilterProxyModel::lessThan(left, right);
 
@@ -115,9 +115,9 @@ bool ModSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInde
 
     switch (left.column())
     {
-        case ModCacheModel::LATEST_VERSION:
+        case ModsModel::LATEST_VERSION:
             return ColumnLessThan::modVersion(leftData, leftStatus, rightData, rightStatus);
-        case ModCacheModel::UPDATE_TIME:
+        case ModsModel::UPDATE_TIME:
             return ColumnLessThan::modUpdateTime(leftData, leftStatus, rightData, rightStatus);
         default:
             return QSortFilterProxyModel::lessThan(left, right);

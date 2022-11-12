@@ -14,9 +14,9 @@
 
 namespace iimodmanager {
 
-class ModCacheModel;
 class ModManGuiApplication;
-class ModSortFilterProxyModel;
+class ModsModel;
+class ModsSortFilterProxyModel;
 
 
 class MainWindow : public QMainWindow
@@ -48,8 +48,8 @@ private:
     ModManGuiApplication &app;
 
     QTabWidget *tabWidget;
-    ModCacheModel *modsModel;
-    ModSortFilterProxyModel *modsSortFilterProxy;
+    ModsModel *modsModel;
+    ModsSortFilterProxyModel *modsSortFilterProxy;
     QTreeView *modsView;
     QLineEdit *modsSearchInput;
     QCheckBox *modsInstalledCheckBox;

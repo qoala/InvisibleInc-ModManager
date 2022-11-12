@@ -10,9 +10,9 @@ set(IIMODMAN_GUI_SOURCES
     installedsyncfilecommand.cpp
     main.cpp
     mainwindow.cpp
-    modcachemodel.cpp
+    modsmodel.cpp
     modmanguiapplication.cpp
-    modsortfilterproxymodel.cpp
+    modssortfilterproxymodel.cpp
     settingsdialog.cpp
     util.cpp
   )

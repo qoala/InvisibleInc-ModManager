@@ -1,12 +1,12 @@
-#ifndef MODCACHEMODEL_H
-#define MODCACHEMODEL_H
+#ifndef MODSMODEL_H
+#define MODSMODEL_H
 
 #include <QAbstractListModel>
 #include <modcache.h>
 
 namespace iimodmanager {
 
-class ModCacheModel : public QAbstractListModel
+class ModsModel : public QAbstractListModel
 {
     Q_OBJECT
 
@@ -44,7 +44,7 @@ public:
     Q_DECLARE_FLAGS(Status, StatusFlag)
     Q_FLAG(Status)
 
-    ModCacheModel(ModCache &cache, QObject *parent = nullptr);
+    ModsModel(ModCache &cache, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -65,8 +65,8 @@ private:
     QVector<QString> savedPersistentMappings;
 };
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(ModCacheModel::Status)
+Q_DECLARE_OPERATORS_FOR_FLAGS(ModsModel::Status)
 
 }  // namespace iimodmanager
 
-#endif // MODCACHEMODEL_H
+#endif // MODSMODEL_H
