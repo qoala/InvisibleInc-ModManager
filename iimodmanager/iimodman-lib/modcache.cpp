@@ -83,7 +83,7 @@ public:
     bool refresh(ModCache::RefreshLevel = ModCache::FULL, const QString &previousInstalledVersionId = QString());
     CachedVersion *refreshVersion(const QString &versionId, ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr);
     bool updateFromSteam(const SteamModInfo &steamInfo);
-    const CachedVersion *markInstalledVersion(const QString &hash, const QString &expectedVersionId);
+    const CachedVersion *markInstalledVersion(const QString &hash, const QString &expectedVersionId, bool *modified);
     inline void unmarkInstalled() { installedVersion_ = nullptr; };
 
     bool readDb(const QJsonObject &modObject);
@@ -288,8 +288,10 @@ const CachedVersion *ModCache::markInstalledVersion(const QString &modId, const 
     CachedMod *m = impl->mod(modId, &modIdx);
     if (m)
     {
-        const CachedVersion *v = m->impl()->markInstalledVersion(hash, expectedVersionId);
-        emit metadataChanged({modId}, {modIdx});
+        bool modified = false;
+        const CachedVersion *v = m->impl()->markInstalledVersion(hash, expectedVersionId, &modified);
+        if (modified)
+            emit metadataChanged({modId}, {modIdx});
         return v;
     }
     return nullptr;
@@ -750,9 +752,18 @@ bool CachedMod::Impl::updateFromSteam(const SteamModInfo &steamInfo)
     return false;
 }
 
-const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, const QString &expectedVersionId)
+const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, const QString &expectedVersionId, bool *modified)
 {
     CachedVersion *cachedVersion = findVersionByHash(hash, expectedVersionId);
+
+    if (cachedVersion == installedVersion_)
+    {
+        if (modified)
+            *modified = false;
+        return cachedVersion;
+    }
+    if (modified)
+        *modified = true;
 
     // Clear flags on any previously installed version.
     if (installedVersion_)
