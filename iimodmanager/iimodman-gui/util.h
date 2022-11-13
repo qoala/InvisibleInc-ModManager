@@ -1,3 +1,5 @@
+#ifndef IIMODMAN_UTIL_H
+#define IIMODMAN_UTIL_H
 #include <QString>
 
 namespace iimodmanager {
@@ -15,3 +17,5 @@ namespace util {
 } // namespace util
 
 } // namespace iimodmanager
+
+#endif // IIMODMAN_UTIL_H

@@ -6,6 +6,7 @@
 
 namespace iimodmanager {
 
+class ModCache;
 class ModList;
 
 //! Data model representing the union of the download-cached and installed mods.
@@ -18,12 +19,12 @@ class ModsModel : public QAbstractListModel
 public:
     enum Column
     {
-        NAME = 0,
-        ID = 1,
-        INSTALLED_VERSION = 2,
-        INSTALLED_UPDATE_TIME = 3,
-        LATEST_VERSION = 4,
-        CACHE_UPDATE_TIME = 5,
+        NAME,
+        ID,
+        INSTALLED_VERSION,
+        INSTALLED_VERSION_TIME,
+        LATEST_VERSION,
+        CACHE_UPDATE_TIME,
 
         COLUMN_MIN = 0,
         COLUMN_MAX = CACHE_UPDATE_TIME,
@@ -60,7 +61,7 @@ public:
     Q_DECLARE_FLAGS(Status, StatusFlag)
     Q_FLAG(Status)
 
-    ModsModel(ModCache &cache, ModList &modList, QObject *parent = nullptr);
+    ModsModel(const ModCache &cache, const ModList &modList, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -92,8 +93,8 @@ private:
         REFRESH_APPEND,
     };
 
-    ModCache &cache;
-    ModList &modList;
+    const ModCache &cache;
+    const ModList &modList;
     // Persistent tracking of mods in the installed, but not download-cached lists.
     QVector<int> uncachedIdxs_;
     QHash<QString, int> uncachedIds_; // Mod ID to index in uncachedIdxs.

@@ -133,7 +133,7 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
     switch(left.column())
     {
     case ModsModel::INSTALLED_VERSION:
-    case ModsModel::INSTALLED_UPDATE_TIME:
+    case ModsModel::INSTALLED_VERSION_TIME:
     case ModsModel::LATEST_VERSION:
     case ModsModel::CACHE_UPDATE_TIME:
         break;
@@ -159,7 +159,7 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
     case ModsModel::INSTALLED_VERSION:
     case ModsModel::LATEST_VERSION:
         return ColumnLessThan::modVersion(leftData, leftStatus, rightData, rightStatus);
-    case ModsModel::INSTALLED_UPDATE_TIME:
+    case ModsModel::INSTALLED_VERSION_TIME:
     case ModsModel::CACHE_UPDATE_TIME:
         return ColumnLessThan::modUpdateTime(leftData, leftStatus, rightData, rightStatus);
     default:

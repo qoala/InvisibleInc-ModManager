@@ -38,8 +38,8 @@ void MainWindow::createTabs()
     setCentralWidget(tabWidget);
 
     // Main mods tab.
-    modsModel = new ModsModel(app.cache(), app.modList());
-    modsSortFilterProxy = new ModsSortFilterProxyModel;
+    modsModel = new ModsModel(app.cache(), app.modList(), this);
+    modsSortFilterProxy = new ModsSortFilterProxyModel(this);
     modsSortFilterProxy->setSourceModel(modsModel);
     modsSortFilterProxy->setFilterKeyColumn(0);
     modsSortFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
@@ -51,7 +51,7 @@ void MainWindow::createTabs()
     modsView->setColumnWidth(ModsModel::ID, 160);
     modsView->setColumnWidth(ModsModel::INSTALLED_VERSION, 110);
     modsView->setColumnWidth(ModsModel::LATEST_VERSION, 110);
-    modsView->setColumnWidth(ModsModel::INSTALLED_UPDATE_TIME, 160);
+    modsView->setColumnWidth(ModsModel::INSTALLED_VERSION_TIME, 160);
     modsView->setColumnWidth(ModsModel::CACHE_UPDATE_TIME, 160);
     modsView->sortByColumn(ModsModel::NAME, Qt::AscendingOrder);
     modsView->setSortingEnabled(true);
