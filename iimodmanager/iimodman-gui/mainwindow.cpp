@@ -8,7 +8,7 @@
 #include "mainwindow.h"
 #include "modelutil.h"
 #include "modmanguiapplication.h"
-#include "modsmodel.h"
+#include "modspecpreviewmodel.h"
 #include "modssortfilterproxymodel.h"
 #include "settingsdialog.h"
 
@@ -39,22 +39,24 @@ void MainWindow::createTabs()
     setCentralWidget(tabWidget);
 
     // Main mods tab.
-    modsModel = new ModsModel(app.cache(), app.modList(), this);
+    modsPreviewModel = new ModSpecPreviewModel(app.cache(), app.modList(), this);
     modsSortFilterProxy = new ModsSortFilterProxyModel(this);
-    modsSortFilterProxy->setSourceModel(modsModel);
-    modsSortFilterProxy->setFilterColumns({ModsModel::NAME, ModsModel::ID});
+    modsSortFilterProxy->setSourceModel(modsPreviewModel);
+    modsSortFilterProxy->setFilterColumns({ModSpecPreviewModel::NAME, ModSpecPreviewModel::ID});
     modsSortFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
     modsSortFilterProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
     modsView = new QTreeView;
     modsView->setModel(modsSortFilterProxy);
     modsView->header()->setStretchLastSection(false);
-    modsView->setColumnWidth(ModsModel::NAME, 300);
-    modsView->setColumnWidth(ModsModel::ID, 160);
-    modsView->setColumnWidth(ModsModel::INSTALLED_VERSION, 110);
-    modsView->setColumnWidth(ModsModel::LATEST_VERSION, 110);
-    modsView->setColumnWidth(ModsModel::INSTALLED_VERSION_TIME, 160);
-    modsView->setColumnWidth(ModsModel::CACHE_UPDATE_TIME, 160);
-    modsView->sortByColumn(ModsModel::NAME, Qt::AscendingOrder);
+    modsView->setColumnWidth(ModSpecPreviewModel::NAME, 300);
+    modsView->setColumnWidth(ModSpecPreviewModel::ID, 160);
+    modsView->setColumnWidth(ModSpecPreviewModel::INSTALLED_VERSION, 110);
+    modsView->setColumnWidth(ModSpecPreviewModel::LATEST_VERSION, 110);
+    modsView->setColumnWidth(ModSpecPreviewModel::TARGET_VERSION, 110);
+    modsView->setColumnWidth(ModSpecPreviewModel::INSTALLED_VERSION_TIME, 160);
+    modsView->setColumnWidth(ModSpecPreviewModel::CACHE_UPDATE_TIME, 160);
+    modsView->setColumnWidth(ModSpecPreviewModel::TARGET_VERSION_TIME, 160);
+    modsView->sortByColumn(ModSpecPreviewModel::NAME, Qt::AscendingOrder);
     modsView->setSortingEnabled(true);
 
     modsSearchInput = new QLineEdit;

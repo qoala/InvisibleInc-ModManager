@@ -133,26 +133,37 @@ int ModsModel::columnCount(const QModelIndex &parent) const
     return COLUMN_COUNT;
 }
 
+int ModsModel::columnMax() const
+{
+    return COLUMN_MAX;
+}
+
+void ModsModel::seekRow(int row, const CachedMod **cm, const InstalledMod **im) const
+{
+    int cacheSize = cache.mods().size();
+    *cm = nullptr;
+    *im = nullptr;
+    if (row < 0)
+        return;
+    else if (row < cacheSize)
+    {
+        *cm = &cache.mods().at(row);
+        *im = modList.mod((*cm)->id());
+    }
+    else if ((row -= cacheSize) < uncachedIdxs().size())
+    {
+        *im = &modList.mods().at(uncachedIdxs().at(row));
+    }
+}
+
 QVariant ModsModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
 
-    int row = index.row();
-    int cacheSize = cache.mods().size();
-    const CachedMod *cm = nullptr;
-    const InstalledMod *im = nullptr;
-    if (row < 0)
-        return QVariant();
-    else if (row < cacheSize)
-    {
-        cm = &cache.mods().at(row);
-        im = modList.mod(cm->id());
-    }
-    else if ((row -= cacheSize) < uncachedIdxs().size())
-    {
-        im = &modList.mods().at(uncachedIdxs().at(row));
-    }
+    const CachedMod *cm;
+    const InstalledMod *im;
+    seekRow(index.row(), &cm, &im);
     if (!cm && !im)
         return QVariant();
 
@@ -347,13 +358,13 @@ void ModsModel::cacheAppendedMods()
     TRIVIAL_MOVE_APPEND:
         reindexUncachedMods();
         row = cache.mods().size() - 1;
-        emit dataChanged(createIndex(row, COLUMN_MIN), createIndex(row, COLUMN_MAX));
+        emit dataChanged(createIndex(row, columnMin()), createIndex(row, columnMax()));
         return;
     MOVE_APPEND:
         reindexUncachedMods();
         endMoveRows();
         row = cache.mods().size() - 1;
-        emit dataChanged(createIndex(row, COLUMN_MIN), createIndex(row, COLUMN_MAX));
+        emit dataChanged(createIndex(row, columnMin()), createIndex(row, columnMax()));
         return;
     REFRESH_APPEND:
         cacheRefreshed();
@@ -402,10 +413,10 @@ void ModsModel::cacheMetadataChanged(const QStringList &modIds, const QList<int>
 
     if (modIdxs.size() == 0)
         // Any/All rows changed.
-        emit dataChanged(createIndex(0, COLUMN_MIN), createIndex(cache.mods().size()-1, COLUMN_MAX));
+        emit dataChanged(createIndex(0, columnMin()), createIndex(cache.mods().size()-1, columnMax()));
     else if (modIdxs.size() == 1)
         // One row changed.
-        emit dataChanged(createIndex(modIdxs[0], COLUMN_MIN), createIndex(modIdxs[0], COLUMN_MAX));
+        emit dataChanged(createIndex(modIdxs[0], columnMin()), createIndex(modIdxs[0], columnMax()));
     else
     {
         // Multiple rows changed. Declare a bounding rectangle.
@@ -418,7 +429,7 @@ void ModsModel::cacheMetadataChanged(const QStringList &modIds, const QList<int>
             else if (idx > maxRow)
                 maxRow = idx;
         }
-        emit dataChanged(createIndex(minRow, COLUMN_MIN), createIndex(maxRow, COLUMN_MAX));
+        emit dataChanged(createIndex(minRow, columnMin()), createIndex(maxRow, columnMax()));
     }
 }
 

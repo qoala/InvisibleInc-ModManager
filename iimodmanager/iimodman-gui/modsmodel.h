@@ -28,7 +28,6 @@ public:
         LATEST_VERSION,
         CACHE_UPDATE_TIME,
 
-        COLUMN_MIN = 0,
         COLUMN_MAX = CACHE_UPDATE_TIME,
         COLUMN_COUNT = COLUMN_MAX+1,
     };
@@ -39,6 +38,26 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+
+protected:
+    const ModCache &cache;
+    const ModList &modList;
+
+    inline int columnMin() const { return 0; };
+    //! The highest column number accepted by this model. ('columnCount() - 1' if columnCount is constant).
+    //! Subclasses may alter the visible columns. Override columnMax and columnCount as necessary.
+    virtual int columnMax() const;
+
+    //! Returns the cached and downloaded mod resources for the given row into its arguments.
+    void seekRow(int row, const CachedMod **cmOut, const InstalledMod **imOut) const;
+    inline const QVector<int> &uncachedIdxs() const { return uncachedIdxs_; };
+    //! Returns the row number for an uncached mod ID, or -1 if not found.
+    //! \sa ModCache::modIndex
+    int uncachedIndex(const QString &modId) const;
+
+    void reindexUncachedMods();
+    void savePersistentIndexes();
+    void updatePersistentIndexes();
 
 private slots:
     void cacheAboutToAppendMods(const QStringList &modIds);
@@ -65,8 +84,6 @@ private:
         REFRESH_APPEND,
     };
 
-    const ModCache &cache;
-    const ModList &modList;
     // Persistent tracking of mods in the installed, but not download-cached lists.
     QVector<int> uncachedIdxs_;
     QHash<QString, int> uncachedIds_; // Mod ID to index in uncachedIdxs.
@@ -75,15 +92,6 @@ private:
     AppendType appendType;
     QModelIndexList savedPersistentIndexes;
     QVector<QString> savedPersistentMappings;
-
-    inline const QVector<int> &uncachedIdxs() const { return uncachedIdxs_; };
-    //! Returns the row number for an uncached mod ID, or -1 if not found.
-    //! \sa ModCache::modIndex
-    int uncachedIndex(const QString &modId) const;
-
-    void reindexUncachedMods();
-    void savePersistentIndexes();
-    void updatePersistentIndexes();
 };
 
 }  // namespace iimodmanager

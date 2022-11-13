@@ -121,15 +121,15 @@ public:
 
 // file-visibility:
     void setInstalled(bool value) { installed_ = value; };
-    bool refresh(ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr);
+    bool refresh(ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr) const;
 
 private:
     const ModCache::Impl &cache;
     const QString modId;
     QString id_;
-    ModInfo info_;
-    std::optional<QDateTime> timestamp_;
-    std::optional<QString> version_;
+    mutable ModInfo info_;
+    mutable std::optional<QDateTime> timestamp_;
+    mutable std::optional<QString> version_;
 
     bool installed_;
     mutable QString hash_;
@@ -646,7 +646,11 @@ const CachedVersion *CachedMod::version(const QString &versionId) const
     for (const CachedVersion &cachedVersion : impl()->versions())
     {
         if (cachedVersion.id() == versionId)
+        {
+            if (cachedVersion.info().isEmpty())
+                cachedVersion.impl()->refresh();
             return &cachedVersion;
+        }
     }
     return nullptr;
 }
@@ -920,7 +924,7 @@ QString CachedVersion::Impl::path() const
     return cache.modVersionPath(modId, id_);
 }
 
-bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level, QString *errorInfo)
+bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level, QString *errorInfo) const
 {
     QDir modVersionDir(cache.modVersionPath(modId, id_));
     if (!modVersionDir.exists("modinfo.txt"))

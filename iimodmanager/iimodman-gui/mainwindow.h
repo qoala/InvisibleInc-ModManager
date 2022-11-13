@@ -15,7 +15,7 @@
 namespace iimodmanager {
 
 class ModManGuiApplication;
-class ModsModel;
+class ModSpecPreviewModel;
 class ModsSortFilterProxyModel;
 
 
@@ -59,7 +59,7 @@ private:
     ModManGuiApplication &app;
 
     QTabWidget *tabWidget;
-    ModsModel *modsModel;
+    ModSpecPreviewModel *modsPreviewModel;
     ModsSortFilterProxyModel *modsSortFilterProxy;
     QTreeView *modsView;
     QLineEdit *modsSearchInput;
