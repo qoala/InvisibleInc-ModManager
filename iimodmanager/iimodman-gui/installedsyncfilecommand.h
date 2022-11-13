@@ -20,6 +20,7 @@ public:
     void execute();
 
 signals:
+    void started();
     void finished();
     void textOutput(QString value);
 

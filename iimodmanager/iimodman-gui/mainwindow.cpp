@@ -193,6 +193,11 @@ void MainWindow::modsFilterStatusChanged()
     modsSortFilterProxy->setFilterStatus(requiredStatuses, maskedStatuses);
 }
 
+void MainWindow::actionStarted()
+{
+    setActionsEnabled(false);
+}
+
 void MainWindow::actionFinished()
 {
     setActionsEnabled(true);
@@ -219,6 +224,7 @@ void MainWindow::endProgress()
 
 void MainWindow::openSettings()
 {
+    actionStarted();
     SettingsDialog dialog(app, this);
     if (dialog.exec() == QDialog::Accepted)
     {
@@ -228,13 +234,14 @@ void MainWindow::openSettings()
         QString message = QString("Settings updated.  \tInstalled: %1 mods  \tCache: %2 mods").arg(app.modList().mods().size()).arg(app.cache().mods().size());
         logDisplay->appendPlainText(message);
     }
+    actionFinished();
 }
 
 void MainWindow::cacheStatus()
 {
     logDisplay->appendPlainText("\n--");
+    actionStarted();
     CacheStatusCommand *command = new CacheStatusCommand(app, this);
-    setActionsEnabled(false);
     connect(command, &CacheStatusCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &CacheStatusCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
@@ -243,8 +250,8 @@ void MainWindow::cacheStatus()
 void MainWindow::cacheUpdate()
 {
     logDisplay->appendPlainText("\n--");
+    actionStarted();
     CacheUpdateCommand *command = new CacheUpdateCommand(app, this);
-    setActionsEnabled(false);
     connect(command, &CacheUpdateCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &CacheUpdateCommand::finished, this, &MainWindow::actionFinished);
     connect(command, &CacheUpdateCommand::beginProgress, this, &MainWindow::beginProgress);
@@ -254,8 +261,8 @@ void MainWindow::cacheUpdate()
 
 void MainWindow::cacheSave()
 {
+    actionStarted();
     CacheSaveCommand *command = new CacheSaveCommand(app, this);
-    setActionsEnabled(false);
     connect(command, &CacheSaveCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &CacheSaveCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
@@ -263,8 +270,8 @@ void MainWindow::cacheSave()
 
 void MainWindow::cacheAddMod()
 {
+    actionStarted();
     CacheAddCommand *command = new CacheAddCommand(app, this);
-    setActionsEnabled(false);
     connect(command, &CacheAddCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &CacheAddCommand::finished, this, &MainWindow::actionFinished);
     connect(command, &CacheAddCommand::beginProgress, this, &MainWindow::beginProgress);
@@ -275,8 +282,8 @@ void MainWindow::cacheAddMod()
 void MainWindow::installedStatus()
 {
     logDisplay->appendPlainText("\n--");
+    actionStarted();
     InstalledStatusCommand *command = new InstalledStatusCommand(app, this);
-    setActionsEnabled(false);
     connect(command, &InstalledStatusCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &InstalledStatusCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
@@ -285,8 +292,8 @@ void MainWindow::installedStatus()
 void MainWindow::installedUpdate()
 {
     logDisplay->appendPlainText("\n--");
+    actionStarted();
     InstalledUpdateCommand *command = new InstalledUpdateCommand(app, this);
-    setActionsEnabled(false);
     connect(command, &InstalledUpdateCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &InstalledUpdateCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
@@ -295,7 +302,7 @@ void MainWindow::installedUpdate()
 void MainWindow::installedSyncFile()
 {
     InstalledSyncFileCommand *command = new InstalledSyncFileCommand(app, this);
-    setActionsEnabled(false);
+    connect(command, &InstalledSyncFileCommand::started, this, &MainWindow::actionStarted);
     connect(command, &InstalledSyncFileCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &InstalledSyncFileCommand::finished, this, &MainWindow::actionFinished);
     command->execute();

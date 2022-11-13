@@ -29,6 +29,10 @@ public:
 private slots:
     void modsFilterStatusChanged();
 
+    //! Triggered when an action begins making changes. Must be followed by actionFinished.
+    //! For most actions, this is called by MainWindow before starting the action.
+    void actionStarted();
+    //! Triggered when an action finishes making changes.
     void actionFinished();
     void writeText(QString value);
     //! Start a progress bar. May be called multiple times without finishing.

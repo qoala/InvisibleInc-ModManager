@@ -19,7 +19,6 @@ void InstalledSyncFileCommand::execute()
         if (fileName.isEmpty())
         {
             // Selection cancelled
-            emit finished();
             deleteLater();
         }
         else
@@ -32,6 +31,7 @@ void InstalledSyncFileCommand::execute()
 
 void InstalledSyncFileCommand::handleFile(const QString &filename, const QByteArray &fileContent)
 {
+    emit started();
     app.refreshMods();
 
     inputSpec.reserve(app.cache().mods().size());
