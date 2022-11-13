@@ -20,12 +20,14 @@ public:
     {
         NAME = 0,
         ID = 1,
-        LATEST_VERSION = 2,
-        CACHE_UPDATE_TIME = 3,
+        INSTALLED_VERSION = 2,
+        INSTALLED_UPDATE_TIME = 3,
+        LATEST_VERSION = 4,
+        CACHE_UPDATE_TIME = 5,
 
         COLUMN_MIN = 0,
-        COLUMN_MAX = 3,
-        COLUMN_COUNT = 4,
+        COLUMN_MAX = CACHE_UPDATE_TIME,
+        COLUMN_COUNT = COLUMN_MAX+1,
     };
     enum UserDataRole
     {
@@ -44,12 +46,16 @@ public:
         //! The row is a mod that's not downloaded.
         NO_DOWNLOAD_STATUS = 0x10,
         //! The row is a mod that's not downloaded.
-        CAN_DOWNLOAD_UPDATE_STATUS = 0x11,
+        CAN_DOWNLOAD_UPDATE_STATUS = 0x20,
         //! The row is a mod that's not downloaded.
-        CAN_INSTALL_UPDATE_STATUS = 0x12,
+        CAN_INSTALL_UPDATE_STATUS = 0x40,
 
+        //! The requested column is null for the requested row.
+        //! Example: If a given mod version does not exist, it is NULL.
+        NULL_STATUS = 0x100,
         //! The requested column is unlabelled for the requested mod.
-        UNLABELLED_STATUS = 0x100,
+        //! Example: If a given mod version exists, but does not declare a 'version' string, it is UNLABELLED.
+        UNLABELLED_STATUS = 0x200,
     };
     Q_DECLARE_FLAGS(Status, StatusFlag)
     Q_FLAG(Status)

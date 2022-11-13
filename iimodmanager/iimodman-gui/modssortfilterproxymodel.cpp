@@ -11,8 +11,10 @@ typedef ModsModel::Status Status;
 namespace ColumnLessThan {
     bool modVersion(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
     {
-        if (leftStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS) || rightStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS))
-            return leftStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS) && !rightStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS);
+        // NULL is less than any other value.
+        if (leftStatus.testFlag(ModsModel::NULL_STATUS) || leftStatus.testFlag(ModsModel::NULL_STATUS))
+            return leftStatus.testFlag(ModsModel::NULL_STATUS) && !rightStatus.testFlag(ModsModel::NULL_STATUS);
+        // UNLABELLED is less than any provided value.
         if (leftStatus.testFlag(ModsModel::UNLABELLED_STATUS) || rightStatus.testFlag(ModsModel::UNLABELLED_STATUS))
             return leftStatus.testFlag(ModsModel::UNLABELLED_STATUS) && !rightStatus.testFlag(ModsModel::UNLABELLED_STATUS);
 
@@ -49,8 +51,9 @@ namespace ColumnLessThan {
 
     bool modUpdateTime(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
     {
-        if (leftStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS) || rightStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS))
-            return leftStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS) && !rightStatus.testFlag(ModsModel::NO_DOWNLOAD_STATUS);
+        // NULL is less than any other value.
+        if (leftStatus.testFlag(ModsModel::NULL_STATUS) || leftStatus.testFlag(ModsModel::NULL_STATUS))
+            return leftStatus.testFlag(ModsModel::NULL_STATUS) && !rightStatus.testFlag(ModsModel::NULL_STATUS);
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         bool leftIsDateTime = static_cast<QMetaType::Type>(leftData.type()) == QMetaType::QDateTime;
@@ -107,6 +110,8 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
         return QSortFilterProxyModel::lessThan(left, right);
     switch(left.column())
     {
+    case ModsModel::INSTALLED_VERSION:
+    case ModsModel::INSTALLED_UPDATE_TIME:
     case ModsModel::LATEST_VERSION:
     case ModsModel::CACHE_UPDATE_TIME:
         break;
@@ -127,8 +132,10 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
 
     switch (left.column())
     {
+    case ModsModel::INSTALLED_VERSION:
     case ModsModel::LATEST_VERSION:
         return ColumnLessThan::modVersion(leftData, leftStatus, rightData, rightStatus);
+    case ModsModel::INSTALLED_UPDATE_TIME:
     case ModsModel::CACHE_UPDATE_TIME:
         return ColumnLessThan::modUpdateTime(leftData, leftStatus, rightData, rightStatus);
     default:

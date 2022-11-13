@@ -34,6 +34,7 @@ namespace ColumnData {
         {
             // Installed, but uncached.
             status |= ModsModel::INSTALLED_STATUS;
+            status |= ModsModel::NO_DOWNLOAD_STATUS;
             if (im->info().isSteam())
                 status |= ModsModel::STEAM_STATUS;
         }
@@ -69,6 +70,37 @@ namespace ColumnData {
         return QVariant();
     }
 
+    QVariant installedLatestVersion(const CachedMod *cm, const InstalledMod *im, int role)
+    {
+        if (!im)
+        {
+            if (role == ModsModel::STATUS_ROLE)
+                return QVariant::fromValue<Status>(modStatus(cm, im) | ModsModel::NULL_STATUS);
+            else
+                return QVariant();
+        }
+
+        const QString &version = im->info().version();
+        if (version.isEmpty())
+        {
+            if (role == Qt::DisplayRole)
+                return QStringLiteral("-");
+            else if (role == Qt::ToolTipRole)
+                return QStringLiteral("(unlabeled)");
+            else if (role == ModsModel::STATUS_ROLE)
+                return QVariant::fromValue<Status>(modStatus(cm, im) | ModsModel::UNLABELLED_STATUS);
+            else
+                return QVariant();
+        }
+
+        if (role == Qt::DisplayRole)
+            return version;
+        else if (role == ModsModel::STATUS_ROLE)
+            return QVariant::fromValue<Status>(modStatus(cm, im));
+        else
+            return QVariant();
+    }
+
     QVariant cacheLatestVersion(const CachedMod *cm, int role)
     {
         const CachedVersion *cv = cm ? cm->latestVersion() : nullptr;
@@ -82,8 +114,7 @@ namespace ColumnData {
                 else
                     return QStringLiteral("(needs copy installed to cache)");
             else if (role == ModsModel::STATUS_ROLE)
-                // NO_DOWNLOAD is covered by the mod status flags.
-                return QVariant::fromValue<Status>(modStatus(cm));
+                return QVariant::fromValue<Status>(modStatus(cm) | ModsModel::NULL_STATUS);
             return QVariant();
         }
 
@@ -108,16 +139,11 @@ namespace ColumnData {
             return QVariant();
     }
 
-    QVariant cacheUpdateTime(const CachedMod *cm, int role)
+    QVariant versionUpdateTime(const CachedMod *cm, const InstalledMod *im, const CachedVersion *cv, int role)
     {
-        const CachedVersion *cv = cm ? cm->latestVersion() : nullptr;
         if (!cv)
-        {
-            if (role == ModsModel::STATUS_ROLE)
-                return QVariant::fromValue<Status>(modStatus(cm));
-            else
-                return QVariant();
-        }
+            // STATUS_ROLE handled by caller.
+            return QVariant();
 
         const std::optional<QDateTime> timestamp = cv->timestamp();
         if (!timestamp)
@@ -125,7 +151,7 @@ namespace ColumnData {
             if (role == Qt::DisplayRole)
                 return cv->id();
             else if (role == ModsModel::STATUS_ROLE)
-                return QVariant::fromValue<Status>(modStatus(cm) | ModsModel::UNLABELLED_STATUS);
+                return QVariant::fromValue<Status>(modStatus(cm, im) | ModsModel::UNLABELLED_STATUS);
             else
                 return QVariant();
         }
@@ -133,9 +159,33 @@ namespace ColumnData {
         if (role == Qt::DisplayRole)
             return *timestamp;
         else if (role == ModsModel::STATUS_ROLE)
-            return QVariant::fromValue<Status>(modStatus(cm));
+            return QVariant::fromValue<Status>(modStatus(cm, im));
         else
             return QVariant();
+    }
+
+    QVariant installedUpdateTime(const CachedMod *cm, const InstalledMod *im, int role)
+    {
+        if (!im)
+        {
+            if (role == ModsModel::STATUS_ROLE)
+                return QVariant::fromValue<Status>(modStatus(cm, im) | ModsModel::NULL_STATUS);
+            else
+                return QVariant();
+        }
+
+        const CachedVersion *cv = im->cacheVersion();
+        if (!cv && role == ModsModel::STATUS_ROLE)
+            return QVariant::fromValue<Status>(modStatus(cm, im) | ModsModel::UNLABELLED_STATUS);
+        return versionUpdateTime(cm, im, cv, role);
+    }
+
+    QVariant cacheUpdateTime(const CachedMod *cm, int role)
+    {
+        const CachedVersion *cv = cm ? cm->latestVersion() : nullptr;
+        if (!cv && role == ModsModel::STATUS_ROLE)
+            return QVariant::fromValue<Status>(modStatus(cm) | ModsModel::NULL_STATUS);
+        return versionUpdateTime(cm, nullptr, cv, role);
     }
 }
 
@@ -193,6 +243,10 @@ QVariant ModsModel::data(const QModelIndex &index, int role) const
         return ColumnData::modName(cm, im, role);
     case ID:
         return ColumnData::modId(cm, im, role);
+    case INSTALLED_VERSION:
+        return ColumnData::installedLatestVersion(cm, im, role);
+    case INSTALLED_UPDATE_TIME:
+        return ColumnData::installedUpdateTime(cm, im, role);
     case LATEST_VERSION:
         return ColumnData::cacheLatestVersion(cm, role);
     case CACHE_UPDATE_TIME:
@@ -214,6 +268,10 @@ QVariant ModsModel::headerData(int section, Qt::Orientation orientation, int rol
             return QStringLiteral("Name");
         case ID:
             return QStringLiteral("ID");
+        case INSTALLED_VERSION:
+            return QStringLiteral("Installed Version");
+        case INSTALLED_UPDATE_TIME:
+            return QStringLiteral("Installed Update Time");
         case LATEST_VERSION:
             return QStringLiteral("Latest Version");
         case CACHE_UPDATE_TIME:
@@ -226,8 +284,10 @@ QVariant ModsModel::headerData(int section, Qt::Orientation orientation, int rol
             return Qt::AscendingOrder;
         case ID:
             return Qt::AscendingOrder;
+        case INSTALLED_VERSION:
         case LATEST_VERSION:
             return Qt::DescendingOrder;
+        case INSTALLED_UPDATE_TIME:
         case CACHE_UPDATE_TIME:
             return Qt::DescendingOrder;
         }
