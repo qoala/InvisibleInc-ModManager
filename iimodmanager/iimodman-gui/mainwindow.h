@@ -29,24 +29,31 @@ public:
 private slots:
     void modsFilterStatusChanged();
 
+    // Action callbacks.
     //! Triggered when an action begins making changes. Must be followed by actionFinished.
     //! For most actions, this is called by MainWindow before starting the action.
     void actionStarted();
     //! Triggered when an action finishes making changes.
     void actionFinished();
     void writeText(QString value);
-    //! Start a progress bar. May be called multiple times without finishing.
+    //! Start a progress bar. May be called multiple times before calling endProgress.
     void beginProgress(int maximum);
+    //! Completes and hides the progress bar. Automatically triggered by actionFinished.
     void endProgress();
 
+    // File Menu
+    void loadSpec();
+    void saveInstalledSpec();
+    void saveInstalledVersionSpec();
+    void saveCacheSpec();
     void openSettings();
+    // Cache Menu
     void cacheStatus();
     void cacheUpdate();
-    void cacheSave();
     void cacheAddMod();
+    // Installed Menu
     void installedStatus();
     void installedUpdate();
-    void installedSyncFile();
 
 private:
     ModManGuiApplication &app;
@@ -64,17 +71,19 @@ private:
     QProgressBar *logProgress;
 
     QMenu *fileMenu;
+    QAction *loadSpecAct;
+    QAction *saveInstalledSpecAct;
+    QAction *saveInstalledVersionSpecAct;
+    QAction *saveCacheSpecAct;
     QAction *settingsAct;
     QAction *quitAct;
     QMenu *cacheMenu;
     QAction *cacheStatusAct;
     QAction *cacheUpdateAct;
-    QAction *cacheSaveAct;
     QAction *cacheAddModAct;
     QMenu *installedMenu;
     QAction *installedStatusAct;
     QAction *installedUpdateAct;
-    QAction *installedSyncFileAct;
 
     void createTabs();
     void createLogDock();
