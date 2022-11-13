@@ -56,7 +56,7 @@ private:
     //! All cached mods.
     QList<CachedMod> mods_;
     //! Index of mods by mod ID.
-    QMap<QString, qsizetype> modIds_;
+    QHash<QString, qsizetype> modIds_;
 
     void sortMods();
     void refreshIndex();
@@ -481,6 +481,7 @@ void ModCache::Impl::refresh(RefreshLevel level)
 
     const QHash<QString, QString> installedVersionIds = saveInstalledVersionIds();
 
+    modIds_.clear();
     mods_.clear();
     readModManDb();
     sortMods();
@@ -503,7 +504,7 @@ void ModCache::Impl::refresh(RefreshLevel level)
         }
     }
 
-    sortMods();
+    sortMods(); // Automatically refreshes the index.
 
     qCDebug(modcache).noquote().nospace() << "cache:refresh() End mods:" << mods_.size();
     emit q->refreshed();

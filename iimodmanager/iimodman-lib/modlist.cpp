@@ -41,7 +41,7 @@ private:
     ModCache *cache_;
     QList<InstalledMod> mods_;
     //! Index of mods by mod ID.
-    QMap<QString, qsizetype> modIds_;
+    QHash<QString, qsizetype> modIds_;
 
     void refreshIndex();
     const QHash<QString, QString> saveCacheVersionIds() const;
@@ -151,9 +151,11 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
 
     emit q->aboutToRefresh();
 
+
     installDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     installDir.setSorting(QDir::Name);
     const QStringList modIds = installDir.entryList();
+    modIds_.clear();
     mods_.clear();
     mods_.reserve(modIds.size());
     for (const auto &modId : modIds)
