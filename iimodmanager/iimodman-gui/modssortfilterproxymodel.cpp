@@ -9,6 +9,28 @@ namespace iimodmanager {
 typedef ModsModel::Status Status;
 
 namespace ColumnLessThan {
+    bool modId(const QVariant &leftData, const QVariant &rightData)
+    {
+        // Sort steam IDs numerically.
+        QRegularExpression steamRe(QStringLiteral("^workshop-(\\d+)(\\D.*)?"));
+        QRegularExpressionMatch leftMatch = steamRe.match(leftData.toString());
+        QRegularExpressionMatch rightMatch = steamRe.match(rightData.toString());
+        if (leftMatch.hasMatch() && rightMatch.hasMatch())
+        {
+            // Steam workshop IDs have crossed the int boundary.
+            qulonglong leftNumber = leftMatch.capturedView(1).toULongLong();
+            qulonglong rightNumber = rightMatch.capturedView(1).toULongLong();
+            if (leftNumber != rightNumber)
+                return leftNumber < rightNumber;
+            else
+                // If a non-steam ID starts with a steam ID, it should sort correctly among them to maintain a total ordering.
+                return leftMatch.capturedView(2) < rightMatch.capturedView(2);
+        }
+
+        // Sort everything else alphabetically.
+        return leftData.toString() < rightData.toString();
+    }
+
     bool modVersion(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
     {
         // NULL is less than any other value.
@@ -115,6 +137,8 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
     case ModsModel::LATEST_VERSION:
     case ModsModel::CACHE_UPDATE_TIME:
         break;
+    case ModsModel::ID:
+        return ColumnLessThan::modId(sourceModel()->data(left), sourceModel()->data(right));
     default:
         // Skip the extraction if we're falling through to superclass method.
         return QSortFilterProxyModel::lessThan(left, right);
