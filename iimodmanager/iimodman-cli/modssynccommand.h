@@ -28,9 +28,9 @@ private:
     QStringList specFileNames;
 
     // All ModSpec lines from input
-    ModSpec inputSpec;
+    ModSpec *inputSpec;
     // ModSpec with exact versions specified
-    ModSpec targetSpec;
+    ModSpec *targetSpec;
     // Mods that need to be newly installed
     QList<SpecMod> addedMods;
     // Mods that need to be updated

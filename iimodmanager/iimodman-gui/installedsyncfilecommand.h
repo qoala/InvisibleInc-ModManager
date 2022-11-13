@@ -36,9 +36,9 @@ private:
     ModManGuiApplication &app;
 
     // ModSpec as read from input
-    ModSpec inputSpec;
+    ModSpec *inputSpec;
     // ModSpec with exact versions specified
-    ModSpec targetSpec;
+    ModSpec *targetSpec;
     // Mods that need to be newly installed
     QList<SpecMod> addedMods;
     // Mods that need to be updated

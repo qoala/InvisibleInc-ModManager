@@ -3,6 +3,7 @@
 #include <modcache.h>
 #include <modinfo.h>
 #include <modlist.h>
+#include <modspec.h>
 
 namespace iimodmanager {
 
@@ -13,9 +14,14 @@ bool compareCachedModNames(const CachedMod &a, const CachedMod &b)
     return a.info().name() < b.info().name();
 }
 
-bool compareModNames(const InstalledMod &a, const InstalledMod &b)
+bool compareInstalledModNames(const InstalledMod &a, const InstalledMod &b)
 {
     return a.info().name() < b.info().name();
+}
+
+bool compareSpecModNames(const SpecMod &a, const SpecMod &b)
+{
+    return a.name() < b.name();
 }
 
 const QString EMPTY_VERSION = QStringLiteral("-");

@@ -11,7 +11,10 @@ namespace iimodmanager {
 
 InstalledSyncFileCommand::InstalledSyncFileCommand(ModManGuiApplication  &app, QObject *parent)
   : QObject(parent), app(app)
-{}
+{
+    inputSpec = new ModSpec(this);
+    targetSpec = new ModSpec(this);
+}
 
 void InstalledSyncFileCommand::execute()
 {
@@ -34,16 +37,17 @@ void InstalledSyncFileCommand::handleFile(const QString &filename, const QByteAr
     emit started();
     app.refreshMods();
 
-    inputSpec.reserve(app.cache().mods().size());
-    inputSpec.appendFromFile(fileContent, filename);
+    inputSpec->reserve(app.cache().mods().size());
+    inputSpec->appendFromFile(fileContent, filename);
+    targetSpec->reserve(inputSpec->mods().size());
 
     emit textOutput("\n--");
     bool ok = true;
-    for (const auto &sm : inputSpec.mods())
+    for (const auto &sm : inputSpec->mods())
     {
         std::optional<SpecMod> targetSpecMod = makeInstallTarget(sm);
         if (targetSpecMod)
-            targetSpec.append(*targetSpecMod);
+            targetSpec->append(*targetSpecMod);
         else
             ok = false;
     }
@@ -102,7 +106,7 @@ std::optional<SpecMod> InstalledSyncFileCommand::makeInstallTarget(const SpecMod
 bool InstalledSyncFileCommand::checkInstalledMod(const InstalledMod &im)
 {
     const QString &modId = im.id();
-    if (targetSpec.contains(modId))
+    if (targetSpec->contains(modId))
         return true;
 
     removedMods.append(im);

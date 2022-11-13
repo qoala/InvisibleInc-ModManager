@@ -6,12 +6,14 @@ namespace iimodmanager {
 
 class CachedMod;
 class InstalledMod;
+class SpecMod;
 
 
 namespace util {
 
     bool compareCachedModNames(const CachedMod &a, const CachedMod &b);
-    bool compareModNames(const InstalledMod &a, const InstalledMod &b);
+    bool compareInstalledModNames(const InstalledMod &a, const InstalledMod &b);
+    bool compareSpecModNames(const SpecMod &a, const SpecMod &b);
     const QString &displayVersion(const QString &version);
 
 } // namespace util

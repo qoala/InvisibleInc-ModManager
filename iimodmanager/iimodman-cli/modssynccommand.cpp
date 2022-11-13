@@ -45,14 +45,17 @@ void ModsSyncCommand::execute()
     cache->refresh(ModCache::LATEST_ONLY);
     modList->refresh();
 
+    inputSpec = new ModSpec(this);
+    targetSpec = new ModSpec(this);
+
 
     // Read input
-    inputSpec.reserve(cache->mods().size());
+    inputSpec->reserve(cache->mods().size());
     bool success = true;
     if (specFileNames.isEmpty())
     {
         for (const auto &im : modList->mods())
-            inputSpec.append(im.asSpec().withoutVersion());
+            inputSpec->append(im.asSpec().withoutVersion());
     }
     else
     {
@@ -66,17 +69,17 @@ void ModsSyncCommand::execute()
     }
 
     // Match up with cached and installed mods
-    qsizetype inputSize = inputSpec.mods().size();
-    targetSpec.reserve(inputSize);
+    qsizetype inputSize = inputSpec->mods().size();
+    targetSpec->reserve(inputSize);
     addedMods.reserve(inputSize);
     updatedMods.reserve(inputSize);
     removedMods.reserve(inputSize);
     success = true;
-    for (const auto &specMod : inputSpec.mods())
+    for (const auto &specMod : inputSpec->mods())
     {
         std::optional<SpecMod> targetSpecMod = makeInstallTarget(specMod);
         if (targetSpecMod)
-            targetSpec.append(*targetSpecMod);
+            targetSpec->append(*targetSpecMod);
         else
             success = false;
     }
@@ -150,7 +153,7 @@ void ModsSyncCommand::doSync()
 bool ModsSyncCommand::readSpecFile(const QString &fileName)
 {
     QFile specFile(fileName);
-    if (!inputSpec.appendFromFile(specFile, fileName))
+    if (!inputSpec->appendFromFile(specFile, fileName))
     {
         QTextStream cerr(stderr);
         cerr << app_.applicationName() << ": Couldn't read file " << fileName << Qt::endl;
@@ -199,7 +202,7 @@ std::optional<SpecMod> ModsSyncCommand::makeInstallTarget(const SpecMod &sm)
 bool ModsSyncCommand::checkInstalledMod(const InstalledMod &im)
 {
     const QString &modId = im.id();
-    if (targetSpec.contains(modId))
+    if (targetSpec->contains(modId))
         return true;
 
     removedMods.append(im);

@@ -69,7 +69,7 @@ QString CacheSaveCommand::generateContent() const
         content.reserve(mods.size() * 50 + 600);
         writeHeader(out);
 
-        std::sort(mods.begin(), mods.end(), util::compareModNames);
+        std::sort(mods.begin(), mods.end(), util::compareInstalledModNames);
         for (const auto &mod : mods) {
             SpecMod spec = mod.asSpec();
             if (options.testFlag(WITH_VERSIONS))

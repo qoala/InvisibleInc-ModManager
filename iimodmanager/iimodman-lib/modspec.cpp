@@ -23,7 +23,7 @@ const qsizetype specLineSectionLength = 5;
 class ModSpec::Impl
 {
 public:
-    Impl(const QList<SpecMod> &mods);
+    Impl();
 
     QList<SpecMod> mods;
     //! Index of mods by mod ID.
@@ -46,12 +46,8 @@ public:
     QString asVersionedSpecString() const;
 };
 
-ModSpec::ModSpec()
-    : ModSpec(QList<SpecMod>())
-{}
-
-ModSpec::ModSpec(const QList<SpecMod> &mods)
-    : impl{std::make_unique<Impl>(mods)}
+ModSpec::ModSpec(QObject *parent)
+    : QObject(parent), impl{std::make_unique<Impl>()}
 {}
 
 const QList<SpecMod> ModSpec::mods() const
@@ -62,6 +58,11 @@ const QList<SpecMod> ModSpec::mods() const
 bool ModSpec::contains(QString modId) const
 {
     return impl->modIds.contains(modId);
+}
+
+void ModSpec::clear()
+{
+    impl->mods.clear();
 }
 
 void ModSpec::reserve(qsizetype size)
@@ -93,8 +94,7 @@ bool ModSpec::appendFromFile(const QByteArray &content, const QString &debugRef)
 
 ModSpec::~ModSpec() = default;
 
-ModSpec::Impl::Impl(const QList<SpecMod> &mods)
-    : mods(mods)
+ModSpec::Impl::Impl()
 {}
 
 bool ModSpec::Impl::appendFromFile(QTextStream &in, const QString &debugRef)

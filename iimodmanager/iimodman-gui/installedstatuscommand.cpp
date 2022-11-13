@@ -19,7 +19,7 @@ void InstalledStatusCommand::execute()
     emit textOutput("Currently Installed Mods\n(name)\t(id)\t(version)");
 
     QList<InstalledMod> mods(app.modList().mods());
-    std::sort(mods.begin(), mods.end(), util::compareModNames);
+    std::sort(mods.begin(), mods.end(), util::compareInstalledModNames);
     for (auto mod : mods) {
         const ModInfo &info = mod.info();
 
