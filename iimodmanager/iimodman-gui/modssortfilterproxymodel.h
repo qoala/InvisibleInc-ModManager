@@ -1,6 +1,8 @@
 #ifndef MODSSORTFILTERPROXYMODEL_H
 #define MODSSORTFILTERPROXYMODEL_H
 
+#include "modelutil.h"
+
 #include <QSortFilterProxyModel>
 
 namespace iimodmanager {
@@ -19,15 +21,15 @@ public:
     ModsSortFilterProxyModel(QObject *parent = nullptr);
 
 public slots:
-    void setFilterStatus(ModsModel::Status requiredStatuses, ModsModel::Status maskedStatuses);
+    void setFilterStatus(modelutil::Status requiredStatuses, modelutil::Status maskedStatuses);
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
 
 private:
-    ModsModel::Status requiredStatuses;
-    ModsModel::Status maskedStatuses;
+    modelutil::Status requiredStatuses;
+    modelutil::Status maskedStatuses;
 };
 
 } // namespace iimodmanager

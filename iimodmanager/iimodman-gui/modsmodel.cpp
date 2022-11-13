@@ -9,7 +9,7 @@
 namespace iimodmanager {
 
 namespace ColumnData {
-    typedef ModsModel::Status Status;
+    typedef modelutil::Status Status;
 
     QVariant modName(const CachedMod *cm, const InstalledMod *im, int role)
     {
@@ -20,7 +20,7 @@ namespace ColumnData {
             else if (im)
                 return im->info().name();
         }
-        else if (role == ModsModel::STATUS_ROLE)
+        else if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(modelutil::modStatus(cm, im));
         return QVariant();
     }
@@ -34,7 +34,7 @@ namespace ColumnData {
             else if (im)
                 return im->id();
         }
-        else if (role == ModsModel::STATUS_ROLE)
+        else if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(modelutil::modStatus(cm, im));
         return QVariant();
     }
@@ -45,8 +45,8 @@ namespace ColumnData {
 
         if (!im)
         {
-            if (role == ModsModel::STATUS_ROLE)
-                return modelutil::toVariant(status | ModsModel::NULL_STATUS);
+            if (role == modelutil::STATUS_ROLE)
+                return modelutil::toVariant(status | modelutil::NULL_STATUS);
             else
                 return QVariant();
         }
@@ -69,8 +69,8 @@ namespace ColumnData {
                     return QStringLiteral("(needs download)");
                 else
                     return QStringLiteral("(needs copy installed to cache)");
-            else if (role == ModsModel::STATUS_ROLE)
-                return modelutil::toVariant(status | ModsModel::NULL_STATUS);
+            else if (role == modelutil::STATUS_ROLE)
+                return modelutil::toVariant(status | modelutil::NULL_STATUS);
             return QVariant();
         }
 
@@ -84,15 +84,15 @@ namespace ColumnData {
 
         if (!im)
         {
-            if (role == ModsModel::STATUS_ROLE)
-                return modelutil::toVariant(status | ModsModel::NULL_STATUS);
+            if (role == modelutil::STATUS_ROLE)
+                return modelutil::toVariant(status | modelutil::NULL_STATUS);
             else
                 return QVariant();
         }
 
         const CachedVersion *cv = im->cacheVersion();
-        if (!cv && role == ModsModel::STATUS_ROLE)
-            return modelutil::toVariant(status | ModsModel::UNLABELLED_STATUS);
+        if (!cv && role == modelutil::STATUS_ROLE)
+            return modelutil::toVariant(status | modelutil::UNLABELLED_STATUS);
 
         return modelutil::versionTimeData(cv, status, role);
     }
@@ -102,8 +102,8 @@ namespace ColumnData {
         Status status = modelutil::modStatus(cm, nullptr, role);
 
         const CachedVersion *cv = cm ? cm->latestVersion() : nullptr;
-        if (!cv && role == ModsModel::STATUS_ROLE)
-            return modelutil::toVariant(status | ModsModel::NULL_STATUS);
+        if (!cv && role == modelutil::STATUS_ROLE)
+            return modelutil::toVariant(status | modelutil::NULL_STATUS);
         return modelutil::versionTimeData(cv, status, role);
     }
 }

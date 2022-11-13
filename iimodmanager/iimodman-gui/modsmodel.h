@@ -1,6 +1,8 @@
 #ifndef MODSMODEL_H
 #define MODSMODEL_H
 
+#include "modelutil.h"
+
 #include <QAbstractListModel>
 #include <modcache.h>
 
@@ -30,36 +32,6 @@ public:
         COLUMN_MAX = CACHE_UPDATE_TIME,
         COLUMN_COUNT = COLUMN_MAX+1,
     };
-    enum UserDataRole
-    {
-        STATUS_ROLE = 0x100,
-    };
-    enum StatusFlag
-    {
-        NO_STATUS = 0,
-        //! The row is a mod that's installed.
-        INSTALLED_STATUS = 1,
-        //! The row is a mod that's in the cache.
-        CACHED_STATUS = 2,
-        //! The row is a steam workshop mod.
-        STEAM_STATUS = 4,
-
-        //! The row is a mod that's not downloaded.
-        NO_DOWNLOAD_STATUS = 0x10,
-        //! The row is a mod that's not downloaded.
-        CAN_DOWNLOAD_UPDATE_STATUS = 0x20,
-        //! The row is a mod that's not downloaded.
-        CAN_INSTALL_UPDATE_STATUS = 0x40,
-
-        //! The requested column is null for the requested row.
-        //! Example: If a given mod version does not exist, it is NULL.
-        NULL_STATUS = 0x100,
-        //! The requested column is unlabelled for the requested mod.
-        //! Example: If a given mod version exists, but does not declare a 'version' string, it is UNLABELLED.
-        UNLABELLED_STATUS = 0x200,
-    };
-    Q_DECLARE_FLAGS(Status, StatusFlag)
-    Q_FLAG(Status)
 
     ModsModel(const ModCache &cache, const ModList &modList, QObject *parent = nullptr);
 
@@ -113,8 +85,6 @@ private:
     void savePersistentIndexes();
     void updatePersistentIndexes();
 };
-
-Q_DECLARE_OPERATORS_FOR_FLAGS(ModsModel::Status)
 
 }  // namespace iimodmanager
 

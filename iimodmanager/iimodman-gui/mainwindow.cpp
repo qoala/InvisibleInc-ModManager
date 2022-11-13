@@ -6,6 +6,7 @@
 #include "installedupdatecommand.h"
 #include "installedsyncfilecommand.h"
 #include "mainwindow.h"
+#include "modelutil.h"
 #include "modmanguiapplication.h"
 #include "modsmodel.h"
 #include "modssortfilterproxymodel.h"
@@ -184,22 +185,22 @@ void MainWindow::setActionsEnabled(bool enabled)
 
 void MainWindow::modsFilterStatusChanged()
 {
-    ModsModel::Status requiredStatuses, maskedStatuses;
+    modelutil::Status requiredStatuses, maskedStatuses;
 
     switch (modsInstalledCheckBox->checkState())
     {
     case Qt::Unchecked:
-        maskedStatuses |= ModsModel::INSTALLED_STATUS;
+        maskedStatuses |= modelutil::INSTALLED_STATUS;
         break;
     case Qt::Checked:
-        requiredStatuses |= ModsModel::INSTALLED_STATUS;
+        requiredStatuses |= modelutil::INSTALLED_STATUS;
         break;
     case Qt::PartiallyChecked:
         break;
     }
 
     if (modsHasCachedUpdateCheckBox->isChecked())
-        requiredStatuses |= ModsModel::CAN_INSTALL_UPDATE_STATUS;
+        requiredStatuses |= modelutil::CAN_INSTALL_UPDATE_STATUS;
 
     modsSortFilterProxy->setFilterStatus(requiredStatuses, maskedStatuses);
 }

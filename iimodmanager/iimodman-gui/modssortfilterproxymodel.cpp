@@ -6,7 +6,7 @@
 
 namespace iimodmanager {
 
-typedef ModsModel::Status Status;
+typedef modelutil::Status Status;
 
 namespace ColumnLessThan {
     bool modId(const QVariant &leftData, const QVariant &rightData)
@@ -34,11 +34,11 @@ namespace ColumnLessThan {
     bool modVersion(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
     {
         // NULL is less than any other value.
-        if (leftStatus.testFlag(ModsModel::NULL_STATUS) || leftStatus.testFlag(ModsModel::NULL_STATUS))
-            return leftStatus.testFlag(ModsModel::NULL_STATUS) && !rightStatus.testFlag(ModsModel::NULL_STATUS);
+        if (leftStatus.testFlag(modelutil::NULL_STATUS) || leftStatus.testFlag(modelutil::NULL_STATUS))
+            return leftStatus.testFlag(modelutil::NULL_STATUS) && !rightStatus.testFlag(modelutil::NULL_STATUS);
         // UNLABELLED is less than any provided value.
-        if (leftStatus.testFlag(ModsModel::UNLABELLED_STATUS) || rightStatus.testFlag(ModsModel::UNLABELLED_STATUS))
-            return leftStatus.testFlag(ModsModel::UNLABELLED_STATUS) && !rightStatus.testFlag(ModsModel::UNLABELLED_STATUS);
+        if (leftStatus.testFlag(modelutil::UNLABELLED_STATUS) || rightStatus.testFlag(modelutil::UNLABELLED_STATUS))
+            return leftStatus.testFlag(modelutil::UNLABELLED_STATUS) && !rightStatus.testFlag(modelutil::UNLABELLED_STATUS);
 
         QRegularExpression versionRe(QStringLiteral("^v?(\\d+(?:\\.\\d+)*)([^\\d.]\\S*)?"));
         QRegularExpressionMatch leftMatch = versionRe.match(leftData.toString());
@@ -74,8 +74,8 @@ namespace ColumnLessThan {
     bool modUpdateTime(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
     {
         // NULL is less than any other value.
-        if (leftStatus.testFlag(ModsModel::NULL_STATUS) || leftStatus.testFlag(ModsModel::NULL_STATUS))
-            return leftStatus.testFlag(ModsModel::NULL_STATUS) && !rightStatus.testFlag(ModsModel::NULL_STATUS);
+        if (leftStatus.testFlag(modelutil::NULL_STATUS) || leftStatus.testFlag(modelutil::NULL_STATUS))
+            return leftStatus.testFlag(modelutil::NULL_STATUS) && !rightStatus.testFlag(modelutil::NULL_STATUS);
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         bool leftIsDateTime = static_cast<QMetaType::Type>(leftData.type()) == QMetaType::QDateTime;
@@ -100,7 +100,7 @@ namespace ColumnLessThan {
 ModsSortFilterProxyModel::ModsSortFilterProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent) {}
 
-void ModsSortFilterProxyModel::setFilterStatus(ModsModel::Status requiredStatuses, ModsModel::Status maskedStatuses)
+void ModsSortFilterProxyModel::setFilterStatus(modelutil::Status requiredStatuses, modelutil::Status maskedStatuses)
 {
     this->requiredStatuses = requiredStatuses;
     this->maskedStatuses = maskedStatuses;
@@ -111,7 +111,7 @@ bool ModsSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex
 {
     QModelIndex nameIndex = sourceModel()->index(sourceRow, ModsModel::NAME, sourceParent);
     QModelIndex modIdIndex = sourceModel()->index(sourceRow, ModsModel::ID, sourceParent);
-    ModsModel::Status rowStatus = (requiredStatuses || maskedStatuses) ? sourceModel()->data(nameIndex, ModsModel::STATUS_ROLE).value<Status>() : ModsModel::NO_STATUS;
+    modelutil::Status rowStatus = (requiredStatuses || maskedStatuses) ? sourceModel()->data(nameIndex, modelutil::STATUS_ROLE).value<Status>() : modelutil::NO_STATUS;
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     // Pre-QT6: setFilterFixedString sets RegExp.
@@ -146,8 +146,8 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
 
     const QVariant leftData = sourceModel()->data(left);
     const QVariant rightData = sourceModel()->data(right);
-    const QVariant leftStatusData = sourceModel()->data(left, ModsModel::STATUS_ROLE);
-    const QVariant rightStatusData = sourceModel()->data(right, ModsModel::STATUS_ROLE);
+    const QVariant leftStatusData = sourceModel()->data(left, modelutil::STATUS_ROLE);
+    const QVariant rightStatusData = sourceModel()->data(right, modelutil::STATUS_ROLE);
     if (!leftStatusData.isValid() || !rightStatusData.isValid())
         return QSortFilterProxyModel::lessThan(left, right);
 
