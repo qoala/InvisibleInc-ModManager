@@ -208,6 +208,20 @@ QVariant ModsModel::headerData(int section, Qt::Orientation orientation, int rol
         case CACHE_UPDATE_TIME:
             return Qt::DescendingOrder;
         }
+    else if (role == modelutil::SORT_ROLE)
+        switch (section)
+        {
+        case NAME:
+            return modelutil::NORMAL_SORT;
+        case ID:
+            return modelutil::MOD_ID_SORT;
+        case INSTALLED_VERSION:
+        case LATEST_VERSION:
+            return modelutil::VERSION_SORT;
+        case INSTALLED_VERSION_TIME:
+        case CACHE_UPDATE_TIME:
+            return modelutil::VERSION_TIME_SORT;
+        }
     // TODO: Qt::BackgroundRole with different backgrounds based on mod status.
 
     return QVariant();

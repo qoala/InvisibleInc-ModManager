@@ -1,4 +1,3 @@
-#include "modsmodel.h"
 #include "modssortfilterproxymodel.h"
 
 #include <QDateTime>
@@ -34,7 +33,7 @@ namespace ColumnLessThan {
     bool modVersion(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
     {
         // NULL is less than any other value.
-        if (leftStatus.testFlag(modelutil::NULL_STATUS) || leftStatus.testFlag(modelutil::NULL_STATUS))
+        if (leftStatus.testFlag(modelutil::NULL_STATUS) || rightStatus.testFlag(modelutil::NULL_STATUS))
             return leftStatus.testFlag(modelutil::NULL_STATUS) && !rightStatus.testFlag(modelutil::NULL_STATUS);
         // UNLABELLED is less than any provided value.
         if (leftStatus.testFlag(modelutil::UNLABELLED_STATUS) || rightStatus.testFlag(modelutil::UNLABELLED_STATUS))
@@ -71,7 +70,7 @@ namespace ColumnLessThan {
         return leftMatch.capturedView(2) < rightMatch.capturedView(3);
     }
 
-    bool modUpdateTime(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
+    bool modVersionTime(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
     {
         // NULL is less than any other value.
         if (leftStatus.testFlag(modelutil::NULL_STATUS) || leftStatus.testFlag(modelutil::NULL_STATUS))
@@ -100,6 +99,11 @@ namespace ColumnLessThan {
 ModsSortFilterProxyModel::ModsSortFilterProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent) {}
 
+void ModsSortFilterProxyModel::setFilterColumns(const QVector<int> &columns)
+{
+    filterColumns = columns;
+}
+
 void ModsSortFilterProxyModel::setFilterStatus(modelutil::Status requiredStatuses, modelutil::Status maskedStatuses)
 {
     this->requiredStatuses = requiredStatuses;
@@ -109,35 +113,45 @@ void ModsSortFilterProxyModel::setFilterStatus(modelutil::Status requiredStatuse
 
 bool ModsSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    QModelIndex nameIndex = sourceModel()->index(sourceRow, ModsModel::NAME, sourceParent);
-    QModelIndex modIdIndex = sourceModel()->index(sourceRow, ModsModel::ID, sourceParent);
-    modelutil::Status rowStatus = (requiredStatuses || maskedStatuses) ? sourceModel()->data(nameIndex, modelutil::STATUS_ROLE).value<Status>() : modelutil::NO_STATUS;
+    QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
+    modelutil::Status rowStatus = (requiredStatuses || maskedStatuses) ? sourceModel()->data(index, modelutil::STATUS_ROLE).value<Status>() : modelutil::NO_STATUS;
+    if ((requiredStatuses && (rowStatus & requiredStatuses) != requiredStatuses)
+        || (maskedStatuses && (rowStatus & maskedStatuses)))
+        return false;
 
+    if (filterColumns.isEmpty())
+        return true;
+
+    QModelIndexList indexes;
+    indexes.reserve(filterColumns.size());
+    for (int column : filterColumns)
+    {
+        index = sourceModel()->index(sourceRow, column, sourceParent);
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    // Pre-QT6: setFilterFixedString sets RegExp.
-    return (sourceModel()->data(nameIndex).toString().contains(filterRegExp())
-            || sourceModel()->data(modIdIndex).toString().contains(filterRegExp()))
+        // Pre-QT6: setFilterFixedString sets RegExp.
+        if (sourceModel()->data(index).toString().contains(filterRegExp()))
+            return true;
 #else
-    // QT6: RegExp retired. setFilterFixedString sets RegularExpression.
-    return (sourceModel()->data(nameIndex).toString().contains(filterRegularExpression())
-            || sourceModel()->data(modIdIndex).toString().contains(filterRegularExpression()))
+        // QT6: RegExp retired. setFilterFixedString sets RegularExpression.
+        if (sourceModel()->data(index).toString().contains(filterRegularExpression()))
+            return true;
 #endif
-        && (!requiredStatuses || (rowStatus & requiredStatuses) == requiredStatuses)
-        && (!maskedStatuses || !(rowStatus & maskedStatuses));
+    }
+    return false;
 }
 
 bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
     if (left.column() != right.column())
         return QSortFilterProxyModel::lessThan(left, right);
-    switch(left.column())
+    int sortType = sourceModel()->headerData(left.column(), Qt::Horizontal, modelutil::SORT_ROLE).toInt();
+    switch(sortType)
     {
-    case ModsModel::INSTALLED_VERSION:
-    case ModsModel::INSTALLED_VERSION_TIME:
-    case ModsModel::LATEST_VERSION:
-    case ModsModel::CACHE_UPDATE_TIME:
+    case modelutil::VERSION_SORT:
+    case modelutil::VERSION_TIME_SORT:
+        // Continue processing below.
         break;
-    case ModsModel::ID:
+    case modelutil::MOD_ID_SORT:
         return ColumnLessThan::modId(sourceModel()->data(left), sourceModel()->data(right));
     default:
         // Skip the extraction if we're falling through to superclass method.
@@ -154,14 +168,12 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
     const Status leftStatus = leftStatusData.value<Status>();
     const Status rightStatus = rightStatusData.value<Status>();
 
-    switch (left.column())
+    switch (sortType)
     {
-    case ModsModel::INSTALLED_VERSION:
-    case ModsModel::LATEST_VERSION:
+    case modelutil::VERSION_SORT:
         return ColumnLessThan::modVersion(leftData, leftStatus, rightData, rightStatus);
-    case ModsModel::INSTALLED_VERSION_TIME:
-    case ModsModel::CACHE_UPDATE_TIME:
-        return ColumnLessThan::modUpdateTime(leftData, leftStatus, rightData, rightStatus);
+    case modelutil::VERSION_TIME_SORT:
+        return ColumnLessThan::modVersionTime(leftData, leftStatus, rightData, rightStatus);
     default:
         return QSortFilterProxyModel::lessThan(left, right);
     }

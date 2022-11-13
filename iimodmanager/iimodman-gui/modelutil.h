@@ -15,8 +15,10 @@ namespace modelutil {
 
     enum UserDataRole
     {
-        //! Used on an item to determine row and field properties in a Status flag set.
+        //! Used on an item to determine row and field properties in a Status flag set. (Status)
         STATUS_ROLE = 0x100,
+        //! Used on a header to identify the column's item type for sorting. (SortType)
+        SORT_ROLE = 0x101,
     };
 
     //! Properties of the given row (or for the highest flags, the specific item).
@@ -46,6 +48,18 @@ namespace modelutil {
     };
     Q_DECLARE_FLAGS(Status, StatusFlag)
     Q_FLAG_NS(Status)
+
+    //! The value type of this header's column, for sorting.
+    enum SortType
+    {
+        NORMAL_SORT,
+        //! String, sorted as a mod ID.
+        MOD_ID_SORT,
+        //! String, sorted as a version string.
+        VERSION_SORT,
+        //! DateTime, with a fallback to String.
+        VERSION_TIME_SORT,
+    };
 
 
     inline QVariant toVariant(Status status)

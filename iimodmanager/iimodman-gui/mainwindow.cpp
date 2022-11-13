@@ -42,7 +42,7 @@ void MainWindow::createTabs()
     modsModel = new ModsModel(app.cache(), app.modList(), this);
     modsSortFilterProxy = new ModsSortFilterProxyModel(this);
     modsSortFilterProxy->setSourceModel(modsModel);
-    modsSortFilterProxy->setFilterKeyColumn(0);
+    modsSortFilterProxy->setFilterColumns({ModsModel::NAME, ModsModel::ID});
     modsSortFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
     modsSortFilterProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
     modsView = new QTreeView;
