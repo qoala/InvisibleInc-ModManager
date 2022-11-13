@@ -302,6 +302,16 @@ void ModsModel::updatePersistentIndexes()
     savedPersistentMappings.clear();
 }
 
+void ModsModel::reportCacheChanged(const std::function<void ()> &cb)
+{
+    cb();
+}
+
+void ModsModel::reportAllChanged(const std::function<void ()> &cb)
+{
+    cb();
+}
+
 void ModsModel::cacheAboutToAppendMods(const QStringList &modIds)
 {
     if (modIds.isEmpty())
@@ -347,24 +357,41 @@ void ModsModel::cacheAboutToAppendMods(const QStringList &modIds)
 
 void ModsModel::cacheAppendedMods()
 {
-    int row;
     switch (appendType)
     {
     EMPTY_APPEND:
         return;
     NORMAL_APPEND:
-        endInsertRows();
+        reportCacheChanged([this]() { endInsertRows(); });
         return;
     TRIVIAL_MOVE_APPEND:
         reindexUncachedMods();
-        row = cache.mods().size() - 1;
-        emit dataChanged(createIndex(row, columnMin()), createIndex(row, columnMax()));
+        {
+            const int row = cache.mods().size() - 1;
+            const int min = columnMin();
+            const int max = columnMax();
+            reportAllChanged([this, row, min, max]()
+                    {
+                        emit dataChanged(
+                                createIndex(row, min),
+                                createIndex(row, max));
+                    });
+        }
         return;
     MOVE_APPEND:
         reindexUncachedMods();
-        endMoveRows();
-        row = cache.mods().size() - 1;
-        emit dataChanged(createIndex(row, columnMin()), createIndex(row, columnMax()));
+        {
+            const int row = cache.mods().size() - 1;
+            const int min = columnMin();
+            const int max = columnMax();
+            reportAllChanged([this, row, min, max]()
+                    {
+                        endMoveRows();
+                        emit dataChanged(
+                                createIndex(row, min),
+                                createIndex(row, max));
+                    });
+        }
         return;
     REFRESH_APPEND:
         cacheRefreshed();
@@ -402,35 +429,53 @@ void ModsModel::cacheRefreshed(const QStringList &modIds, const QList<int> &modI
     updatePersistentIndexes();
 
     if (hint == ModCache::SORT_ONLY_HINT)
-        emit layoutChanged(QList<QPersistentModelIndex>(), QAbstractItemModel::VerticalSortHint);
+        reportAllChanged([this]()
+                {
+                    emit layoutChanged(
+                            QList<QPersistentModelIndex>(),
+                            QAbstractItemModel::VerticalSortHint);
+                });
     else
-        emit layoutChanged();
+        reportAllChanged([this]() { layoutChanged(); });
 }
 
 void ModsModel::cacheMetadataChanged(const QStringList &modIds, const QList<int> &modIdxs)
 {
     Q_UNUSED(modIds);
 
+    int startRow, endRow;
+    const int startColumn = columnMin(), endColumn = columnMax();
     if (modIdxs.size() == 0)
+    {
         // Any/All rows changed.
-        emit dataChanged(createIndex(0, columnMin()), createIndex(cache.mods().size()-1, columnMax()));
+        startRow = 0;
+        endRow = cache.mods().size()-1;
+    }
     else if (modIdxs.size() == 1)
+    {
         // One row changed.
-        emit dataChanged(createIndex(modIdxs[0], columnMin()), createIndex(modIdxs[0], columnMax()));
+        startRow = modIdxs[0];
+        endRow = modIdxs[0];
+    }
     else
     {
         // Multiple rows changed. Declare a bounding rectangle.
-        int minRow = modIdxs[0];
-        int maxRow = minRow;
+        startRow = modIdxs[0];
+        endRow = startRow;
         for (int idx : modIdxs)
         {
-            if (idx < minRow)
-                minRow = idx;
-            else if (idx > maxRow)
-                maxRow = idx;
+            if (idx < startRow)
+                startRow = idx;
+            else if (idx > endRow)
+                endRow = idx;
         }
-        emit dataChanged(createIndex(minRow, columnMin()), createIndex(maxRow, columnMax()));
     }
+    reportAllChanged([this, startRow, startColumn, endRow, endColumn]()
+            {
+                emit dataChanged(
+                        createIndex(startRow, startColumn),
+                        createIndex(endRow, endColumn));
+            });
 }
 
 void ModsModel::installedModsAboutToRefresh()
@@ -444,7 +489,7 @@ void ModsModel::installedModsRefreshed()
     reindexUncachedMods();
     updatePersistentIndexes();
 
-    emit layoutChanged();
+    reportAllChanged([this]() { emit layoutChanged(); });
 }
 
 }  // namespace iimodmanager

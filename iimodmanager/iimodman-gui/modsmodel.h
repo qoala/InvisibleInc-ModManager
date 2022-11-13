@@ -48,6 +48,15 @@ protected:
     //! Subclasses may alter the visible columns. Override columnMax and columnCount as necessary.
     virtual int columnMax() const;
 
+    //! Called after ModsModel has processed a change that only affects cached mods.
+    //! Subclass implementations must call the base method(or the callback),
+    //! which will emit the appropriate upward signal.
+    virtual void reportCacheChanged(const std::function<void ()> &cb);
+    //! Called after ModsModel has processed a change that may affect both cached and installed mods.
+    //! Subclass implementations must call the base method (or the callback),
+    //! which will emit the appropriate upward signal.
+    virtual void reportAllChanged(const std::function<void ()> &cb);
+
     //! Returns the cached and downloaded mod resources for the given row into its arguments.
     void seekRow(int row, const CachedMod **cmOut, const InstalledMod **imOut) const;
     inline const QVector<int> &uncachedIdxs() const { return uncachedIdxs_; };
