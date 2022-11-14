@@ -20,6 +20,7 @@
 #include <QKeySequence>
 #include <QLabel>
 #include <QMenuBar>
+#include <QShortcut>
 #include <QVBoxLayout>
 #include <modcache.h>
 #include <modlist.h>
@@ -68,6 +69,9 @@ void MainWindow::createTabs()
 
     modsSearchInput = new QLineEdit;
     connect(modsSearchInput, &QLineEdit::textChanged, modsSortFilterProxy, &QSortFilterProxyModel::setFilterFixedString);
+    QShortcut *modsSearchShortcut = new QShortcut(QKeySequence::Find, modsSearchInput);
+    connect(modsSearchShortcut, &QShortcut::activated,
+            modsSearchInput, [=](){ this->modsSearchInput->setFocus(Qt::ShortcutFocusReason); });
 
     modsInstalledCheckBox = new QCheckBox(tr("Installed"));
     connect(modsInstalledCheckBox, &QCheckBox::stateChanged, this, &MainWindow::modsFilterStatusChanged);
