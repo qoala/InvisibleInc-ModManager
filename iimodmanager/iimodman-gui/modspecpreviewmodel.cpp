@@ -231,17 +231,48 @@ int ModSpecPreviewModel::columnMax() const
 
 bool isBase(int column)
 {
-    return (column >= ModSpecPreviewModel::BASE_COLUMN_MIN
-            && column <= ModSpecPreviewModel::BASE_COLUMN_MAX);
+    switch (column)
+    {
+    case ModSpecPreviewModel::NAME:
+    case ModSpecPreviewModel::ID:
+    case ModSpecPreviewModel::INSTALLED_VERSION:
+    case ModSpecPreviewModel::INSTALLED_VERSION_TIME:
+    case ModSpecPreviewModel::LATEST_VERSION:
+    case ModSpecPreviewModel::CACHE_UPDATE_TIME:
+        return true;
+    default:
+        return false;
+    }
 }
-bool isBase(const QModelIndex &index)
+inline bool isBase(const QModelIndex &index)
 {
     return (!index.isValid()
             || (!index.parent().isValid() && isBase(index.column())));
 }
 
-inline int toBaseColumn(int column) { return column; }
-inline QModelIndex toBaseColumn(const QModelIndex &index) { return index; }
+int toBaseColumn(int column) {
+    switch (column)
+    {
+    case ModSpecPreviewModel::NAME:
+        return ModsModel::NAME;
+    case ModSpecPreviewModel::ID:
+        return ModsModel::ID;
+    case ModSpecPreviewModel::INSTALLED_VERSION:
+        return ModsModel::INSTALLED_VERSION;
+    case ModSpecPreviewModel::INSTALLED_VERSION_TIME:
+        return ModsModel::INSTALLED_VERSION_TIME;
+    case ModSpecPreviewModel::LATEST_VERSION:
+        return ModsModel::LATEST_VERSION;
+    case ModSpecPreviewModel::CACHE_UPDATE_TIME:
+        return ModsModel::CACHE_UPDATE_TIME;
+    default:
+        return column;
+    }
+}
+
+inline QModelIndex toBaseColumn(const ModSpecPreviewModel *model, const QModelIndex &index) {
+    return model->index(index.row(), toBaseColumn(index.column()));
+}
 
 const ModSpecPreviewModel::PendingChange ModSpecPreviewModel::seekPendingRow(int row, const CachedMod **cm, const InstalledMod **im) const
 {
@@ -275,7 +306,7 @@ ModSpecPreviewModel::PendingChange *ModSpecPreviewModel::seekMutablePendingRow(i
 QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 {
     if (isBase(index))
-        return ModsModel::data(toBaseColumn(index), role);
+        return ModsModel::data(toBaseColumn(this, index), role);
 
     const CachedMod *cm;
     const InstalledMod *im;
@@ -345,8 +376,8 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
         }
 
         emit dataChanged(
-                createIndex(row, NEW_COLUMN_MIN),
-                createIndex(row, NEW_COLUMN_MAX));
+                createIndex(row, columnMin()),
+                createIndex(row, columnMax()));
         return true;
     }
     return false;
@@ -684,8 +715,8 @@ void ModSpecPreviewModel::reportSpecChanged(const QString &modId)
         endRow = startRow;
 
     emit dataChanged(
-            createIndex(startRow, NEW_COLUMN_MIN),
-            createIndex(endRow, NEW_COLUMN_MAX));
+            createIndex(startRow, columnMin()),
+            createIndex(endRow, columnMax()));
 
     bool emptyState = isEmpty();
     if (previousEmptyState_ != emptyState)

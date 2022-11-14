@@ -21,26 +21,21 @@ class ModSpecPreviewModel : public ModsModel
 public:
     enum Column
     {
-        // Pre-base columns.
+        NAME, // from base
+        ID, // from base
 
-        // Base columns.
-        NAME,
-        ID,
-        INSTALLED_VERSION,
-        INSTALLED_VERSION_TIME,
-        LATEST_VERSION,
-        CACHE_UPDATE_TIME,
-
-        // Post-base columns.
         ACTION,
+
+        INSTALLED_VERSION, // from base
+        INSTALLED_VERSION_TIME, // from base
+
         TARGET_VERSION,
         TARGET_VERSION_TIME,
 
-        BASE_COLUMN_MIN = NAME,
-        BASE_COLUMN_MAX = CACHE_UPDATE_TIME,
-        NEW_COLUMN_MIN = ACTION,
-        NEW_COLUMN_MAX = TARGET_VERSION_TIME,
-        COLUMN_MAX = TARGET_VERSION_TIME,
+        LATEST_VERSION, // from base
+        CACHE_UPDATE_TIME, // from base
+
+        COLUMN_MAX = CACHE_UPDATE_TIME,
         COLUMN_COUNT = COLUMN_MAX+1,
     };
 
