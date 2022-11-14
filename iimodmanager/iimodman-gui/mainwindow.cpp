@@ -123,7 +123,7 @@ void MainWindow::createLogDock()
     dockContents->setMinimumWidth(50);
     dockContents->setMinimumHeight(50);
 
-    QDockWidget *logDock = new QDockWidget(tr("Logs"), this);
+    QDockWidget *logDock = new QDockWidget(tr("Output"), this);
     logDock->setAllowedAreas(Qt::BottomDockWidgetArea | Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     logDock->setFeatures(QDockWidget::DockWidgetMovable); // Not floatable, Not closable.
     logDock->setWidget(dockContents);

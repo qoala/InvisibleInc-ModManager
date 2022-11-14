@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QIcon>
+#include <QStyle>
 #include <QVBoxLayout>
 
 namespace iimodmanager {
@@ -13,10 +14,10 @@ SettingsDialog::SettingsDialog(ModManGuiApplication  &app, QWidget *parent)
     : QDialog(parent), app(app)
 {
     cachePathLine = new QLineEdit;
-    cachePathBrowseAct = cachePathLine->addAction(QIcon::fromTheme("document-open"), QLineEdit::TrailingPosition);
+    cachePathBrowseAct = cachePathLine->addAction(style()->standardIcon(QStyle::SP_DirOpenIcon), QLineEdit::TrailingPosition);
     connect(cachePathBrowseAct, &QAction::triggered, this, &SettingsDialog::browseCachePath);
     installPathLine = new QLineEdit;
-    installPathBrowseAct = installPathLine->addAction(QIcon::fromTheme("document-open"), QLineEdit::TrailingPosition);
+    installPathBrowseAct = installPathLine->addAction(style()->standardIcon(QStyle::SP_DirOpenIcon), QLineEdit::TrailingPosition);
     connect(installPathBrowseAct, &QAction::triggered, this, &SettingsDialog::browseInstallPath);
 
     QFormLayout *formLayout = new QFormLayout;
