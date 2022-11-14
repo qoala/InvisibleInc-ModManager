@@ -375,9 +375,8 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
                 pc.type = PendingChange::NONE;
         }
 
-        emit dataChanged(
-                createIndex(row, columnMin()),
-                createIndex(row, columnMax()));
+        setDirty();
+        reportSpecChanged(pc.modId);
         return true;
     }
     return false;
@@ -697,7 +696,7 @@ void ModSpecPreviewModel::reportAllChanged(const std::function<void ()> &cb, con
     }
 }
 
-void ModSpecPreviewModel::reportSpecChanged(const QString &modId)
+void ModSpecPreviewModel::reportSpecChanged(const QString &modId, int row)
 {
     int startRow, endRow;
 
@@ -707,12 +706,14 @@ void ModSpecPreviewModel::reportSpecChanged(const QString &modId)
         startRow = 0;
         endRow = rowCount() - 1;
     }
-    else if ((startRow = rowOf(modId)) == -1)
+    else if (row != -1)
+        startRow = endRow = row;
+    else if ((endRow = rowOf(modId)) == -1)
         // Mod is not present.
         return;
     else
         // Update a single mod row.
-        endRow = startRow;
+        startRow = endRow;
 
     emit dataChanged(
             createIndex(startRow, columnMin()),

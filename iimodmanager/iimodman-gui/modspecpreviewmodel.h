@@ -148,7 +148,7 @@ private:
     inline void setDirty() const { dirty = true; };
     //! Report the the visible model has changed.
     //! Pass the updated mod ID for a single mod; leave blank for all mods.
-    void reportSpecChanged(const QString &modId = QString());
+    void reportSpecChanged(const QString &modId = QString(), int row = -1);
 
     std::optional<PendingChange> toPendingChange(const SpecMod &specMod) const;
     void generateModSpec() const;

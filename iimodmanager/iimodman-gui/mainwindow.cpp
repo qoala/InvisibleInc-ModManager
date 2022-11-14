@@ -29,7 +29,7 @@
 namespace iimodmanager {
 
 MainWindow::MainWindow(ModManGuiApplication &app)
-    : app(app)
+    : app(app), isLocked_(false)
 {
     createTabs();
     createLogDock();
