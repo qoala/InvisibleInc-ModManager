@@ -121,7 +121,7 @@ public slots:
 
 protected:
     int columnMax() const override;
-    void reportAllChanged(const std::function<void ()> &cb) override;
+    void reportAllChanged(const std::function<void ()> &cb, const QString &modId = QString()) override;
 
 private:
     QHash<QString, PendingChange> pendingChanges;
@@ -143,6 +143,7 @@ private:
 
     std::optional<PendingChange> toPendingChange(const SpecMod &specMod) const;
     void generateModSpec() const;
+    void refreshPendingChange(PendingChange &pc);
     void refreshPendingChanges();
 };
 

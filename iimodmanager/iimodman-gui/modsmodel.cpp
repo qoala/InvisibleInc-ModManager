@@ -308,12 +308,12 @@ void ModsModel::updatePersistentIndexes()
     savedPersistentMappings.clear();
 }
 
-void ModsModel::reportCacheChanged(const std::function<void ()> &cb)
+void ModsModel::reportCacheChanged(const std::function<void ()> &cb, const QString &modId)
 {
     cb();
 }
 
-void ModsModel::reportAllChanged(const std::function<void ()> &cb)
+void ModsModel::reportAllChanged(const std::function<void ()> &cb, const QString &modId)
 {
     cb();
 }
@@ -447,10 +447,9 @@ void ModsModel::cacheRefreshed(const QStringList &modIds, const QList<int> &modI
 
 void ModsModel::cacheMetadataChanged(const QStringList &modIds, const QList<int> &modIdxs)
 {
-    Q_UNUSED(modIds);
-
     int startRow, endRow;
     const int startColumn = columnMin(), endColumn = columnMax();
+    QString modId;
     if (modIdxs.size() == 0)
     {
         // Any/All cache rows changed.
@@ -462,6 +461,7 @@ void ModsModel::cacheMetadataChanged(const QStringList &modIds, const QList<int>
         // One row changed.
         startRow = modIdxs[0];
         endRow = modIdxs[0];
+        modId = modIds[0];
     }
     else
     {
@@ -481,7 +481,7 @@ void ModsModel::cacheMetadataChanged(const QStringList &modIds, const QList<int>
                 emit dataChanged(
                         createIndex(startRow, startColumn),
                         createIndex(endRow, endColumn));
-            });
+            }, modId);
 }
 
 void ModsModel::installedModsAboutToRefresh()

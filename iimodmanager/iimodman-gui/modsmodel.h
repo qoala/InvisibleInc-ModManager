@@ -54,11 +54,13 @@ protected:
     //! Called after ModsModel has processed a change that only affects cached mods.
     //! Subclass implementations must call the base method(or the callback),
     //! which will emit the appropriate upward signal.
-    virtual void reportCacheChanged(const std::function<void ()> &cb);
+    //! If the change is scoped to a single mod, it is passed as an argument.
+    virtual void reportCacheChanged(const std::function<void ()> &cb, const QString &modId = QString());
     //! Called after ModsModel has processed a change that may affect both cached and installed mods.
     //! Subclass implementations must call the base method (or the callback),
     //! which will emit the appropriate upward signal.
-    virtual void reportAllChanged(const std::function<void ()> &cb);
+    //! If the change is scoped to a single mod, it is passed as an argument.
+    virtual void reportAllChanged(const std::function<void ()> &cb, const QString &modId = QString());
 
     //! Returns the cached and downloaded mod resources for the given row into its arguments.
     void seekRow(int row, const CachedMod **cmOut, const InstalledMod **imOut) const;
