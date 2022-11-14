@@ -119,12 +119,15 @@ public slots:
     //! Mods not in the specification will be unaffected.
     void insertModSpec(const QList<SpecMod> &specMods);
 
+    void setLock(bool locked);
+
 protected:
     int columnMax() const override;
     void reportAllChanged(const std::function<void ()> &cb, const QString &modId = QString()) override;
 
 private:
     QHash<QString, PendingChange> pendingChanges;
+    bool isLocked_;
 
     //! Most recently exported mod spec.
     mutable QList<SpecMod> modSpec_;
@@ -134,6 +137,8 @@ private:
 
     // Used to report ::isEmptyChanged.
     mutable bool previousEmptyState_;
+
+    inline bool isLocked() const { return isLocked_; };
 
     inline const PendingChange pendingChange(const QString &modId) const
     { return pendingChanges.value(modId, PendingChange(modId)); }

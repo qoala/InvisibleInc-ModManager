@@ -436,10 +436,21 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
 
 Qt::ItemFlags ModSpecPreviewModel::flags(const QModelIndex &index) const
 {
-    if (index.column() != ACTION)
-        return QAbstractItemModel::flags(index);
+    if (index.column() == ACTION)
+    {
+        Qt::ItemFlags f = Qt::ItemIsSelectable | Qt::ItemIsUserCheckable;
+        if (!isLocked())
+        {
+            const CachedMod *cm;
+            const InstalledMod *im;
+            seekRow(index.row(), &cm, &im);
+            if (im || (cm && cm->downloaded()))
+                f |= Qt::ItemIsEnabled;
+        }
+        return f;
+    }
 
-    return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable;
+    return QAbstractItemModel::flags(index);
 }
 
 void ModSpecPreviewModel::setModSpec(const QList<SpecMod> &specMods)
@@ -475,6 +486,11 @@ void ModSpecPreviewModel::insertModSpec(const QList<SpecMod> &specMods)
 
     setDirty();
     reportSpecChanged();
+}
+
+void ModSpecPreviewModel::setLock(bool locked)
+{
+    isLocked_ = locked;
 }
 
 QList<SpecMod> ModSpecPreviewModel::modSpec() const

@@ -27,6 +27,9 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(ModManGuiApplication &app);
 
+signals:
+    void lockChanged(bool locked);
+
 private slots:
 
     // Action callbacks.
@@ -96,7 +99,8 @@ private:
     QAction *installedUpdateAct;
 
     inline bool isLocked() const { return isLocked_; };
-    inline void setLock(bool locked) { isLocked_ = locked; setActionsEnabled(!locked); };
+    inline void setLock(bool locked)
+    { isLocked_ = locked; setActionsEnabled(!locked); emit lockChanged(locked); };
 
     void createTabs();
     void createLogDock();

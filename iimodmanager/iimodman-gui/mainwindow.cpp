@@ -47,6 +47,7 @@ void MainWindow::createTabs()
     // Main mods tab.
     modsPreviewModel = new ModSpecPreviewModel(app.cache(), app.modList(), this);
     connect(modsPreviewModel, &ModSpecPreviewModel::textOutput, this, &MainWindow::writeText);
+    connect(this, &MainWindow::lockChanged, modsPreviewModel, &ModSpecPreviewModel::setLock);
     modsSortFilterProxy = new ModsSortFilterProxyModel(this);
     modsSortFilterProxy->setSourceModel(modsPreviewModel);
     modsSortFilterProxy->setFilterTextColumns({ModSpecPreviewModel::NAME, ModSpecPreviewModel::ID});
