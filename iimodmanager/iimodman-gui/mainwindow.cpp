@@ -1,3 +1,4 @@
+#include "applypreviewcommand.h"
 #include "cacheaddcommand.h"
 #include "cachesavecommand.h"
 #include "cachestatuscommand.h"
@@ -12,7 +13,9 @@
 #include "modssortfilterproxymodel.h"
 #include "settingsdialog.h"
 
+#include <QAbstractItemModel>
 #include <QApplication>
+#include <QDialogButtonBox>
 #include <QHeaderView>
 #include <QKeySequence>
 #include <QLabel>
@@ -71,6 +74,15 @@ void MainWindow::createTabs()
     modsHasCachedUpdateCheckBox->setToolTip(tr("A new version is downloaded and ready to install."));
     connect(modsHasCachedUpdateCheckBox, &QCheckBox::stateChanged, this, &MainWindow::modsFilterStatusChanged);
 
+    QDialogButtonBox *modsActionBtnBox = new QDialogButtonBox();
+    applyPreviewBtn = modsActionBtnBox->addButton(tr("Apply Changes"), QDialogButtonBox::ApplyRole);
+    applyPreviewBtn->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Return));
+    applyPreviewBtn->setEnabled(false);
+    connect(applyPreviewBtn, &QAbstractButton::clicked, this, &MainWindow::applyPreview);
+    revertPreviewBtn = modsActionBtnBox->addButton(tr("Reset Changes"), QDialogButtonBox::ResetRole);
+    revertPreviewBtn->setEnabled(false);
+    connect(revertPreviewBtn, &QAbstractButton::clicked, modsPreviewModel, &QAbstractItemModel::revert);
+
     QHBoxLayout *modsFilterBtnLayout = new QHBoxLayout;
     modsFilterBtnLayout->addWidget(modsInstalledCheckBox);
     modsFilterBtnLayout->addWidget(modsHasCachedUpdateCheckBox);
@@ -78,6 +90,7 @@ void MainWindow::createTabs()
     modsLayout->addWidget(modsSearchInput);
     modsLayout->addLayout(modsFilterBtnLayout);
     modsLayout->addWidget(modsView);
+    modsLayout->addWidget(modsActionBtnBox);
     QWidget *modsPage = new QWidget;
     modsPage->setLayout(modsLayout);
     tabWidget->addTab(modsPage, tr("Mods"));
@@ -177,27 +190,22 @@ void MainWindow::createMenuActions()
 
 void MainWindow::setActionsEnabled(bool enabled)
 {
+    if (!enabled || !modsPreviewModel->isEmpty())
+    {
+        applyPreviewBtn->setEnabled(enabled);
+        revertPreviewBtn->setEnabled(enabled);
+    }
+
+    openSpecAct->setEnabled(enabled);
+    saveInstalledSpecAct->setEnabled(enabled);
+    saveInstalledVersionSpecAct->setEnabled(enabled);
+    saveCacheSpecAct->setEnabled(enabled);
     settingsAct->setEnabled(enabled);
     cacheStatusAct->setEnabled(enabled);
     cacheUpdateAct->setEnabled(enabled);
-    saveCacheSpecAct->setEnabled(enabled);
     cacheAddModAct->setEnabled(enabled);
     installedStatusAct->setEnabled(enabled);
     installedUpdateAct->setEnabled(enabled);
-    openSpecAct->setEnabled(enabled);
-}
-
-void MainWindow::modsFilterStatusChanged()
-{
-    modelutil::Status requiredStatuses, maskedStatuses;
-
-    if (modsInstalledCheckBox->isChecked())
-        requiredStatuses |= modelutil::INSTALLED_STATUS;
-
-    if (modsHasCachedUpdateCheckBox->isChecked())
-        requiredStatuses |= modelutil::CAN_INSTALL_UPDATE_STATUS;
-
-    modsSortFilterProxy->setFilterStatus(requiredStatuses, maskedStatuses);
 }
 
 void MainWindow::actionStarted()
@@ -337,6 +345,31 @@ void MainWindow::installedUpdate()
     InstalledUpdateCommand *command = new InstalledUpdateCommand(app, this);
     connect(command, &InstalledUpdateCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &InstalledUpdateCommand::finished, this, &MainWindow::actionFinished);
+    command->execute();
+}
+
+// Main mods page.
+
+void MainWindow::modsFilterStatusChanged()
+{
+    modelutil::Status requiredStatuses, maskedStatuses;
+
+    if (modsInstalledCheckBox->isChecked())
+        requiredStatuses |= modelutil::INSTALLED_STATUS;
+
+    if (modsHasCachedUpdateCheckBox->isChecked())
+        requiredStatuses |= modelutil::CAN_INSTALL_UPDATE_STATUS;
+
+    modsSortFilterProxy->setFilterStatus(requiredStatuses, maskedStatuses);
+}
+
+void MainWindow::applyPreview()
+{
+    logDisplay->appendPlainText("\n--");
+    actionStarted();
+    ApplyPreviewCommand *command = new ApplyPreviewCommand(app, modsPreviewModel, this);
+    connect(command, &ApplyPreviewCommand::textOutput, this, &MainWindow::writeText);
+    connect(command, &ApplyPreviewCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 

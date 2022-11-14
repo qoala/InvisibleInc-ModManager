@@ -90,7 +90,12 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
     //! Returns a specification of the currently previewed target mods.
+    //! Versions are only specified for pinned mods.
     QList<SpecMod> modSpec() const;
+    //! Returns a specification of the currently previewed target mods.
+    //! All versions are specified.
+    QList<SpecMod> versionedModSpec() const;
+    void prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMod> *toUpdateMods, QList<InstalledMod> *toRemoveMods) const;
     //! Returns true if there any differences compared to the currently installed state.
     //! \sa ::revert
     bool isEmpty() const;
@@ -123,6 +128,7 @@ private:
 
     //! Most recently exported mod spec.
     mutable QList<SpecMod> modSpec_;
+    mutable QList<SpecMod> versionedModSpec_;
     //! True if modSpec_ needs to be regenerated.
     mutable bool dirty;
 

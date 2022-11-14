@@ -332,7 +332,14 @@ QList<SpecMod> ModSpecPreviewModel::modSpec() const
 {
     if (dirty)
         generateModSpec();
-    return QList<SpecMod>();
+    return modSpec_;
+}
+
+QList<SpecMod> ModSpecPreviewModel::versionedModSpec() const
+{
+    if (dirty)
+        generateModSpec();
+    return versionedModSpec_;
 }
 
 bool ModSpecPreviewModel::isEmpty() const
@@ -340,11 +347,48 @@ bool ModSpecPreviewModel::isEmpty() const
     if (pendingChanges.isEmpty())
         return true;
 
-    for (const auto change : pendingChanges)
+    for (const auto &change : pendingChanges)
         if (change.type >= PendingChange::ACTIVE_CHANGE_MIN)
             return false;
 
     return true;
+}
+
+void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMod> *toUpdateMods, QList<InstalledMod> *toRemoveMods) const
+{
+    toAddMods->reserve(pendingChanges.size());
+    toUpdateMods->reserve(pendingChanges.size());
+    toRemoveMods->reserve(pendingChanges.size());
+
+    for (const auto &pc : pendingChanges)
+        switch (pc.type)
+        {
+        case PendingChange::INSTALL:
+            {
+                const auto *cm = cache.mod(pc.modId);
+                const auto *cv = cm ? cm->version(pc.versionId) : nullptr;
+                if (cv)
+                    *toAddMods << cv->asSpec();
+            }
+            break;
+        case PendingChange::UPDATE:
+            {
+                const auto *cm = cache.mod(pc.modId);
+                const auto *cv = cm ? cm->version(pc.versionId) : nullptr;
+                if (cv)
+                    *toUpdateMods << cv->asSpec();
+            }
+            break;
+        case PendingChange::REMOVE:
+            {
+                const auto *im = modList.mod(pc.modId);
+                if (im)
+                    *toRemoveMods << *im;
+            }
+            break;
+        default:
+            break;
+        }
 }
 
 void ModSpecPreviewModel::revert()

@@ -1,8 +1,8 @@
 #ifndef OPENSPECFILECOMMAND_H
 #define OPENSPECFILECOMMAND_H
 
-# include<QObject>
-# include<modspec.h>
+#include <QObject>
+#include <modspec.h>
 
 namespace iimodmanager {
 

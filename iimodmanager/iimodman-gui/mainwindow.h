@@ -9,6 +9,7 @@
 #include <QMenu>
 #include <QPlainTextEdit>
 #include <QProgressBar>
+#include <QPushButton>
 #include <QTabWidget>
 #include <QTreeView>
 
@@ -27,7 +28,6 @@ public:
     MainWindow(ModManGuiApplication &app);
 
 private slots:
-    void modsFilterStatusChanged();
 
     // Action callbacks.
     //! Triggered when an action begins making changes. Must be followed by actionFinished.
@@ -55,6 +55,10 @@ private slots:
     void installedStatus();
     void installedUpdate();
 
+    // Main Page
+    void modsFilterStatusChanged();
+    void applyPreview();
+
 private:
     ModManGuiApplication &app;
 
@@ -69,6 +73,8 @@ private:
     QDockWidget *logDock;
     QPlainTextEdit *logDisplay;
     QProgressBar *logProgress;
+    QPushButton *applyPreviewBtn;
+    QPushButton *revertPreviewBtn;
 
     QMenu *fileMenu;
     QAction *openSpecAct;
