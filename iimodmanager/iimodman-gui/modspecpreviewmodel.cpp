@@ -241,7 +241,8 @@ std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const InstalledMod 
 
     PendingChange pc(im->id());
     pc.modName = im->info().name();
-    if (const CachedVersion *iv = im->cacheVersion())
+    const CachedVersion *iv = im->cacheVersion();
+    if (iv)
         pc.versionId = iv->id();
     pc.versionPin = PendingChange::CURRENT;
     pc.type = PendingChange::PIN_CURRENT;
@@ -293,6 +294,7 @@ std::optional<ModSpecPreviewModel::PendingChange> ModSpecPreviewModel::toPending
         else
             return useLatest(cm, im);
     }
+    // A specific version ID was requested.
 
     const CachedVersion *tv = cm ? cm->version(sm.versionId()) : nullptr;
     if (!tv || !cm)
@@ -308,7 +310,7 @@ std::optional<ModSpecPreviewModel::PendingChange> ModSpecPreviewModel::toPending
     pc.versionPin = PendingChange::PINNED;
     if (!im)
         pc.type = PendingChange::INSTALL;
-    else if ((tv = cm->installedVersion()))
+    else if (tv == cm->installedVersion())
         pc.type = PendingChange::PIN_CURRENT;
     else
         pc.type = PendingChange::UPDATE;

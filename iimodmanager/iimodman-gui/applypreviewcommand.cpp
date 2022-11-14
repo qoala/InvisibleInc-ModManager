@@ -17,6 +17,13 @@ ApplyPreviewCommand::ApplyPreviewCommand(ModManGuiApplication  &app, ModSpecPrev
 
 void ApplyPreviewCommand::execute()
 {
+    if (!preview)
+    {
+        emit finished();
+        deleteLater();
+        return;
+    }
+
     app.refreshMods();
 
     if (doSync())

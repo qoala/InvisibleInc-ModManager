@@ -31,6 +31,12 @@ void OpenSpecFileCommand::execute()
 
 void OpenSpecFileCommand::handleFile(const QString &filename, const QByteArray &fileContent)
 {
+    if (!inputSpec)
+    {
+        deleteLater();
+        return;
+    }
+
     emit started();
     app.refreshMods();
 

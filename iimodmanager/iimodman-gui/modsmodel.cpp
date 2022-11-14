@@ -47,8 +47,7 @@ namespace ColumnData {
         {
             if (role == modelutil::STATUS_ROLE)
                 return modelutil::toVariant(status | modelutil::NULL_STATUS);
-            else
-                return QVariant();
+            return QVariant();
         }
 
         const QString &version = im->info().version();
@@ -140,6 +139,9 @@ int ModsModel::columnMax() const
 
 void ModsModel::seekRow(int row, const CachedMod **cm, const InstalledMod **im) const
 {
+    if (!cm || !im)
+        return;
+
     int cacheSize = cache.mods().size();
     *cm = nullptr;
     *im = nullptr;
@@ -148,7 +150,7 @@ void ModsModel::seekRow(int row, const CachedMod **cm, const InstalledMod **im) 
     else if (row < cacheSize)
     {
         *cm = &cache.mods().at(row);
-        *im = modList.mod((*cm)->id());
+        *im = *cm ? modList.mod((*cm)->id()) : nullptr;
     }
     else if ((row -= cacheSize) < uncachedIdxs().size())
     {
