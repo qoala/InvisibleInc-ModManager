@@ -4,7 +4,7 @@
 #include "cacheupdatecommand.h"
 #include "installedstatuscommand.h"
 #include "installedupdatecommand.h"
-#include "installedsyncfilecommand.h"
+#include "openspecfilecommand.h"
 #include "mainwindow.h"
 #include "modelutil.h"
 #include "modmanguiapplication.h"
@@ -19,6 +19,8 @@
 #include <QMenuBar>
 #include <QVBoxLayout>
 #include <modcache.h>
+#include <modlist.h>
+#include <modspec.h>
 
 namespace iimodmanager {
 
@@ -40,6 +42,7 @@ void MainWindow::createTabs()
 
     // Main mods tab.
     modsPreviewModel = new ModSpecPreviewModel(app.cache(), app.modList(), this);
+    connect(modsPreviewModel , &ModSpecPreviewModel::textOutput, this, &MainWindow::writeText);
     modsSortFilterProxy = new ModsSortFilterProxyModel(this);
     modsSortFilterProxy->setSourceModel(modsPreviewModel);
     modsSortFilterProxy->setFilterColumns({ModSpecPreviewModel::NAME, ModSpecPreviewModel::ID});
@@ -116,9 +119,10 @@ void MainWindow::createLogDock()
 
 void MainWindow::createMenuActions()
 {
-    loadSpecAct = new QAction(tr("&Open Spec File..."), this);
-    loadSpecAct->setStatusTip(tr("Installs/Updates/Uninstalls mods to match a modspec file."));
-    connect(loadSpecAct, &QAction::triggered, this, &MainWindow::loadSpec);
+    openSpecAct = new QAction(tr("&Open Spec File..."), this);
+    openSpecAct->setStatusTip(tr("Update the proposed mods to the selected file's specification."));
+    openSpecAct->setShortcuts(QKeySequence::Open);
+    connect(openSpecAct, &QAction::triggered, this, &MainWindow::openSpec);
     saveInstalledSpecAct = new QAction(tr("&Save Installed Mods As..."), this);
     saveInstalledSpecAct->setShortcuts(QKeySequence::Save);
     saveInstalledSpecAct->setStatusTip(tr("Save a modspec file listing currently installed mods"));
@@ -155,7 +159,7 @@ void MainWindow::createMenuActions()
     connect(installedUpdateAct, &QAction::triggered, this, &MainWindow::installedUpdate);
 
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
-    fileMenu->addAction(loadSpecAct);
+    fileMenu->addAction(openSpecAct);
     fileMenu->addSeparator();
     fileMenu->addAction(saveInstalledSpecAct);
     fileMenu->addAction(saveInstalledVersionSpecAct);
@@ -182,7 +186,7 @@ void MainWindow::setActionsEnabled(bool enabled)
     cacheAddModAct->setEnabled(enabled);
     installedStatusAct->setEnabled(enabled);
     installedUpdateAct->setEnabled(enabled);
-    loadSpecAct->setEnabled(enabled);
+    openSpecAct->setEnabled(enabled);
 }
 
 void MainWindow::modsFilterStatusChanged()
@@ -238,12 +242,13 @@ void MainWindow::endProgress()
 
 // File actions.
 
-void MainWindow::loadSpec()
+void MainWindow::openSpec()
 {
-    InstalledSyncFileCommand *command = new InstalledSyncFileCommand(app, this);
-    connect(command, &InstalledSyncFileCommand::started, this, &MainWindow::actionStarted);
-    connect(command, &InstalledSyncFileCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &InstalledSyncFileCommand::finished, this, &MainWindow::actionFinished);
+    OpenSpecFileCommand *command = new OpenSpecFileCommand(app, this);
+    connect(command, &OpenSpecFileCommand::started, this, &MainWindow::actionStarted);
+    connect(command, &OpenSpecFileCommand::textOutput, this, &MainWindow::writeText);
+    connect(command, &OpenSpecFileCommand::modSpecReady, modsPreviewModel, &ModSpecPreviewModel::setModSpec);
+    connect(command, &OpenSpecFileCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 

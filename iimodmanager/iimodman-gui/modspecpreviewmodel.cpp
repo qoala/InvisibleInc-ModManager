@@ -240,7 +240,7 @@ ModSpecPreviewModel::PendingChange useLatest(const CachedMod *cm, const Installe
     pc.versionPin = PendingChange::LATEST;
     if (!im)
         pc.type = PendingChange::INSTALL;
-    else if (lv = cm->installedVersion())
+    else if (lv == cm->installedVersion())
         pc.type = PendingChange::PIN_LATEST;
     else
         pc.type = PendingChange::UPDATE;
@@ -249,7 +249,7 @@ ModSpecPreviewModel::PendingChange useLatest(const CachedMod *cm, const Installe
 
 std::optional<ModSpecPreviewModel::PendingChange> ModSpecPreviewModel::toPendingChange(const SpecMod &sm) const
 {
-    if (sm.id().isNull())
+    if (sm.id().isEmpty())
         return std::nullopt;
 
     const CachedMod *cm = cache.mod(sm.id());
@@ -261,7 +261,7 @@ std::optional<ModSpecPreviewModel::PendingChange> ModSpecPreviewModel::toPending
         return std::nullopt;
     }
 
-    if (sm.versionId().isNull())
+    if (sm.versionId().isEmpty())
         return useLatest(cm, im, sm);
     if (sm.versionId() == '-')
     {
@@ -480,7 +480,7 @@ void ModSpecPreviewModel::reportSpecChanged(const QString &modId)
 {
     int startRow, endRow;
 
-    if (modId.isNull())
+    if (modId.isEmpty())
     {
         // All rows.
         startRow = 0;

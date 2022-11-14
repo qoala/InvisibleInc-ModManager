@@ -7,7 +7,7 @@ set(IIMODMAN_GUI_SOURCES
     cacheupdatecommand.cpp
     installedstatuscommand.cpp
     installedupdatecommand.cpp
-    installedsyncfilecommand.cpp
+    # installedsyncfilecommand.cpp
     main.cpp
     mainwindow.cpp
     modelutil.cpp
@@ -15,6 +15,7 @@ set(IIMODMAN_GUI_SOURCES
     modspecpreviewmodel.cpp
     modmanguiapplication.cpp
     modssortfilterproxymodel.cpp
+    openspecfilecommand.cpp
     settingsdialog.cpp
     util.cpp
   )

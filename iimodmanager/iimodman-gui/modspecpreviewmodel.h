@@ -89,14 +89,6 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
-    void reportAllChanged(const std::function<void ()> &cb) override;
-
-    //! Replaces pending changes with an exact sync to the given mod specification.
-    //! \sa ::revert
-    void setModSpec(const QList<SpecMod> &specMods);
-    //! Overwrites pending changes for mods in the given mod specification.
-    //! Mods not in the specification will be unaffected.
-    void insertModSpec(const QList<SpecMod> &specMods);
     //! Returns a specification of the currently previewed target mods.
     QList<SpecMod> modSpec() const;
     //! Returns true if there any differences compared to the currently installed state.
@@ -104,6 +96,7 @@ public:
     bool isEmpty() const;
 
 signals:
+    void textOutput(QString value) const;
 
 public slots:
     //! Resets the pending mods to the currently installed state.
@@ -114,11 +107,16 @@ public slots:
     //! \sa ::isEmpty
     void revert() override;
 
-signals:
-    void textOutput(QString value) const;
+    //! Replaces pending changes with an exact sync to the given mod specification.
+    //! \sa ::revert
+    void setModSpec(const QList<SpecMod> &specMods);
+    //! Overwrites pending changes for mods in the given mod specification.
+    //! Mods not in the specification will be unaffected.
+    void insertModSpec(const QList<SpecMod> &specMods);
 
 protected:
     int columnMax() const override;
+    void reportAllChanged(const std::function<void ()> &cb) override;
 
 private:
     QHash<QString, PendingChange> pendingChanges;

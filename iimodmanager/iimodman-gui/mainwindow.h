@@ -42,7 +42,7 @@ private slots:
     void endProgress();
 
     // File Menu
-    void loadSpec();
+    void openSpec();
     void saveInstalledSpec();
     void saveInstalledVersionSpec();
     void saveCacheSpec();
@@ -71,7 +71,7 @@ private:
     QProgressBar *logProgress;
 
     QMenu *fileMenu;
-    QAction *loadSpecAct;
+    QAction *openSpecAct;
     QAction *saveInstalledSpecAct;
     QAction *saveInstalledVersionSpecAct;
     QAction *saveCacheSpecAct;
