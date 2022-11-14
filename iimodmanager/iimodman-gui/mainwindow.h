@@ -57,10 +57,14 @@ private slots:
 
     // Main Page
     void modsFilterStatusChanged();
+    void updatePreviewActionsEnabled();
     void applyPreview();
+    void revertPreview();
 
 private:
     ModManGuiApplication &app;
+    //! True if an action is currently modifying the cached/installed mods.
+    bool isLocked_;
 
     QTabWidget *tabWidget;
     ModSpecPreviewModel *modsPreviewModel;
@@ -90,6 +94,9 @@ private:
     QMenu *installedMenu;
     QAction *installedStatusAct;
     QAction *installedUpdateAct;
+
+    inline bool isLocked() const { return isLocked_; };
+    inline void setLock(bool locked) { isLocked_ = locked; setActionsEnabled(!locked); };
 
     void createTabs();
     void createLogDock();

@@ -81,6 +81,7 @@ public:
 
         inline bool isValid() const { return !modId.isNull(); };
         inline bool isNone() const { return type == NONE; };
+        inline bool isActive() const { return type >= ACTIVE_CHANGE_MIN; }
     };
 
     ModSpecPreviewModel(const ModCache &cache, const ModList &modList, QObject *parent);
@@ -102,6 +103,8 @@ public:
 
 signals:
     void textOutput(QString value) const;
+
+    void isEmptyChanged(bool newValue) const;
 
 public slots:
     //! Resets the pending mods to the currently installed state.
@@ -131,6 +134,9 @@ private:
     mutable QList<SpecMod> versionedModSpec_;
     //! True if modSpec_ needs to be regenerated.
     mutable bool dirty;
+
+    // Used to report ::isEmptyChanged.
+    mutable bool previousEmptyState_;
 
     inline const PendingChange pendingChange(const QString &modId) const
     { return pendingChanges.value(modId, PendingChange(modId)); }

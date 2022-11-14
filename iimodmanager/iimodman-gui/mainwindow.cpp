@@ -45,7 +45,7 @@ void MainWindow::createTabs()
 
     // Main mods tab.
     modsPreviewModel = new ModSpecPreviewModel(app.cache(), app.modList(), this);
-    connect(modsPreviewModel , &ModSpecPreviewModel::textOutput, this, &MainWindow::writeText);
+    connect(modsPreviewModel, &ModSpecPreviewModel::textOutput, this, &MainWindow::writeText);
     modsSortFilterProxy = new ModsSortFilterProxyModel(this);
     modsSortFilterProxy->setSourceModel(modsPreviewModel);
     modsSortFilterProxy->setFilterColumns({ModSpecPreviewModel::NAME, ModSpecPreviewModel::ID});
@@ -81,7 +81,8 @@ void MainWindow::createTabs()
     connect(applyPreviewBtn, &QAbstractButton::clicked, this, &MainWindow::applyPreview);
     revertPreviewBtn = modsActionBtnBox->addButton(tr("Reset Changes"), QDialogButtonBox::ResetRole);
     revertPreviewBtn->setEnabled(false);
-    connect(revertPreviewBtn, &QAbstractButton::clicked, modsPreviewModel, &QAbstractItemModel::revert);
+    connect(revertPreviewBtn, &QAbstractButton::clicked, this, &MainWindow::revertPreview);
+    connect(modsPreviewModel, &ModSpecPreviewModel::isEmptyChanged, this, &MainWindow::updatePreviewActionsEnabled);
 
     QHBoxLayout *modsFilterBtnLayout = new QHBoxLayout;
     modsFilterBtnLayout->addWidget(modsInstalledCheckBox);
@@ -190,11 +191,7 @@ void MainWindow::createMenuActions()
 
 void MainWindow::setActionsEnabled(bool enabled)
 {
-    if (!enabled || !modsPreviewModel->isEmpty())
-    {
-        applyPreviewBtn->setEnabled(enabled);
-        revertPreviewBtn->setEnabled(enabled);
-    }
+    updatePreviewActionsEnabled();
 
     openSpecAct->setEnabled(enabled);
     saveInstalledSpecAct->setEnabled(enabled);
@@ -208,14 +205,21 @@ void MainWindow::setActionsEnabled(bool enabled)
     installedUpdateAct->setEnabled(enabled);
 }
 
+void MainWindow::updatePreviewActionsEnabled()
+{
+    bool enabled = !isLocked() && !modsPreviewModel->isEmpty();
+    applyPreviewBtn->setEnabled(enabled);
+    revertPreviewBtn->setEnabled(enabled);
+}
+
 void MainWindow::actionStarted()
 {
-    setActionsEnabled(false);
+    setLock(true);
 }
 
 void MainWindow::actionFinished()
 {
-    setActionsEnabled(true);
+    setLock(false);
     endProgress();
 }
 
@@ -371,6 +375,12 @@ void MainWindow::applyPreview()
     connect(command, &ApplyPreviewCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &ApplyPreviewCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
+}
+
+void MainWindow::revertPreview()
+{
+    modsPreviewModel->revert();
+    updatePreviewActionsEnabled();
 }
 
 } // namespace iimodmanager

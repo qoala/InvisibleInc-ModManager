@@ -111,7 +111,7 @@ namespace ColumnData {
 }
 
 ModSpecPreviewModel::ModSpecPreviewModel(const ModCache &cache, const ModList &modList, QObject *parent)
-    : ModsModel(cache, modList, parent), dirty(true)
+    : ModsModel(cache, modList, parent), dirty(true), previousEmptyState_(true)
 {}
 
 int ModSpecPreviewModel::columnCount(const QModelIndex &parent) const
@@ -354,7 +354,7 @@ bool ModSpecPreviewModel::isEmpty() const
         return true;
 
     for (const auto &change : pendingChanges)
-        if (change.type >= PendingChange::ACTIVE_CHANGE_MIN)
+        if (change.isActive())
             return false;
 
     return true;
@@ -520,7 +520,7 @@ void ModSpecPreviewModel::refreshPendingChange(PendingChange &pc)
     // Now check if target version is already installed.
     if (iv && pc.versionId == iv->id())
     {
-        if (pc.type >= PendingChange::ACTIVE_CHANGE_MIN)
+        if (pc.isActive())
         {
             // Installation/Update complete.
             if (pc.versionPin == PendingChange::LATEST)
@@ -542,7 +542,15 @@ void ModSpecPreviewModel::reportAllChanged(const std::function<void ()> &cb, con
         refreshPendingChanges();
     else if (pendingChanges.contains(modId))
         refreshPendingChange(pendingChanges[modId]);
+
     ModsModel::reportAllChanged(cb, modId);
+
+    bool emptyState = isEmpty();
+    if (previousEmptyState_ != emptyState)
+    {
+        previousEmptyState_ = emptyState;
+        emit isEmptyChanged(emptyState);
+    }
 }
 
 void ModSpecPreviewModel::reportSpecChanged(const QString &modId)
@@ -565,6 +573,13 @@ void ModSpecPreviewModel::reportSpecChanged(const QString &modId)
     emit dataChanged(
             createIndex(startRow, NEW_COLUMN_MIN),
             createIndex(endRow, NEW_COLUMN_MAX));
+
+    bool emptyState = isEmpty();
+    if (previousEmptyState_ != emptyState)
+    {
+        previousEmptyState_ = emptyState;
+        emit isEmptyChanged(emptyState);
+    }
 }
 
 }  // namespace iimodmanager
