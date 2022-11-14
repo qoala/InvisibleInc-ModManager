@@ -18,7 +18,7 @@ class ModCache;
 class ModInfo;
 class ModManConfig;
 class SpecMod;
-class SteamModInfo;
+struct SteamModInfo;
 
 
 class InstalledMod;

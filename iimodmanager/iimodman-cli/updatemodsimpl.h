@@ -11,7 +11,7 @@ class ModCache;
 class ModDownloadCall;
 class ModDownloader;
 class ModInfoCall;
-class SteamModInfo;
+struct SteamModInfo;
 
 //! Shared implementation for commands that update mods in the mod cache.
 class UpdateModsImpl : public QObject

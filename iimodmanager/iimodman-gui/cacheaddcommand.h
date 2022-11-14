@@ -8,7 +8,7 @@ namespace iimodmanager {
 class ModDownloadCall;
 class ModInfoCall;
 class ModManGuiApplication;
-class SteamModInfo;
+struct SteamModInfo;
 
 
 class CacheAddCommand : public QObject
@@ -31,8 +31,8 @@ private slots:
     void steamDownloadFinished();
 
 private:
-    QWidget *parentWidget;
     ModManGuiApplication &app;
+    QWidget *parentWidget;
 
     ModInfoCall *steamInfoCall;
     ModDownloadCall *steamDownloadCall;

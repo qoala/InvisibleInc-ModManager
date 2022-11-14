@@ -312,11 +312,13 @@ void ModsModel::updatePersistentIndexes()
 
 void ModsModel::reportCacheChanged(const std::function<void ()> &cb, const QString &modId)
 {
+    Q_UNUSED(modId)
     cb();
 }
 
 void ModsModel::reportAllChanged(const std::function<void ()> &cb, const QString &modId)
 {
+    Q_UNUSED(modId)
     cb();
 }
 
@@ -367,12 +369,12 @@ void ModsModel::cacheAppendedMods()
 {
     switch (appendType)
     {
-    EMPTY_APPEND:
+    case EMPTY_APPEND:
         return;
-    NORMAL_APPEND:
+    case NORMAL_APPEND:
         reportCacheChanged([this]() { endInsertRows(); });
         return;
-    TRIVIAL_MOVE_APPEND:
+    case TRIVIAL_MOVE_APPEND:
         reindexUncachedMods();
         {
             const int row = cache.mods().size() - 1;
@@ -386,7 +388,7 @@ void ModsModel::cacheAppendedMods()
                     });
         }
         return;
-    MOVE_APPEND:
+    case MOVE_APPEND:
         reindexUncachedMods();
         {
             const int row = cache.mods().size() - 1;
@@ -401,7 +403,7 @@ void ModsModel::cacheAppendedMods()
                     });
         }
         return;
-    REFRESH_APPEND:
+    case REFRESH_APPEND:
         cacheRefreshed();
         return;
     }

@@ -18,7 +18,7 @@ namespace iimodmanager {
 class ModInfo;
 class ModManConfig;
 class SpecMod;
-class SteamModInfo;
+struct SteamModInfo;
 
 
 Q_DECLARE_LOGGING_CATEGORY(modcache)

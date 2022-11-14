@@ -9,7 +9,6 @@ namespace iimodmanager {
 class ModDownloadCall;
 class ModInfoCall;
 class ModManGuiApplication;
-class SteamModInfo;
 
 
 class CacheUpdateCommand : public QObject
