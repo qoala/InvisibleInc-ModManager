@@ -20,6 +20,11 @@ class ModsSortFilterProxyModel : public QSortFilterProxyModel
 public:
     ModsSortFilterProxyModel(QObject *parent = nullptr);
 
+    //! Overridden just to apply CANCEL_SORT_ROLE.
+    //! Sorting is cancelled until the next time ::sort is called.
+    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::DisplayRole) override;
+    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
+
     //! The columns that will be searched when setFilterFixedString is called (default: None).
     void setFilterTextColumns(const QVector<int> &columns);
     //! The column that will be checked for filter status (default: 0).
@@ -37,6 +42,7 @@ private:
     int filterStatusColumn;
     modelutil::Status requiredStatuses;
     modelutil::Status maskedStatuses;
+    bool sortCancelled;
 };
 
 } // namespace iimodmanager

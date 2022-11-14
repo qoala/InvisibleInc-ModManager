@@ -97,7 +97,7 @@ namespace ColumnLessThan {
 
 
 ModsSortFilterProxyModel::ModsSortFilterProxyModel(QObject *parent)
-    : QSortFilterProxyModel(parent) {}
+    : QSortFilterProxyModel(parent), filterStatusColumn(0), sortCancelled(false) {}
 
 void ModsSortFilterProxyModel::setFilterTextColumns(const QVector<int> &columns)
 {
@@ -116,6 +116,26 @@ void ModsSortFilterProxyModel::setFilterStatus(modelutil::Status requiredStatuse
     this->requiredStatuses = requiredStatuses;
     this->maskedStatuses = maskedStatuses;
     invalidateFilter();
+}
+
+bool ModsSortFilterProxyModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    // Cancel sorting.
+    QVariant cancelColumnsData = sourceModel()->headerData(index.column(), Qt::Horizontal, modelutil::CANCEL_SORTING_ROLE);
+    if (!cancelColumnsData.isNull())
+    {
+        QVector<int> columns = cancelColumnsData.value<QVector<int>>();
+        if (columns.indexOf(sortColumn()) != -1)
+            sortCancelled = true;
+    }
+
+    return QSortFilterProxyModel::setData(index, value, role);
+}
+
+void ModsSortFilterProxyModel::sort(int column, Qt::SortOrder order)
+{
+    sortCancelled = false;
+    QSortFilterProxyModel::sort(column, order);
 }
 
 bool ModsSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
@@ -147,6 +167,9 @@ bool ModsSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex
 
 bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
+    if (sortCancelled)
+        return false;
+
     if (left.column() != right.column())
         return QSortFilterProxyModel::lessThan(left, right);
     int sortType = sourceModel()->headerData(left.column(), Qt::Horizontal, modelutil::SORT_ROLE).toInt();

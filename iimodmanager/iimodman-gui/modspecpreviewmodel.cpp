@@ -37,7 +37,7 @@ namespace ColumnData {
         if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(baseStatus);
 
-        if (role == Qt::DisplayRole)
+        else if (role == Qt::DisplayRole)
             switch (pc.type)
             {
             case PendingChange::NONE:
@@ -67,6 +67,10 @@ namespace ColumnData {
             case PendingChange::REMOVE:
                 return 4;
             }
+        else if (role == Qt::CheckStateRole)
+            // We never arrive here unless either there's an already-installed version
+            // or we're trying to install one;
+            return (pc.type == PendingChange::REMOVE) ? Qt::Unchecked : Qt::Checked;
 
         return QVariant();
     }
@@ -123,113 +127,6 @@ namespace ColumnData {
             return modelutil::toVariant(baseStatus | modelutil::NULL_STATUS);
         return modelutil::versionTimeData(cv, baseStatus, role);
     }
-}
-
-ModSpecPreviewModel::ModSpecPreviewModel(const ModCache &cache, const ModList &modList, QObject *parent)
-    : ModsModel(cache, modList, parent), dirty(true), previousEmptyState_(true)
-{}
-
-int ModSpecPreviewModel::columnCount(const QModelIndex &parent) const
-{
-    Q_UNUSED(parent);
-    return COLUMN_COUNT;
-}
-
-int ModSpecPreviewModel::columnMax() const
-{
-    return COLUMN_MAX;
-}
-
-bool isBase(int column)
-{
-    return (column >= ModSpecPreviewModel::BASE_COLUMN_MIN
-            && column <= ModSpecPreviewModel::BASE_COLUMN_MAX);
-}
-bool isBase(const QModelIndex &index)
-{
-    return (!index.isValid()
-            || (!index.parent().isValid() && isBase(index.column())));
-}
-
-inline int toBaseColumn(int column) { return column; }
-inline QModelIndex toBaseColumn(const QModelIndex &index) { return index; }
-
-QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
-{
-    if (isBase(index))
-        return ModsModel::data(toBaseColumn(index), role);
-
-    const CachedMod *cm;
-    const InstalledMod *im;
-    seekRow(index.row(), &cm, &im);
-    const QString modId = cm ? cm->id() : im ? im-> id() : QString();
-    const PendingChange pc = pendingChange(modId);
-
-    modelutil::Status baseStatus = modelutil::modStatus(cm, im, role);
-
-    if (!im && pc.isNone())
-    {
-        // Not installed and not trying to change that.
-        if (role == modelutil::STATUS_ROLE)
-            return modelutil::toVariant(baseStatus | modelutil::NULL_STATUS);
-        else if (role == modelutil::SORT_ROLE)
-            return 0;
-        else
-            return QVariant();
-    }
-
-    switch (index.column())
-    {
-    case ACTION:
-        return ColumnData::targetAction(pc, baseStatus, role);
-    case TARGET_VERSION:
-        return ColumnData::targetVersion(cm, im, pc, baseStatus, role);
-    case TARGET_VERSION_TIME:
-        return ColumnData::targetTime(cm, pc, baseStatus, role);
-    }
-    return QVariant();
-}
-
-QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientation, int role) const
-{
-    if (orientation == Qt::Vertical)
-        return QVariant();
-    if (isBase(section))
-        return ModsModel::headerData(toBaseColumn(section), orientation, role);
-
-    if (role == Qt::DisplayRole)
-        switch (section)
-        {
-        case ACTION:
-            return QStringLiteral("Status");
-        case TARGET_VERSION:
-            return QStringLiteral("Target Version");
-        case TARGET_VERSION_TIME:
-            return QStringLiteral("Target Version Time");
-        }
-    else if (role == Qt::InitialSortOrderRole)
-        switch (section)
-        {
-        case ACTION:
-        case TARGET_VERSION:
-        case TARGET_VERSION_TIME:
-            return Qt::DescendingOrder;
-        }
-    else if (role == modelutil::SORT_ROLE)
-        switch (section)
-        {
-        case ACTION:
-            return modelutil::ROLE_SORT;
-        case TARGET_VERSION:
-            return modelutil::VERSION_SORT;
-        case TARGET_VERSION_TIME:
-            return modelutil::VERSION_TIME_SORT;
-        }
-    else if (role == Qt::BackgroundRole)
-        // TODO
-        return QVariant();
-
-    return QVariant();
 }
 
 std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const InstalledMod *im)
@@ -315,6 +212,204 @@ std::optional<ModSpecPreviewModel::PendingChange> ModSpecPreviewModel::toPending
     else
         pc.type = PendingChange::UPDATE;
     return pc;
+}
+
+ModSpecPreviewModel::ModSpecPreviewModel(const ModCache &cache, const ModList &modList, QObject *parent)
+    : ModsModel(cache, modList, parent), dirty(true), previousEmptyState_(true)
+{}
+
+int ModSpecPreviewModel::columnCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+    return COLUMN_COUNT;
+}
+
+int ModSpecPreviewModel::columnMax() const
+{
+    return COLUMN_MAX;
+}
+
+bool isBase(int column)
+{
+    return (column >= ModSpecPreviewModel::BASE_COLUMN_MIN
+            && column <= ModSpecPreviewModel::BASE_COLUMN_MAX);
+}
+bool isBase(const QModelIndex &index)
+{
+    return (!index.isValid()
+            || (!index.parent().isValid() && isBase(index.column())));
+}
+
+inline int toBaseColumn(int column) { return column; }
+inline QModelIndex toBaseColumn(const QModelIndex &index) { return index; }
+
+const ModSpecPreviewModel::PendingChange ModSpecPreviewModel::seekPendingRow(int row, const CachedMod **cm, const InstalledMod **im) const
+{
+    if (!cm || !im)
+        return PendingChange();
+
+    seekRow(row, cm, im);
+    if (!(*cm) && !(*im))
+        return PendingChange();
+
+    const QString modId = *cm ? (*cm)->id() : *im ? (*im)-> id() : QString();
+    return pendingChange(modId);
+}
+
+ModSpecPreviewModel::PendingChange *ModSpecPreviewModel::seekMutablePendingRow(int row, const CachedMod **cm, const InstalledMod **im)
+{
+    if (!cm || !im)
+        return nullptr;
+
+    seekRow(row, cm, im);
+    if (!(*cm) && !(*im))
+        return nullptr;
+
+    const QString modId = *cm ? (*cm)->id() : *im ? (*im)-> id() : QString();
+    PendingChange *pc = &pendingChanges[modId];
+    if (pc->modId.isEmpty())
+        pc->modId = modId;
+    return pc;
+}
+
+QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
+{
+    if (isBase(index))
+        return ModsModel::data(toBaseColumn(index), role);
+
+    const CachedMod *cm;
+    const InstalledMod *im;
+    const PendingChange pc = seekPendingRow(index.row(), &cm, &im);
+
+    modelutil::Status baseStatus = modelutil::modStatus(cm, im, role);
+
+    if (!im && pc.isNone())
+    {
+        // Not installed and not trying to change that.
+        if (role == modelutil::STATUS_ROLE)
+            return modelutil::toVariant(baseStatus | modelutil::NULL_STATUS);
+        else if (role == modelutil::SORT_ROLE)
+            return 0;
+        else if (role == Qt::CheckStateRole && index.column() == ACTION)
+            return Qt::Unchecked;
+        else
+            return QVariant();
+    }
+
+    switch (index.column())
+    {
+    case ACTION:
+        return ColumnData::targetAction(pc, baseStatus, role);
+    case TARGET_VERSION:
+        return ColumnData::targetVersion(cm, im, pc, baseStatus, role);
+    case TARGET_VERSION_TIME:
+        return ColumnData::targetTime(cm, pc, baseStatus, role);
+    }
+    return QVariant();
+}
+
+bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if (index.column() == ACTION && role == Qt::CheckStateRole)
+    {
+        auto state = value.value<Qt::CheckState>();
+        int row = index.row();
+        const CachedMod *cm;
+        const InstalledMod *im;
+        PendingChange &pc = *seekMutablePendingRow(row, &cm, &im);
+
+        if (state == Qt::Checked)
+        {
+            if (im)
+            {
+                auto target = pinCurrent(im);
+                if (!target)
+                    return false;
+                pc = *target;
+            }
+            else
+            {
+                // Install new.
+                auto target = useLatest(cm, im);
+                if (!target)
+                    return false;
+                pc = *target;
+            }
+        }
+        else if (state == Qt::Unchecked)
+        {
+            if (im)
+                pc.type = PendingChange::REMOVE;
+            else
+                pc.type = PendingChange::NONE;
+        }
+
+        emit dataChanged(
+                createIndex(row, NEW_COLUMN_MIN),
+                createIndex(row, NEW_COLUMN_MAX));
+        return true;
+    }
+    return false;
+}
+
+QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (orientation == Qt::Vertical)
+        return QVariant();
+    if (isBase(section))
+        return ModsModel::headerData(toBaseColumn(section), orientation, role);
+
+    switch (role)
+    {
+    case Qt::DisplayRole:
+        switch (section)
+        {
+        case ACTION:
+            return QStringLiteral("Status");
+        case TARGET_VERSION:
+            return QStringLiteral("Target Version");
+        case TARGET_VERSION_TIME:
+            return QStringLiteral("Target Version Time");
+        }
+        break;
+    case Qt::InitialSortOrderRole:
+        switch (section)
+        {
+        case ACTION:
+        case TARGET_VERSION:
+        case TARGET_VERSION_TIME:
+            return Qt::DescendingOrder;
+        }
+        break;
+    case modelutil::SORT_ROLE:
+        switch (section)
+        {
+        case ACTION:
+            return modelutil::ROLE_SORT;
+        case TARGET_VERSION:
+            return modelutil::VERSION_SORT;
+        case TARGET_VERSION_TIME:
+            return modelutil::VERSION_TIME_SORT;
+        }
+        break;
+    case modelutil::CANCEL_SORTING_ROLE:
+        if (section == ACTION)
+            return QVariant::fromValue<QVector<int>>({ACTION, TARGET_VERSION, TARGET_VERSION_TIME});
+        break;
+    case Qt::BackgroundRole:
+        // TODO
+        return QVariant();
+    }
+
+    return QVariant();
+}
+
+Qt::ItemFlags ModSpecPreviewModel::flags(const QModelIndex &index) const
+{
+    if (index.column() != ACTION)
+        return QAbstractItemModel::flags(index);
+
+    return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable;
 }
 
 void ModSpecPreviewModel::setModSpec(const QList<SpecMod> &specMods)

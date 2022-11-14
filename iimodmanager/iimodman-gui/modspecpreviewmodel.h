@@ -88,7 +88,9 @@ public:
 
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::DisplayRole) override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    Qt::ItemFlags flags(const QModelIndex &index) const override;
 
     //! Returns a specification of the currently previewed target mods.
     //! Versions are only specified for pinned mods.
@@ -140,6 +142,12 @@ private:
 
     inline const PendingChange pendingChange(const QString &modId) const
     { return pendingChanges.value(modId, PendingChange(modId)); }
+    //! Populates the cached mod, installed mod, and pending change.
+    //! If not present, a default pending change is provided.
+    const PendingChange seekPendingRow(int row, const CachedMod **cmOut, const InstalledMod **imOut) const;
+    //! Populates the cached mod, installed mod, and pending change.
+    //! If not present, a default pending change is inserted and provided for editing.
+    PendingChange *seekMutablePendingRow(int row, const CachedMod **cmOut, const InstalledMod **imOut);
 
     //! Marks the mod spec as needing to be regenerated.
     inline void setDirty() const { dirty = true; };

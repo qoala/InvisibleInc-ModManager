@@ -20,6 +20,10 @@ namespace modelutil {
         //! Used on a header to identify the column's item type for sorting. (SortType)
         //! Or used on an item when the column has ROLE_SORT, to return a sortable value. (int)
         SORT_ROLE = 0x101,
+        //! Used on a header when data is modified to identify columns that depend on this item.
+        //! If the current sort is one of those columns, then the current sorting is cancelled.
+        //! (QVector<int>)
+        CANCEL_SORTING_ROLE = 0x102,
     };
 
     //! Properties of the given row (or for the highest flags, the specific item).
