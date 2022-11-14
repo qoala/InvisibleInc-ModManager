@@ -38,6 +38,8 @@ public:
 
         BASE_COLUMN_MIN = NAME,
         BASE_COLUMN_MAX = CACHE_UPDATE_TIME,
+        NEW_COLUMN_MIN = ACTION,
+        NEW_COLUMN_MAX = TARGET_VERSION_TIME,
         COLUMN_MAX = TARGET_VERSION_TIME,
         COLUMN_COUNT = COLUMN_MAX+1,
     };
@@ -46,10 +48,16 @@ public:
     {
         enum ChangeType {
             NONE,
+            //! Like NONE, but specifically pinning the current installed version.
             PIN_CURRENT,
+            //! Like NONE, but specifically pinning the latest available version.
+            //! Must have LATEST pin type.
+            PIN_LATEST,
             INSTALL,
             REMOVE,
             UPDATE,
+
+            ACTIVE_CHANGE_MIN = INSTALL,
         };
         //! How this change specifies a version.
         //! Controls how this pending change is affected by cache/installed updates.
@@ -62,13 +70,14 @@ public:
             PINNED,
         };
 
-        PendingChange(const QString &modId = QString())
-            : modId(modId), versionId(), versionPin(CURRENT), type(NONE) {};
-
-        const QString modId;
+        QString modId;
+        QString modName;
         QString versionId;
         VersionPinning versionPin;
         ChangeType type;
+
+        PendingChange(const QString &modId = QString())
+            : modId(modId), versionId(), versionPin(CURRENT), type(NONE) {};
 
         inline bool isValid() const { return !modId.isNull(); };
         inline bool isNone() const { return type == NONE; };
@@ -106,6 +115,7 @@ public slots:
     void revert() override;
 
 signals:
+    void textOutput(QString value) const;
 
 protected:
     int columnMax() const override;
@@ -116,9 +126,18 @@ private:
     //! Most recently exported mod spec.
     mutable QList<SpecMod> modSpec_;
     //! True if modSpec_ needs to be regenerated.
-    mutable bool dirty_;
+    mutable bool dirty;
 
-    inline void setDirty() const { dirty_ = true; };
+    inline const PendingChange pendingChange(const QString &modId) const
+    { return pendingChanges.value(modId, PendingChange(modId)); }
+
+    //! Marks the mod spec as needing to be regenerated.
+    inline void setDirty() const { dirty = true; };
+    //! Report the the visible model has changed.
+    //! Pass the updated mod ID for a single mod; leave blank for all mods.
+    void reportSpecChanged(const QString &modId = QString());
+
+    std::optional<PendingChange> toPendingChange(const SpecMod &specMod) const;
     void generateModSpec() const;
     void refreshPendingChanges();
 };

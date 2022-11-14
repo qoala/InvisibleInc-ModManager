@@ -156,6 +156,14 @@ void ModsModel::seekRow(int row, const CachedMod **cm, const InstalledMod **im) 
     }
 }
 
+int ModsModel::rowOf(const QString &modId) const
+{
+    int row = cache.modIndex(modId);
+    if (row != -1)
+        return row;
+    return uncachedIndex(modId);
+}
+
 QVariant ModsModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
@@ -288,10 +296,8 @@ void ModsModel::updatePersistentIndexes()
     for (const auto &fromIndex : savedPersistentIndexes)
     {
         const QString &modId = savedPersistentMappings.at(fromIndex.row());
-        int newIdx = cache.modIndex(modId);
+        int newIdx = rowOf(modId);
         if (newIdx != -1)
-            to << createIndex(newIdx, fromIndex.column());
-        else if ((newIdx = uncachedIndex(modId)) != -1)
             to << createIndex(newIdx, fromIndex.column());
         else
             to << QModelIndex(); // Mod is no longer available.
@@ -447,7 +453,7 @@ void ModsModel::cacheMetadataChanged(const QStringList &modIds, const QList<int>
     const int startColumn = columnMin(), endColumn = columnMax();
     if (modIdxs.size() == 0)
     {
-        // Any/All rows changed.
+        // Any/All cache rows changed.
         startRow = 0;
         endRow = cache.mods().size()-1;
     }

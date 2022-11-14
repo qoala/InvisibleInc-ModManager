@@ -199,7 +199,21 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *e
             *errorInfo = QStringLiteral("Mod not in cache.");
         return nullptr;
     }
-    const CachedVersion *cv = specMod.versionId().isEmpty() ? cm->latestVersion() : cm->version(specMod.versionId());
+
+    bool useLatestVersion = specMod.versionId().isEmpty();
+    if (specMod.versionId() == '-')
+    {
+        // Keep currently installed version, if possible.
+        InstalledMod *im = mod(modId);
+        if (im)
+        {
+            im->impl()->refresh();
+            return im;
+        }
+        else
+            useLatestVersion = true;
+    }
+    const CachedVersion *cv = useLatestVersion ? cm->latestVersion() : cm->version(specMod.versionId());
     if (!cv)
     {
         if (errorInfo)
@@ -344,7 +358,7 @@ const SpecMod InstalledMod::Impl::asSpec() const
     if (!specMod)
     {
         const CachedVersion *v = cacheVersion();
-        specMod.emplace(id_, v ? v->id() : QString(), info_.name(), info_.version());
+        specMod.emplace(id_, v ? v->id() : QStringLiteral("-"), info_.name(), info_.version());
     }
 
     return *specMod;
@@ -387,7 +401,9 @@ bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &exp
     if (cache->contains(id_))
     {
         hash_ = ModSignature::hashModPath(modDir.path());
-        const CachedVersion *version = cache->markInstalledVersion(id_, hash_, expectedCacheVersionId);
+        const CachedVersion *version = cache->markInstalledVersion(
+                id_, hash_,
+                expectedCacheVersionId.isNull() ? cacheVersionId_ : expectedCacheVersionId);
         if (version)
             cacheVersionId_ = version->id();
         else

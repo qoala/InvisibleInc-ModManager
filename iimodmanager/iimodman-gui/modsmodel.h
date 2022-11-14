@@ -62,14 +62,8 @@ protected:
 
     //! Returns the cached and downloaded mod resources for the given row into its arguments.
     void seekRow(int row, const CachedMod **cmOut, const InstalledMod **imOut) const;
-    inline const QVector<int> &uncachedIdxs() const { return uncachedIdxs_; };
-    //! Returns the row number for an uncached mod ID, or -1 if not found.
-    //! \sa ModCache::modIndex
-    int uncachedIndex(const QString &modId) const;
-
-    void reindexUncachedMods();
-    void savePersistentIndexes();
-    void updatePersistentIndexes();
+    //! Returns the row of the given mod ID, or -1 if not present.
+    int rowOf(const QString &modId) const;
 
 private slots:
     void cacheAboutToAppendMods(const QStringList &modIds);
@@ -104,6 +98,15 @@ private:
     AppendType appendType;
     QModelIndexList savedPersistentIndexes;
     QVector<QString> savedPersistentMappings;
+
+    inline const QVector<int> &uncachedIdxs() const { return uncachedIdxs_; };
+    //! Returns the row number for an uncached mod ID, or -1 if not found.
+    //! \sa ModCache::modIndex
+    int uncachedIndex(const QString &modId) const;
+
+    void reindexUncachedMods();
+    void savePersistentIndexes();
+    void updatePersistentIndexes();
 };
 
 }  // namespace iimodmanager
