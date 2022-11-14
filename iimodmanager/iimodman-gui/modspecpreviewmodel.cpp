@@ -13,6 +13,24 @@ namespace ColumnData {
     typedef modelutil::Status Status;
     typedef ModSpecPreviewModel::PendingChange PendingChange;
 
+    //! For info formatting, not normal column display.
+    QString changeType(PendingChange::ChangeType type)
+    {
+        switch (type)
+        {
+            case PendingChange::PIN_CURRENT:
+                return QStringLiteral("PINNED");
+            case PendingChange::INSTALL:
+                return QStringLiteral("INSTALL");
+            case PendingChange::REMOVE:
+                return QStringLiteral("REMOVE");
+            case PendingChange::UPDATE:
+                return QStringLiteral("UPDATE");
+            default:
+                return QString();
+        }
+    }
+
     QVariant targetAction(const CachedMod *cm, const InstalledMod *im, const PendingChange &pc, Status baseStatus, int role)
     {
         if (role == modelutil::STATUS_ROLE)
@@ -50,6 +68,14 @@ namespace ColumnData {
 
     QVariant targetVersion(const CachedMod *cm, const InstalledMod *im, const PendingChange &pc, Status baseStatus, int role)
     {
+        if (pc.type == PendingChange::REMOVE)
+        {
+            if (role == modelutil::STATUS_ROLE)
+                return modelutil::toVariant(baseStatus | modelutil::NULL_STATUS);
+            else
+                return QVariant();
+        }
+
         QString version = versionString(cm, im, pc);
         return modelutil::versionData(version, baseStatus, role);
     }
@@ -64,6 +90,14 @@ namespace ColumnData {
 
     QVariant targetTime(const CachedMod *cm, const InstalledMod *im, const PendingChange &pc, Status baseStatus, int role)
     {
+        if (pc.type == PendingChange::REMOVE)
+        {
+            if (role == modelutil::STATUS_ROLE)
+                return modelutil::toVariant(baseStatus | modelutil::NULL_STATUS);
+            else
+                return QVariant();
+        }
+
         const CachedVersion *cv = cm ? cachedVersion(cm, pc) : nullptr;
         if (!cv && role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(baseStatus | modelutil::NULL_STATUS);
@@ -72,7 +106,7 @@ namespace ColumnData {
 }
 
 ModSpecPreviewModel::ModSpecPreviewModel(const ModCache &cache, const ModList &modList, QObject *parent)
-    : ModsModel(cache, modList, parent)
+    : ModsModel(cache, modList, parent), dirty_(true)
 {}
 
 int ModSpecPreviewModel::columnCount(const QModelIndex &parent) const
@@ -174,6 +208,149 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
         return QVariant();
 
     return QVariant();
+}
+
+void ModSpecPreviewModel::setModSpec(const QList<SpecMod> &specMods)
+{
+    // TODO
+}
+
+void ModSpecPreviewModel::insertModSpec(const QList<SpecMod> &specMods)
+{
+    // TODO
+}
+
+QList<SpecMod> ModSpecPreviewModel::modSpec() const
+{
+    if (dirty_)
+        generateModSpec();
+    return QList<SpecMod>();
+}
+
+bool ModSpecPreviewModel::isEmpty() const
+{
+    if (pendingChanges.isEmpty())
+        return true;
+
+    for (const auto change : pendingChanges)
+        if (change.type != PendingChange::NONE && change.type != PendingChange::PIN_CURRENT)
+            return false;
+
+    return true;
+}
+
+void ModSpecPreviewModel::revert()
+{
+    if (!pendingChanges.isEmpty())
+    {
+        pendingChanges.clear();
+        setDirty();
+    }
+}
+
+void ModSpecPreviewModel::generateModSpec() const
+{
+    // TODO
+}
+
+void ModSpecPreviewModel::refreshPendingChanges()
+{
+    for (PendingChange &pc : pendingChanges)
+    {
+        if (pc.isNone())
+            continue;
+
+        if (pc.type == PendingChange::REMOVE)
+        {
+            if (!modList.contains(pc.modId))
+                // Already done.
+                pc.type = PendingChange::NONE;
+            continue;
+        }
+
+        const CachedMod *cm = cache.mod(pc.modId);
+        const CachedVersion *lv = cm ? cm->latestVersion() : nullptr;
+        if (!cm || !lv)
+        {
+            // Can't apply this change anymore.
+            emit textOutput(QStringLiteral("! Dropping pending change (%2) for %1: No longer in cache.").arg(pc.modId, ColumnData::changeType(pc.type)));
+            pc.type = PendingChange::NONE;
+            setDirty();
+            continue;
+        }
+
+        // Preserving Installed-only Uncached mods should be eliminated as NONE above.
+        const CachedVersion *iv = cm->installedVersion();
+        if (!iv)
+            switch (pc.type)
+            {
+            default:
+                continue;
+            case PendingChange::PIN_CURRENT:
+            case PendingChange::INSTALL:
+            case PendingChange::UPDATE:
+                // Need to install the mod.
+                pc.type = PendingChange::INSTALL;
+                // Fall through.
+            }
+        else if (pc.type == PendingChange::REMOVE)
+            // Change is clear.
+            continue;
+
+        // Only PIN_CURRENT/INSTALL/UPDATE remain. Check versionId.
+        switch (pc.versionPin)
+        {
+        case PendingChange::CURRENT:
+            if (pc.versionId != iv->id())
+            {
+                pc.versionId = iv->id();
+                setDirty();
+            }
+            continue;
+        case PendingChange::LATEST:
+            if (pc.versionId != lv->id())
+            {
+                pc.versionId = lv->id();
+                setDirty();
+            }
+            continue;
+        case PendingChange::PINNED:
+            const CachedVersion *tv = ColumnData::cachedVersion(cm, pc);
+            // If the pinned version exists, everything is good. If not...
+            if (!tv)
+            {
+                if (pc.type == PendingChange::PIN_CURRENT)
+                {
+                    // Preserve the currently installed version.
+                    pc.versionId.clear();
+                    pc.versionPin = PendingChange::CURRENT;
+                    pc.type = PendingChange::NONE;
+                    setDirty();
+                }
+                else
+                {
+                    emit textOutput(QStringLiteral("! Replacing requested version (%2) with latest for %1: No longer in cache.").arg(pc.modId, pc.versionId));
+                    pc.versionId = lv->id();
+                    if (iv == lv)
+                    {
+                        pc.versionPin = PendingChange::CURRENT;
+                        pc.type = PendingChange::NONE;
+                    }
+                    else
+                    {
+                        pc.versionPin = PendingChange::LATEST;
+                    }
+                    setDirty();
+                }
+            }
+        }
+    }
+}
+
+void ModSpecPreviewModel::reportAllChanged(const std::function<void ()> &cb)
+{
+    refreshPendingChanges();
+    ModsModel::reportAllChanged(cb);
 }
 
 }  // namespace iimodmanager

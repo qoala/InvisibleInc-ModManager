@@ -23,6 +23,7 @@ public:
     Impl(const ModManConfig &config, ModCache *cache);
 
     inline const QList<InstalledMod> &mods() const { return mods_; }
+    bool contains(const QString &id) const;
     InstalledMod *mod(const QString &id);
     const InstalledMod *mod(const QString &id) const;
 
@@ -90,6 +91,11 @@ const QList<InstalledMod> &ModList::mods() const
     return impl->mods();
 }
 
+bool ModList::contains(const QString &id) const
+{
+    return impl->contains(id);
+}
+
 const InstalledMod *ModList::mod(const QString &id) const
 {
     return impl->mod(id);
@@ -115,6 +121,11 @@ ModList::~ModList() = default;
 ModList::Impl::Impl(const ModManConfig &config, ModCache *cache)
     : config_(config), cache_(cache)
 {}
+
+bool ModList::Impl::contains(const QString &id) const
+{
+    return modIds_.contains(id);
+}
 
 InstalledMod *ModList::Impl::mod(const QString &id)
 {

@@ -44,6 +44,7 @@ public:
     ModList(const ModManConfig &config, ModCache *cache, QObject *parent = nullptr);
 
     const QList<InstalledMod> &mods() const;
+    bool contains(const QString &id) const;
     const InstalledMod *mod(const QString &id) const;
 
     void refresh(RefreshLevel level = FULL);

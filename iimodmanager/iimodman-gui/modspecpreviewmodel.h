@@ -4,14 +4,16 @@
 #include "modsmodel.h"
 
 #include <QAbstractItemModel>
+#include <modspec.h>
 
 namespace iimodmanager {
 
 class ModCache;
 class ModList;
 class ModSpec;
+class SpecMod;
 
-//! Previews the effect of applying a given mod spec.
+//! Previews the effect of applying a given mod specification.
 class ModSpecPreviewModel : public ModsModel
 {
     Q_OBJECT
@@ -44,10 +46,13 @@ public:
     {
         enum ChangeType {
             NONE,
+            PIN_CURRENT,
             INSTALL,
             REMOVE,
             UPDATE,
         };
+        //! How this change specifies a version.
+        //! Controls how this pending change is affected by cache/installed updates.
         enum VersionPinning {
             //! Currently installed version.
             CURRENT,
@@ -58,7 +63,7 @@ public:
         };
 
         PendingChange(const QString &modId = QString())
-            : modId(modId), versionId(), versionPin(LATEST), type(NONE) {};
+            : modId(modId), versionId(), versionPin(CURRENT), type(NONE) {};
 
         const QString modId;
         QString versionId;
@@ -75,14 +80,47 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
-    void setModSpec(const ModSpec &s);
-    ModSpec modSpec() const;
+    void reportAllChanged(const std::function<void ()> &cb) override;
+
+    //! Replaces pending changes with an exact sync to the given mod specification.
+    //! \sa ::revert
+    void setModSpec(const QList<SpecMod> &specMods);
+    //! Overwrites pending changes for mods in the given mod specification.
+    //! Mods not in the specification will be unaffected.
+    void insertModSpec(const QList<SpecMod> &specMods);
+    //! Returns a specification of the currently previewed target mods.
+    QList<SpecMod> modSpec() const;
+    //! Returns true if there any differences compared to the currently installed state.
+    //! \sa ::revert
+    bool isEmpty() const;
+
+signals:
+
+public slots:
+    //! Resets the pending mods to the currently installed state.
+    //!
+    //! Submitting changes should be handled outside of this model,
+    //! instead of by calling ::submit.
+    //!
+    //! \sa ::isEmpty
+    void revert() override;
+
+signals:
 
 protected:
     int columnMax() const override;
 
 private:
     QHash<QString, PendingChange> pendingChanges;
+
+    //! Most recently exported mod spec.
+    mutable QList<SpecMod> modSpec_;
+    //! True if modSpec_ needs to be regenerated.
+    mutable bool dirty_;
+
+    inline void setDirty() const { dirty_ = true; };
+    void generateModSpec() const;
+    void refreshPendingChanges();
 };
 
 }  // namespace iimodmanager
