@@ -20,7 +20,10 @@ class ModsSortFilterProxyModel : public QSortFilterProxyModel
 public:
     ModsSortFilterProxyModel(QObject *parent = nullptr);
 
-    void setFilterColumns(const QVector<int> &columns);
+    //! The columns that will be searched when setFilterFixedString is called (default: None).
+    void setFilterTextColumns(const QVector<int> &columns);
+    //! The column that will be checked for filter status (default: 0).
+    void setFilterStatusColumn(int column);
 
 public slots:
     void setFilterStatus(modelutil::Status requiredStatuses, modelutil::Status maskedStatuses);
@@ -30,7 +33,8 @@ protected:
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
 
 private:
-    QVector<int> filterColumns;
+    QVector<int> filterTextColumns;
+    int filterStatusColumn;
     modelutil::Status requiredStatuses;
     modelutil::Status maskedStatuses;
 };

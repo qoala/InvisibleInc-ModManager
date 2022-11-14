@@ -36,11 +36,10 @@ namespace ColumnData {
     {
         if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(baseStatus);
-        if (role != Qt::DisplayRole)
-            return QVariant();
 
-        switch (pc.type)
-        {
+        if (role == Qt::DisplayRole)
+            switch (pc.type)
+            {
             case PendingChange::NONE:
             case PendingChange::PIN_CURRENT:
             case PendingChange::PIN_LATEST:
@@ -52,7 +51,23 @@ namespace ColumnData {
                 return QStringLiteral("REMOVE");
             case PendingChange::UPDATE:
                 return QStringLiteral("UPDATE");
-        }
+            }
+        else if (role == modelutil::SORT_ROLE)
+            switch (pc.type)
+            {
+            case PendingChange::NONE:
+            case PendingChange::PIN_CURRENT:
+            case PendingChange::PIN_LATEST:
+                // If we got here, then there's an already-installed version.
+                return 1;
+            case PendingChange::UPDATE:
+                return 2;
+            case PendingChange::INSTALL:
+                return 3;
+            case PendingChange::REMOVE:
+                return 4;
+            }
+
         return QVariant();
     }
 
@@ -157,6 +172,8 @@ QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
         // Not installed and not trying to change that.
         if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(baseStatus | modelutil::NULL_STATUS);
+        else if (role == modelutil::SORT_ROLE)
+            return 0;
         else
             return QVariant();
     }
@@ -194,7 +211,6 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
         switch (section)
         {
         case ACTION:
-            return Qt::AscendingOrder;
         case TARGET_VERSION:
         case TARGET_VERSION_TIME:
             return Qt::DescendingOrder;
@@ -203,7 +219,7 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
         switch (section)
         {
         case ACTION:
-            return modelutil::NORMAL_SORT;
+            return modelutil::ROLE_SORT;
         case TARGET_VERSION:
             return modelutil::VERSION_SORT;
         case TARGET_VERSION_TIME:

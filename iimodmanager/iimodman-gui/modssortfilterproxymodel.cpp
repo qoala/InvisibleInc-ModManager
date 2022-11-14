@@ -99,9 +99,16 @@ namespace ColumnLessThan {
 ModsSortFilterProxyModel::ModsSortFilterProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent) {}
 
-void ModsSortFilterProxyModel::setFilterColumns(const QVector<int> &columns)
+void ModsSortFilterProxyModel::setFilterTextColumns(const QVector<int> &columns)
 {
-    filterColumns = columns;
+    filterTextColumns = columns;
+    invalidateFilter();
+}
+
+void ModsSortFilterProxyModel::setFilterStatusColumn(int column)
+{
+    filterStatusColumn = column;
+    invalidateFilter();
 }
 
 void ModsSortFilterProxyModel::setFilterStatus(modelutil::Status requiredStatuses, modelutil::Status maskedStatuses)
@@ -113,18 +120,16 @@ void ModsSortFilterProxyModel::setFilterStatus(modelutil::Status requiredStatuse
 
 bool ModsSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
+    QModelIndex index = sourceModel()->index(sourceRow, filterStatusColumn, sourceParent);
     modelutil::Status rowStatus = (requiredStatuses || maskedStatuses) ? sourceModel()->data(index, modelutil::STATUS_ROLE).value<Status>() : modelutil::NO_STATUS;
     if ((requiredStatuses && (rowStatus & requiredStatuses) != requiredStatuses)
         || (maskedStatuses && (rowStatus & maskedStatuses)))
         return false;
 
-    if (filterColumns.isEmpty())
+    if (filterTextColumns.isEmpty())
         return true;
 
-    QModelIndexList indexes;
-    indexes.reserve(filterColumns.size());
-    for (int column : filterColumns)
+    for (int column : filterTextColumns)
     {
         index = sourceModel()->index(sourceRow, column, sourceParent);
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -151,6 +156,8 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
     case modelutil::VERSION_TIME_SORT:
         // Continue processing below.
         break;
+    case modelutil::ROLE_SORT:
+        return sourceModel()->data(left, modelutil::SORT_ROLE).toInt() < sourceModel()->data(right, modelutil::SORT_ROLE).toInt();
     case modelutil::MOD_ID_SORT:
         return ColumnLessThan::modId(sourceModel()->data(left), sourceModel()->data(right));
     default:

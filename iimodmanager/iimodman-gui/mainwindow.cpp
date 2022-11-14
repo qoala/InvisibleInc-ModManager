@@ -48,8 +48,9 @@ void MainWindow::createTabs()
     connect(modsPreviewModel, &ModSpecPreviewModel::textOutput, this, &MainWindow::writeText);
     modsSortFilterProxy = new ModsSortFilterProxyModel(this);
     modsSortFilterProxy->setSourceModel(modsPreviewModel);
-    modsSortFilterProxy->setFilterColumns({ModSpecPreviewModel::NAME, ModSpecPreviewModel::ID});
+    modsSortFilterProxy->setFilterTextColumns({ModSpecPreviewModel::NAME, ModSpecPreviewModel::ID});
     modsSortFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    modsSortFilterProxy->setFilterStatusColumn({ModSpecPreviewModel::NAME});
     modsSortFilterProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
     modsView = new QTreeView;
     modsView->setModel(modsSortFilterProxy);

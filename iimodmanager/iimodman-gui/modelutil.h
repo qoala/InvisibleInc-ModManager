@@ -18,6 +18,7 @@ namespace modelutil {
         //! Used on an item to determine row and field properties in a Status flag set. (Status)
         STATUS_ROLE = 0x100,
         //! Used on a header to identify the column's item type for sorting. (SortType)
+        //! Or used on an item when the column has ROLE_SORT, to return a sortable value. (int)
         SORT_ROLE = 0x101,
     };
 
@@ -55,6 +56,8 @@ namespace modelutil {
         NORMAL_SORT,
         //! String, sorted as a mod ID.
         MOD_ID_SORT,
+        //! Int, obtained from the SORT_ROLE role.
+        ROLE_SORT,
         //! String, sorted as a version string.
         VERSION_SORT,
         //! DateTime, with a fallback to String.
