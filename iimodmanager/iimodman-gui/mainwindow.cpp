@@ -66,8 +66,6 @@ void MainWindow::createTabs()
     connect(modsSearchInput, &QLineEdit::textChanged, modsSortFilterProxy, &QSortFilterProxyModel::setFilterFixedString);
 
     modsInstalledCheckBox = new QCheckBox(tr("Installed"));
-    modsInstalledCheckBox->setTristate(true);
-    modsInstalledCheckBox->setCheckState(Qt::PartiallyChecked);
     connect(modsInstalledCheckBox, &QCheckBox::stateChanged, this, &MainWindow::modsFilterStatusChanged);
     modsHasCachedUpdateCheckBox = new QCheckBox(tr("Update Ready"));
     modsHasCachedUpdateCheckBox->setToolTip(tr("A new version is downloaded and ready to install."));
@@ -193,17 +191,8 @@ void MainWindow::modsFilterStatusChanged()
 {
     modelutil::Status requiredStatuses, maskedStatuses;
 
-    switch (modsInstalledCheckBox->checkState())
-    {
-    case Qt::Unchecked:
-        maskedStatuses |= modelutil::INSTALLED_STATUS;
-        break;
-    case Qt::Checked:
+    if (modsInstalledCheckBox->isChecked())
         requiredStatuses |= modelutil::INSTALLED_STATUS;
-        break;
-    case Qt::PartiallyChecked:
-        break;
-    }
 
     if (modsHasCachedUpdateCheckBox->isChecked())
         requiredStatuses |= modelutil::CAN_INSTALL_UPDATE_STATUS;
