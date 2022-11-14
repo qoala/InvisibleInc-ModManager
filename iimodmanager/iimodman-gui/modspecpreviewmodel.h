@@ -127,6 +127,7 @@ protected:
 
 private:
     QHash<QString, PendingChange> pendingChanges;
+    //! True if an action is currently modifying the cached/installed mods.
     bool isLocked_;
 
     //! Most recently exported mod spec.
