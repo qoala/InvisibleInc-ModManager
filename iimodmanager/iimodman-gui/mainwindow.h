@@ -51,13 +51,10 @@ private slots:
     void saveCacheSpec();
     void openSettings();
     // Cache Menu
-    void cacheStatus();
     void cacheUpdate();
+    void installedUpdate();
     void cacheAddMod();
     void cacheImportInstalled();
-    // Installed Menu
-    void installedStatus();
-    void installedUpdate();
 
     // Main Page
     void modsFilterStatusChanged();
@@ -92,13 +89,10 @@ private:
     QAction *settingsAct;
     QAction *quitAct;
     QMenu *cacheMenu;
-    QAction *cacheStatusAct;
     QAction *cacheUpdateAct;
+    QAction *installedUpdateAct;
     QAction *cacheAddModAct;
     QAction *cacheImportInstalledAct;
-    QMenu *installedMenu;
-    QAction *installedStatusAct;
-    QAction *installedUpdateAct;
 
     inline bool isLocked() const { return isLocked_; };
     inline void setLock(bool locked)

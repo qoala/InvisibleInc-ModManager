@@ -6,9 +6,9 @@ set(IIMODMAN_GUI_SOURCES
     cacheimportinstalledcommand.cpp
     cacheimportmodel.cpp
     cachesavecommand.cpp
-    cachestatuscommand.cpp
+    # cachestatuscommand.cpp
     cacheupdatecommand.cpp
-    installedstatuscommand.cpp
+    # installedstatuscommand.cpp
     installedupdatecommand.cpp
     # installedsyncfilecommand.cpp
     main.cpp

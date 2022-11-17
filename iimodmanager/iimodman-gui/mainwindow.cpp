@@ -160,25 +160,18 @@ void MainWindow::createMenuActions()
     quitAct->setShortcuts(QKeySequence::Quit);
     connect(quitAct, &QAction::triggered, QApplication::instance(), &QApplication::quit);
 
-    cacheStatusAct = new QAction(tr("&Log Status"), this);
-    cacheStatusAct->setStatusTip(tr("List downloaded mods to the log."));
-    connect(cacheStatusAct, &QAction::triggered, this, &MainWindow::cacheStatus);
     cacheUpdateAct = new QAction(tr("Download &Updates"), this);
     cacheUpdateAct->setStatusTip(tr("Check for and download updates for all mods in the cache"));
     connect(cacheUpdateAct, &QAction::triggered, this, &MainWindow::cacheUpdate);
+    installedUpdateAct = new QAction(tr("Install &Updates"), this);
+    installedUpdateAct->setStatusTip(tr("Updates currently installed mods to their latest downloaded version."));
+    connect(installedUpdateAct, &QAction::triggered, this, &MainWindow::installedUpdate);
     cacheAddModAct = new QAction(tr("&Add Workshop Mod"), this);
     cacheAddModAct->setStatusTip(tr("Download and add a mod to the cache"));
     connect(cacheAddModAct, &QAction::triggered, this, &MainWindow::cacheAddMod);
     cacheImportInstalledAct = new QAction(tr("&Import installed mods"), this);
     cacheImportInstalledAct->setStatusTip(tr("Copy existing installed mods to the download cache"));
     connect(cacheImportInstalledAct, &QAction::triggered, this, &MainWindow::cacheImportInstalled);
-
-    installedStatusAct = new QAction(tr("&Log Status"), this);
-    installedStatusAct->setStatusTip(tr("List currently installed mods to the log."));
-    connect(installedStatusAct, &QAction::triggered, this, &MainWindow::installedStatus);
-    installedUpdateAct = new QAction(tr("Install &Updates"), this);
-    installedUpdateAct->setStatusTip(tr("Updates currently installed mods to their latest downloaded version."));
-    connect(installedUpdateAct, &QAction::triggered, this, &MainWindow::installedUpdate);
 
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(openSpecAct);
@@ -189,15 +182,12 @@ void MainWindow::createMenuActions()
     fileMenu->addSeparator();
     fileMenu->addAction(settingsAct);
     fileMenu->addAction(quitAct);
-    QMenu *cacheMenu = menuBar()->addMenu(tr("&Downloaded"));
-    cacheMenu->addAction(cacheStatusAct);
+    QMenu *cacheMenu = menuBar()->addMenu(tr("&Cache"));
     cacheMenu->addAction(cacheUpdateAct);
+    cacheMenu->addAction(installedUpdateAct);
     cacheMenu->addSeparator();
     cacheMenu->addAction(cacheAddModAct);
     cacheMenu->addAction(cacheImportInstalledAct);
-    QMenu *installedMenu = menuBar()->addMenu(tr("&Installed"));
-    installedMenu->addAction(installedStatusAct);
-    installedMenu->addAction(installedUpdateAct);
 }
 
 void MainWindow::setActionsEnabled(bool enabled)
@@ -209,12 +199,10 @@ void MainWindow::setActionsEnabled(bool enabled)
     saveInstalledVersionSpecAct->setEnabled(enabled);
     saveCacheSpecAct->setEnabled(enabled);
     settingsAct->setEnabled(enabled);
-    cacheStatusAct->setEnabled(enabled);
     cacheUpdateAct->setEnabled(enabled);
+    installedUpdateAct->setEnabled(enabled);
     cacheAddModAct->setEnabled(enabled);
     cacheImportInstalledAct->setEnabled(enabled);
-    installedStatusAct->setEnabled(enabled);
-    installedUpdateAct->setEnabled(enabled);
 }
 
 void MainWindow::updatePreviewActionsEnabled()
@@ -309,16 +297,6 @@ void MainWindow::openSettings()
 
 // Cache actions.
 
-void MainWindow::cacheStatus()
-{
-    logDisplay->appendPlainText("\n--");
-    actionStarted();
-    CacheStatusCommand *command = new CacheStatusCommand(app, this);
-    connect(command, &CacheStatusCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &CacheStatusCommand::finished, this, &MainWindow::actionFinished);
-    command->execute();
-}
-
 void MainWindow::cacheUpdate()
 {
     logDisplay->appendPlainText("\n--");
@@ -352,16 +330,6 @@ void MainWindow::cacheImportInstalled()
 }
 
 // Installed actions.
-
-void MainWindow::installedStatus()
-{
-    logDisplay->appendPlainText("\n--");
-    actionStarted();
-    InstalledStatusCommand *command = new InstalledStatusCommand(app, this);
-    connect(command, &InstalledStatusCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &InstalledStatusCommand::finished, this, &MainWindow::actionFinished);
-    command->execute();
-}
 
 void MainWindow::installedUpdate()
 {
