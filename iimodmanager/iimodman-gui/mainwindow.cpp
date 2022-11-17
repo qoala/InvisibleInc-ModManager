@@ -2,16 +2,14 @@
 #include "cacheaddcommand.h"
 #include "cacheimportinstalledcommand.h"
 #include "cachesavecommand.h"
-#include "cachestatuscommand.h"
 #include "cacheupdatecommand.h"
-#include "installedstatuscommand.h"
-#include "installedupdatecommand.h"
-#include "openspecfilecommand.h"
 #include "mainwindow.h"
+#include "markupdatescommand.h"
 #include "modelutil.h"
 #include "modmanguiapplication.h"
 #include "modspecpreviewmodel.h"
 #include "modssortfilterproxymodel.h"
+#include "openspecfilecommand.h"
 #include "settingsdialog.h"
 
 #include <QAbstractItemModel>
@@ -163,9 +161,9 @@ void MainWindow::createMenuActions()
     cacheUpdateAct = new QAction(tr("Download &Updates"), this);
     cacheUpdateAct->setStatusTip(tr("Check for and download updates for all mods in the cache"));
     connect(cacheUpdateAct, &QAction::triggered, this, &MainWindow::cacheUpdate);
-    installedUpdateAct = new QAction(tr("Install &Updates"), this);
-    installedUpdateAct->setStatusTip(tr("Updates currently installed mods to their latest downloaded version."));
-    connect(installedUpdateAct, &QAction::triggered, this, &MainWindow::installedUpdate);
+    markUpdatesAct = new QAction(tr("Mark &Updates For Installation"), this);
+    markUpdatesAct->setStatusTip(tr("Propose updating all installed mods with newer downloaded versions. Click \"Apply\" to install."));
+    connect(markUpdatesAct, &QAction::triggered, this, &MainWindow::markUpdates);
     cacheAddModAct = new QAction(tr("&Add Workshop Mod"), this);
     cacheAddModAct->setStatusTip(tr("Download and add a mod to the cache"));
     connect(cacheAddModAct, &QAction::triggered, this, &MainWindow::cacheAddMod);
@@ -184,7 +182,7 @@ void MainWindow::createMenuActions()
     fileMenu->addAction(quitAct);
     QMenu *cacheMenu = menuBar()->addMenu(tr("&Cache"));
     cacheMenu->addAction(cacheUpdateAct);
-    cacheMenu->addAction(installedUpdateAct);
+    cacheMenu->addAction(markUpdatesAct);
     cacheMenu->addSeparator();
     cacheMenu->addAction(cacheAddModAct);
     cacheMenu->addAction(cacheImportInstalledAct);
@@ -200,7 +198,7 @@ void MainWindow::setActionsEnabled(bool enabled)
     saveCacheSpecAct->setEnabled(enabled);
     settingsAct->setEnabled(enabled);
     cacheUpdateAct->setEnabled(enabled);
-    installedUpdateAct->setEnabled(enabled);
+    markUpdatesAct->setEnabled(enabled);
     cacheAddModAct->setEnabled(enabled);
     cacheImportInstalledAct->setEnabled(enabled);
 }
@@ -309,6 +307,14 @@ void MainWindow::cacheUpdate()
     command->execute();
 }
 
+void MainWindow::markUpdates()
+{
+    actionStarted();
+    MarkUpdatesCommand *command = new MarkUpdatesCommand(app, modsPreviewModel, this);
+    connect(command, &MarkUpdatesCommand::finished, this, &MainWindow::actionFinished);
+    command->execute();
+}
+
 void MainWindow::cacheAddMod()
 {
     actionStarted();
@@ -326,18 +332,6 @@ void MainWindow::cacheImportInstalled()
     CacheImportInstalledCommand *command = new CacheImportInstalledCommand(app, this);
     connect(command, &CacheImportInstalledCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &CacheImportInstalledCommand::finished, this, &MainWindow::actionFinished);
-    command->execute();
-}
-
-// Installed actions.
-
-void MainWindow::installedUpdate()
-{
-    logDisplay->appendPlainText("\n--");
-    actionStarted();
-    InstalledUpdateCommand *command = new InstalledUpdateCommand(app, this);
-    connect(command, &InstalledUpdateCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &InstalledUpdateCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 

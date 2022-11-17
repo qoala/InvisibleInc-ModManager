@@ -9,10 +9,11 @@ set(IIMODMAN_GUI_SOURCES
     # cachestatuscommand.cpp
     cacheupdatecommand.cpp
     # installedstatuscommand.cpp
-    installedupdatecommand.cpp
+    # installedupdatecommand.cpp
     # installedsyncfilecommand.cpp
     main.cpp
     mainwindow.cpp
+    markupdatescommand.cpp
     modelutil.cpp
     modsmodel.cpp
     modspecpreviewmodel.cpp
