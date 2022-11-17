@@ -4,6 +4,7 @@
 #include "command.h"
 
 #include <QList>
+#include <optional>
 
 namespace iimodmanager {
 

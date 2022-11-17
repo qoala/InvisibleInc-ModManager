@@ -8,6 +8,7 @@
 #include <QDir>
 #include <QList>
 #include <QLoggingCategory>
+#include <optional>
 #include <modsignature.h>
 
 namespace iimodmanager {

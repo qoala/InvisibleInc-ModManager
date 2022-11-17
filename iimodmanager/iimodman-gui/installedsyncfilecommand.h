@@ -2,6 +2,7 @@
 #define INSTALLEDSYNCFILECOMMAND_H
 
 # include<QObject>
+#include <optional>
 # include<modlist.h>
 # include<modspec.h>
 

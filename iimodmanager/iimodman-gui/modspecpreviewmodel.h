@@ -4,6 +4,7 @@
 #include "modsmodel.h"
 
 #include <QAbstractItemModel>
+#include <optional>
 #include <modspec.h>
 
 namespace iimodmanager {

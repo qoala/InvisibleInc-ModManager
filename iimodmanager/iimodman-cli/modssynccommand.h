@@ -3,6 +3,7 @@
 
 #include "command.h"
 
+#include <optional>
 #include <modspec.h>
 
 namespace iimodmanager {

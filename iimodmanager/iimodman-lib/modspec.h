@@ -8,6 +8,7 @@
 #include <QString>
 #include <QObject>
 #include <memory>
+#include <optional>
 
 class QIODevice;
 template <typename T> class QList;

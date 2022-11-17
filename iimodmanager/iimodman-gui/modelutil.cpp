@@ -1,6 +1,7 @@
 #include "modelutil.h"
 
 #include <QDateTime>
+#include <optional>
 #include <modcache.h>
 #include <modinfo.h>
 #include <modlist.h>
