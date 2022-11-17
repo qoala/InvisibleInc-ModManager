@@ -72,6 +72,9 @@ namespace modelutil {
     inline QVariant toVariant(Status status)
     { return QVariant::fromValue<Status>(status); };
 
+    inline QVariant nullData(int role, Status baseStatus = NO_STATUS)
+    { return (role == STATUS_ROLE) ? toVariant(baseStatus | NULL_STATUS) : QVariant(); };
+
     //! Returns row-level status flags.
     Status modStatus(const CachedMod *cm, const InstalledMod *im = nullptr, int role = STATUS_ROLE);
 

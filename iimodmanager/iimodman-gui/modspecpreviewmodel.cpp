@@ -1,5 +1,4 @@
 #include "modelutil.h"
-#include "modsmodel.h"
 #include "modspecpreviewmodel.h"
 
 #include <modcache.h>
@@ -91,12 +90,7 @@ namespace ColumnData {
     QVariant targetVersion(const CachedMod *cm, const InstalledMod *im, const PendingChange &pc, Status baseStatus, int role)
     {
         if (pc.type == PendingChange::REMOVE)
-        {
-            if (role == modelutil::STATUS_ROLE)
-                return modelutil::toVariant(baseStatus | modelutil::NULL_STATUS);
-            else
-                return QVariant();
-        }
+            return modelutil::nullData(role, baseStatus);
 
         QString version = versionString(cm, im, pc);
         return modelutil::versionData(version, baseStatus, role);
@@ -115,12 +109,7 @@ namespace ColumnData {
     QVariant targetTime(const CachedMod *cm, const PendingChange &pc, Status baseStatus, int role)
     {
         if (pc.type == PendingChange::REMOVE)
-        {
-            if (role == modelutil::STATUS_ROLE)
-                return modelutil::toVariant(baseStatus | modelutil::NULL_STATUS);
-            else
-                return QVariant();
-        }
+            return modelutil::nullData(role, baseStatus);
 
         const CachedVersion *cv = cm ? cachedVersion(cm, pc) : nullptr;
         if (!cv && role == modelutil::STATUS_ROLE)
@@ -229,7 +218,7 @@ int ModSpecPreviewModel::columnMax() const
     return COLUMN_MAX;
 }
 
-bool isBase(int column)
+static bool isBase(int column)
 {
     switch (column)
     {
@@ -250,7 +239,7 @@ inline bool isBase(const QModelIndex &index)
             || (!index.parent().isValid() && isBase(index.column())));
 }
 
-int toBaseColumn(int column) {
+static int toBaseColumn(int column) {
     switch (column)
     {
     case ModSpecPreviewModel::NAME:
@@ -423,12 +412,8 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
         }
         break;
     case modelutil::CANCEL_SORTING_ROLE:
-        if (section == ACTION)
-            return QVariant::fromValue<QVector<int>>({ACTION, TARGET_VERSION, TARGET_VERSION_TIME});
-        break;
-    case Qt::BackgroundRole:
-        // TODO
-        return QVariant();
+        return QVariant::fromValue<QVector<int>>({ACTION, TARGET_VERSION, TARGET_VERSION_TIME});
+    // TODO: case Qt::BackgroundRole:
     }
 
     return QVariant();

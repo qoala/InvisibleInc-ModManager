@@ -40,7 +40,7 @@ SettingsDialog::SettingsDialog(ModManGuiApplication  &app, QWidget *parent)
     loadSettings();
     connect(this, &QDialog::accepted, this, &SettingsDialog::applySettings);
 
-    setWindowTitle(tr("Preferences"));
+    setWindowTitle(tr("II Mod Manager: Preferences"));
     setSizeGripEnabled(true);
     resize(800, 0);
 }

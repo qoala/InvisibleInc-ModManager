@@ -1,5 +1,6 @@
 #include "applypreviewcommand.h"
 #include "cacheaddcommand.h"
+#include "cacheimportinstalledcommand.h"
 #include "cachesavecommand.h"
 #include "cachestatuscommand.h"
 #include "cacheupdatecommand.h"
@@ -168,6 +169,9 @@ void MainWindow::createMenuActions()
     cacheAddModAct = new QAction(tr("&Add Workshop Mod"), this);
     cacheAddModAct->setStatusTip(tr("Download and add a mod to the cache"));
     connect(cacheAddModAct, &QAction::triggered, this, &MainWindow::cacheAddMod);
+    cacheImportInstalledAct = new QAction(tr("&Import installed mods"), this);
+    cacheImportInstalledAct->setStatusTip(tr("Copy existing installed mods to the download cache"));
+    connect(cacheImportInstalledAct, &QAction::triggered, this, &MainWindow::cacheImportInstalled);
 
     installedStatusAct = new QAction(tr("&Log Status"), this);
     installedStatusAct->setStatusTip(tr("List currently installed mods to the log."));
@@ -190,6 +194,7 @@ void MainWindow::createMenuActions()
     cacheMenu->addAction(cacheUpdateAct);
     cacheMenu->addSeparator();
     cacheMenu->addAction(cacheAddModAct);
+    cacheMenu->addAction(cacheImportInstalledAct);
     QMenu *installedMenu = menuBar()->addMenu(tr("&Installed"));
     installedMenu->addAction(installedStatusAct);
     installedMenu->addAction(installedUpdateAct);
@@ -207,6 +212,7 @@ void MainWindow::setActionsEnabled(bool enabled)
     cacheStatusAct->setEnabled(enabled);
     cacheUpdateAct->setEnabled(enabled);
     cacheAddModAct->setEnabled(enabled);
+    cacheImportInstalledAct->setEnabled(enabled);
     installedStatusAct->setEnabled(enabled);
     installedUpdateAct->setEnabled(enabled);
 }
@@ -333,6 +339,15 @@ void MainWindow::cacheAddMod()
     connect(command, &CacheAddCommand::finished, this, &MainWindow::actionFinished);
     connect(command, &CacheAddCommand::beginProgress, this, &MainWindow::beginProgress);
     connect(command, &CacheAddCommand::updateProgress, this->logProgress, &QProgressBar::setValue);
+    command->execute();
+}
+
+void MainWindow::cacheImportInstalled()
+{
+    actionStarted();
+    CacheImportInstalledCommand *command = new CacheImportInstalledCommand(app, this);
+    connect(command, &CacheImportInstalledCommand::textOutput, this, &MainWindow::writeText);
+    connect(command, &CacheImportInstalledCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 

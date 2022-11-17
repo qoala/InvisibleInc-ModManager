@@ -44,11 +44,7 @@ namespace ColumnData {
         Status status = modelutil::modStatus(cm, im, role);
 
         if (!im)
-        {
-            if (role == modelutil::STATUS_ROLE)
-                return modelutil::toVariant(status | modelutil::NULL_STATUS);
-            return QVariant();
-        }
+            return modelutil::nullData(role, status);
 
         const QString &version = im->info().version();
         return modelutil::versionData(version, status, role);
@@ -64,13 +60,13 @@ namespace ColumnData {
             if (role == Qt::DisplayRole)
                 return QStringLiteral("N/A");
             else if (role == Qt::ToolTipRole)
+            {
                 if (cm)
                     return QStringLiteral("(needs download)");
                 else
                     return QStringLiteral("(needs copy installed to cache)");
-            else if (role == modelutil::STATUS_ROLE)
-                return modelutil::toVariant(status | modelutil::NULL_STATUS);
-            return QVariant();
+            }
+            return modelutil::nullData(role, status);
         }
 
         const QString version = cv->version().value_or(QString());
@@ -82,12 +78,7 @@ namespace ColumnData {
         Status status = modelutil::modStatus(cm, im, role);
 
         if (!im)
-        {
-            if (role == modelutil::STATUS_ROLE)
-                return modelutil::toVariant(status | modelutil::NULL_STATUS);
-            else
-                return QVariant();
-        }
+            return modelutil::nullData(role, status);
 
         const CachedVersion *cv = im->cacheVersion();
         if (!cv && role == modelutil::STATUS_ROLE)

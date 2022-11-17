@@ -93,7 +93,7 @@ private:
     };
 
     // Persistent tracking of mods in the installed, but not download-cached lists.
-    QVector<int> uncachedIdxs_;
+    QVector<int> uncachedIdxs_; // List of uncached mods (value is the index into modList).
     QHash<QString, int> uncachedIds_; // Mod ID to index in uncachedIdxs.
 
     // Temporary storage between aboutTo and completion signals.
@@ -101,6 +101,7 @@ private:
     QModelIndexList savedPersistentIndexes;
     QVector<QString> savedPersistentMappings;
 
+    //! Uncached mods in row order ([0] = the first row after the cached rows) (value = index into modList).
     inline const QVector<int> &uncachedIdxs() const { return uncachedIdxs_; };
     //! Returns the row number for an uncached mod ID, or -1 if not found.
     //! \sa ModCache::modIndex

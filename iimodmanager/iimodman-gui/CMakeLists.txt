@@ -3,6 +3,8 @@ project(IIModManager_GUI VERSION ${IIMODMAN_VERSION})
 set(IIMODMAN_GUI_SOURCES
     applypreviewcommand.cpp
     cacheaddcommand.cpp
+    cacheimportinstalledcommand.cpp
+    cacheimportmodel.cpp
     cachesavecommand.cpp
     cachestatuscommand.cpp
     cacheupdatecommand.cpp
