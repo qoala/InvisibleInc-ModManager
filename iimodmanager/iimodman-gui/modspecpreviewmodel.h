@@ -28,12 +28,11 @@ public:
         ACTION,
 
         INSTALLED_VERSION, // from base
-        INSTALLED_VERSION_TIME, // from base
-
         TARGET_VERSION,
-        TARGET_VERSION_TIME,
-
         LATEST_VERSION, // from base
+
+        INSTALLED_VERSION_TIME, // from base
+        TARGET_VERSION_TIME,
         CACHE_UPDATE_TIME, // from base
 
         COLUMN_MAX = CACHE_UPDATE_TIME,

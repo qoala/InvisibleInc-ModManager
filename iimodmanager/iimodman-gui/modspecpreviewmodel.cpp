@@ -1,6 +1,7 @@
 #include "modelutil.h"
 #include "modspecpreviewmodel.h"
 
+#include <QColor>
 #include <modcache.h>
 #include <modinfo.h>
 #include <modlist.h>
@@ -91,6 +92,8 @@ namespace ColumnData {
     {
         if (pc.type == PendingChange::REMOVE)
             return modelutil::nullData(role, baseStatus);
+        if (role == Qt::ForegroundRole && !pc.isActive())
+            return QColor(Qt::gray);
 
         QString version = versionString(cm, im, pc);
         return modelutil::versionData(version, baseStatus, role);
@@ -110,6 +113,8 @@ namespace ColumnData {
     {
         if (pc.type == PendingChange::REMOVE)
             return modelutil::nullData(role, baseStatus);
+        if (role == Qt::ForegroundRole && !pc.isActive())
+            return QColor(Qt::gray);
 
         const CachedVersion *cv = cm ? cachedVersion(cm, pc) : nullptr;
         if (!cv && role == modelutil::STATUS_ROLE)
@@ -294,7 +299,7 @@ ModSpecPreviewModel::PendingChange *ModSpecPreviewModel::seekMutablePendingRow(i
 
 QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 {
-    if (isBase(index))
+    if (role != Qt::ForegroundRole && isBase(index))
         return ModsModel::data(toBaseColumn(this, index), role);
 
     const CachedMod *cm;
@@ -308,10 +313,13 @@ QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
         // Not installed and not trying to change that.
         if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(baseStatus | modelutil::NULL_STATUS);
-        else if (role == modelutil::SORT_ROLE)
-            return 0;
+        else if (role == modelutil::SORT_ROLE && index.column() == ACTION)
+            // No-status mods are below all marked mods. No-version mods are below event them.
+            return (cm && cm->downloaded()) ? 0 : -1;
         else if (role == Qt::CheckStateRole && index.column() == ACTION)
             return Qt::Unchecked;
+        else if (role == Qt::ForegroundRole && (!cm || !cm->downloaded()))
+            return QColor(Qt::gray);
         else
             return QVariant();
     }
@@ -413,7 +421,6 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
         break;
     case modelutil::CANCEL_SORTING_ROLE:
         return QVariant::fromValue<QVector<int>>({ACTION, TARGET_VERSION, TARGET_VERSION_TIME});
-    // TODO: case Qt::BackgroundRole:
     }
 
     return QVariant();

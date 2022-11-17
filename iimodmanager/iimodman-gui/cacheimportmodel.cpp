@@ -174,7 +174,6 @@ QVariant CacheImportModel::headerData(int section, Qt::Orientation orientation, 
         break;
     case modelutil::CANCEL_SORTING_ROLE:
         return QVariant::fromValue<QVector<int>>({ACTION, ID, STEAM_UPDATE_TIME});
-    // TODO: case Qt::BackgroundRole:
     }
 
     return QVariant();
