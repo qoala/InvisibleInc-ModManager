@@ -99,6 +99,19 @@ namespace ColumnLessThan {
 ModsSortFilterProxyModel::ModsSortFilterProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent), filterStatusColumn(0), sortCancelled(false) {}
 
+void ModsSortFilterProxyModel::setSourceModel(QAbstractItemModel *newSource)
+{
+    auto *oldSource = sourceModel();
+    if (oldSource != newSource)
+    {
+        if (oldSource)
+            disconnect(oldSource, &QAbstractItemModel::dataChanged, this, &ModsSortFilterProxyModel::sourceDataChanged);
+        connect(newSource, &QAbstractItemModel::dataChanged, this, &ModsSortFilterProxyModel::sourceDataChanged);
+    }
+
+    QSortFilterProxyModel::setSourceModel(newSource);
+}
+
 void ModsSortFilterProxyModel::setFilterTextColumns(const QVector<int> &columns)
 {
     filterTextColumns = columns;
@@ -207,6 +220,15 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
     default:
         return QSortFilterProxyModel::lessThan(left, right);
     }
+}
+
+void ModsSortFilterProxyModel::sourceDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
+{
+    Q_UNUSED(topLeft)
+    Q_UNUSED(bottomRight)
+
+    if (sortCancelled && roles.contains(modelutil::CANCEL_SORTING_ROLE))
+        sortCancelled = false;
 }
 
 } // namespace iimodmanager

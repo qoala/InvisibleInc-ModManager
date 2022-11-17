@@ -123,6 +123,7 @@ public slots:
 
 protected:
     int columnMax() const override;
+    void reportCacheChanged(const std::function<void ()> &cb, const QString &modId = QString()) override;
     void reportAllChanged(const std::function<void ()> &cb, const QString &modId = QString()) override;
 
 private:
@@ -154,7 +155,7 @@ private:
     inline void setDirty() const { dirty = true; };
     //! Report the the visible model has changed.
     //! Pass the updated mod ID for a single mod; leave blank for all mods.
-    void reportSpecChanged(const QString &modId = QString(), int row = -1);
+    void reportSpecChanged(const QString &modId = QString(), int row = -1, bool modifiedByView = false);
 
     std::optional<PendingChange> toPendingChange(const SpecMod &specMod) const;
     void generateModSpec() const;

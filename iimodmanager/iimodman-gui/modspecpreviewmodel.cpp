@@ -373,7 +373,7 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
         }
 
         setDirty();
-        reportSpecChanged(pc.modId);
+        reportSpecChanged(pc.modId, row, true);
         return true;
     }
     return false;
@@ -687,6 +687,12 @@ void ModSpecPreviewModel::refreshPendingChanges()
         refreshPendingChange(pc);
 }
 
+void ModSpecPreviewModel::reportCacheChanged(const std::function<void ()> &cb, const QString &modId)
+{
+    emit dataChanged(QModelIndex(), QModelIndex(), {modelutil::CANCEL_SORTING_ROLE});
+    ModsModel::reportCacheChanged(cb, modId);
+}
+
 void ModSpecPreviewModel::reportAllChanged(const std::function<void ()> &cb, const QString &modId)
 {
     if (modId.isEmpty())
@@ -694,6 +700,7 @@ void ModSpecPreviewModel::reportAllChanged(const std::function<void ()> &cb, con
     else if (pendingChanges.contains(modId))
         refreshPendingChange(pendingChanges[modId]);
 
+    emit dataChanged(QModelIndex(), QModelIndex(), {modelutil::CANCEL_SORTING_ROLE});
     ModsModel::reportAllChanged(cb, modId);
 
     bool emptyState = isEmpty();
@@ -704,7 +711,7 @@ void ModSpecPreviewModel::reportAllChanged(const std::function<void ()> &cb, con
     }
 }
 
-void ModSpecPreviewModel::reportSpecChanged(const QString &modId, int row)
+void ModSpecPreviewModel::reportSpecChanged(const QString &modId, int row, bool modifiedByView)
 {
     int startRow, endRow;
 
@@ -723,6 +730,8 @@ void ModSpecPreviewModel::reportSpecChanged(const QString &modId, int row)
         // Update a single mod row.
         startRow = endRow;
 
+    if (!modifiedByView)
+        emit dataChanged(QModelIndex(), QModelIndex(), {modelutil::CANCEL_SORTING_ROLE});
     emit dataChanged(
             createIndex(startRow, columnMin()),
             createIndex(endRow, columnMax()));

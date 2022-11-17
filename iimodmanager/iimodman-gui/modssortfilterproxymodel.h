@@ -20,6 +20,8 @@ class ModsSortFilterProxyModel : public QSortFilterProxyModel
 public:
     ModsSortFilterProxyModel(QObject *parent = nullptr);
 
+    void setSourceModel(QAbstractItemModel *sourceModel) override;
+
     //! Overridden just to apply CANCEL_SORT_ROLE.
     //! Sorting is cancelled until the next time ::sort is called.
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::DisplayRole) override;
@@ -36,6 +38,9 @@ public slots:
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
+
+private slots:
+    void sourceDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
 
 private:
     QVector<int> filterTextColumns;

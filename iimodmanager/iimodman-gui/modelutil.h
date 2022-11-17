@@ -23,6 +23,7 @@ namespace modelutil {
         //! Used on a header when data is modified to identify columns that depend on this item.
         //! If the current sort is one of those columns, then the current sorting is cancelled.
         //! (QVector<int>)
+        //! Declared explicitly in a dataChanged signal to clear cancelled sorting.
         CANCEL_SORTING_ROLE = 0x102,
     };
 
