@@ -25,6 +25,10 @@
 #include <modlist.h>
 #include <modspec.h>
 
+#ifndef IIMODMANVERSION
+#  define IIMODMANVERSION ""
+#endif
+
 namespace iimodmanager {
 
 MainWindow::MainWindow(ModManGuiApplication &app)
@@ -34,7 +38,7 @@ MainWindow::MainWindow(ModManGuiApplication &app)
     createLogDock();
     createMenuActions();
 
-    setWindowTitle(tr("II Mod Manager"));
+    setWindowTitle(tr("II Mod Manager %1").arg(IIMODMAN_VERSION));
     resize(980, 460);
 }
 
