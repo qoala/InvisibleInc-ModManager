@@ -26,7 +26,7 @@ void CacheSaveCommand::execute()
     deleteLater();
 }
 
-void writeHeader(QTextStream &out)
+static void writeHeader(QTextStream &out)
 {
     out << QStringLiteral("# II Mod Manager mod-spec") << Qt::endl;
     out << QStringLiteral("# Blank lines and lines starting with '#' are ignored") << Qt::endl;

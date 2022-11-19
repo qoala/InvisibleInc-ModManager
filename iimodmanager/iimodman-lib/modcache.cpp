@@ -170,12 +170,12 @@ const QJsonObject readJSON(QIODevice &file)
     return json.object();
 }
 
-bool compareModIds(const CachedMod &a, const CachedMod &b)
+static bool compareModIds(const CachedMod &a, const CachedMod &b)
 {
     return a.id() < b.id();
 }
 
-bool compareVersionIds(const CachedVersion &a, const CachedVersion &b)
+static bool compareVersionIds(const CachedVersion &a, const CachedVersion &b)
 {
     return a.id() > b.id();
 }
@@ -189,7 +189,7 @@ bool compareVersionIds(const CachedVersion &a, const CachedVersion &b)
  * The Mod Uploader creates non-conforming ZIP files using the local path separator, but QuaZip::QuaZip explicitly does not support such files.
  * In that case, on non-Windows systems, files were incorrectly extracted with "path\filename".
  */
-bool fixFileNames(const QDir &cacheDir, const QDir &dir, const QStringList &filePaths, QString *errorInfo = nullptr)
+static bool fixFileNames(const QDir &cacheDir, const QDir &dir, const QStringList &filePaths, QString *errorInfo = nullptr)
 {
     for (const QString &absolutePath : filePaths)
     {

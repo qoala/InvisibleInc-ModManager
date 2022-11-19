@@ -43,7 +43,7 @@ ModDownloadCall *ModDownloader::modDownloadCall(ModCache &cache)
     return call;
 }
 
-SteamModInfo parseSteamModInfo(const QByteArray rawData, const QString &debugContext, QString *errorInfo = nullptr)
+static SteamModInfo parseSteamModInfo(const QByteArray rawData, const QString &debugContext, QString *errorInfo = nullptr)
 {
         SteamModInfo result;
 

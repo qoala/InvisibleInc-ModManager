@@ -215,7 +215,7 @@ QVariant CacheImportModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-bool containsDupe(const QHash<QString, CacheImportModel::PendingImport> &pendingImports, const QString &newId, const QString &existingKey)
+static bool containsDupe(const QHash<QString, CacheImportModel::PendingImport> &pendingImports, const QString &newId, const QString &existingKey)
 {
     for (const auto &pi : pendingImports)
         if (pi.modId == newId && pi.installedId != existingKey)

@@ -123,7 +123,7 @@ namespace ColumnData {
     }
 }
 
-std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const InstalledMod *im)
+static std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const InstalledMod *im)
 {
     using PendingChange = ModSpecPreviewModel::PendingChange;
 
@@ -140,7 +140,7 @@ std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const InstalledMod 
     return pc;
 }
 
-std::optional<ModSpecPreviewModel::PendingChange> useLatest(const CachedMod *cm, const InstalledMod *im)
+static std::optional<ModSpecPreviewModel::PendingChange> useLatest(const CachedMod *cm, const InstalledMod *im)
 {
     using PendingChange = ModSpecPreviewModel::PendingChange;
 
