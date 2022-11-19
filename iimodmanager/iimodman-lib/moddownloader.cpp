@@ -43,7 +43,7 @@ ModDownloadCall *ModDownloader::modDownloadCall(ModCache &cache)
     return call;
 }
 
-SteamModInfo parseSteamModInfo(const QByteArray rawData, const QString &debugContext)
+static SteamModInfo parseSteamModInfo(const QByteArray rawData, const QString &debugContext, QString *errorInfo = nullptr)
 {
         SteamModInfo result;
 
@@ -53,11 +53,15 @@ SteamModInfo parseSteamModInfo(const QByteArray rawData, const QString &debugCon
         if (json.isNull() || !json.isObject())
         {
             qCWarning(steamAPI).noquote() << debugContext << "Invalid response from Steam API:" << errors.errorString();
+            if (errorInfo)
+                *errorInfo = QStringLiteral("Invalid response from Steam API: %1").arg(errors.errorString());
             return result;
         }
         if (!json.isObject())
         {
             qCWarning(steamAPI).noquote() << debugContext << "Invalid response from Steam API: Not a JSON object.";
+            if (errorInfo)
+                *errorInfo = QStringLiteral("Invalid response from Steam API: Not a JSON object.");
             return result;
         }
 
@@ -65,6 +69,8 @@ SteamModInfo parseSteamModInfo(const QByteArray rawData, const QString &debugCon
         if (!response.value("resultcount").isDouble() || response.value("resultcount").toInt(0) < 1)
         {
             qCWarning(steamAPI).noquote() << debugContext << "Steam API: No results.";
+            if (errorInfo)
+                *errorInfo = QStringLiteral("No results from Steam API.");
             return result;
         }
         assert(response.value("resultcount").toInt(0) >= 1);
@@ -74,12 +80,16 @@ SteamModInfo parseSteamModInfo(const QByteArray rawData, const QString &debugCon
         if (appId != 243970)
         {
             qCWarning(steamAPI).noquote() << debugContext << "Steam API: Mod is for non-Invisible-Inc app:" << appId;
+            if (errorInfo)
+                *errorInfo = QStringLiteral("Mod is for non-Invisible-Inc app: ID %1").arg(appId);
             return result;
         }
         QString filename = fileDetail.value("filename").toString();
         if (!filename.endsWith(".zip"))
         {
             qCWarning(steamAPI).noquote() << debugContext << "Steam API: File is not a .zip, possibly not a Mod:" << filename;
+            if (errorInfo)
+                *errorInfo = QStringLiteral("File is not a .zip, possibly not a Mod: %1").arg(filename);
             return result;
         }
 
@@ -92,11 +102,15 @@ SteamModInfo parseSteamModInfo(const QByteArray rawData, const QString &debugCon
         if (workshopId.isEmpty())
         {
             qCWarning(steamAPI).noquote() << debugContext << "Steam API: no publishedfileid";
+            if (errorInfo)
+                *errorInfo = QStringLiteral("Steam API response is missing publishedfileid");
             return result;
         }
         if (downloadUrl.isEmpty())
         {
             qCWarning(steamAPI).noquote() << debugContext << "Steam API: no file_url";
+            if (errorInfo)
+                *errorInfo = QStringLiteral("Steam API response is missing file_url");
             return result;
         }
 
@@ -128,7 +142,7 @@ void ModInfoCall::start(const QString &id)
     connect(reply, &QNetworkReply::finished, this, [this, callDebugInfo, reply]
     {
         qCDebug(steamAPI).noquote() << callDebugInfo << "Request End";
-        result_ = parseSteamModInfo(reply->readAll(), callDebugInfo);
+        result_ = parseSteamModInfo(reply->readAll(), callDebugInfo, &errorDetail_);
         reply->deleteLater();
         emit finished();
     });
@@ -167,7 +181,7 @@ void ModDownloadCall::start(const SteamModInfo &info)
         reply->deleteLater();
 
         zipFile->seek(0);
-        const CachedVersion *v = cache_.addZipVersion(info_, *zipFile);
+        const CachedVersion *v = cache_.addZipVersion(info_, *zipFile, &errorDetail_);
         if (v)
             resultVersionId_ = v->id();
         else

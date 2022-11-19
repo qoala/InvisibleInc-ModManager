@@ -27,12 +27,13 @@ public:
     const QString modPath() const;
     const QString savePath() const;
 
-private:
-    QSettings settings_;
-
+    // Defaults
     const QString defaultCachePath() const;
     const QString defaultInstallPath() const;
     const QString defaultLocalPath() const;
+
+private:
+    QSettings settings_;
 };
 
 }  // namespace iimodmanager

@@ -25,7 +25,7 @@ void CacheUpdateCommand::addTerminalArgs(QCommandLineParser &parser) const
                       });
 }
 
-void addDownloaded(QStringList &modIds, const ModCache &cache)
+static void addDownloaded(QStringList &modIds, const ModCache &cache)
 {
     const QList<CachedMod> &mods = cache.mods();
     modIds.reserve(modIds.size() + mods.size());
@@ -36,7 +36,7 @@ void addDownloaded(QStringList &modIds, const ModCache &cache)
     }
 }
 
-void addAllCached(QStringList &modIds, const ModCache &cache)
+static void addAllCached(QStringList &modIds, const ModCache &cache)
 {
     const QList<CachedMod> &mods = cache.mods();
     modIds.reserve(modIds.size() + mods.size());

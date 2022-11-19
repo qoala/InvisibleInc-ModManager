@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QList>
+#include <QIODevice>
 #include <QMap>
 #include <QString>
 #include <stdexcept>
@@ -22,13 +23,13 @@ const qsizetype specLineSectionLength = 5;
 class ModSpec::Impl
 {
 public:
-    Impl(const QList<SpecMod> &mods);
+    Impl();
 
     QList<SpecMod> mods;
     //! Index of mods by mod ID.
     QMap<QString, qsizetype> modIds;
 
-    bool appendFromFile(QIODevice &file, const QString &debugRef);
+    bool appendFromFile(QTextStream &in, const QString &debugRef);
 };
 
 class SpecMod::Impl
@@ -45,12 +46,8 @@ public:
     QString asVersionedSpecString() const;
 };
 
-ModSpec::ModSpec()
-    : ModSpec(QList<SpecMod>())
-{}
-
-ModSpec::ModSpec(const QList<SpecMod> &mods)
-    : impl{std::make_unique<Impl>(mods)}
+ModSpec::ModSpec(QObject *parent)
+    : QObject(parent), impl{std::make_unique<Impl>()}
 {}
 
 const QList<SpecMod> ModSpec::mods() const
@@ -61,6 +58,11 @@ const QList<SpecMod> ModSpec::mods() const
 bool ModSpec::contains(QString modId) const
 {
     return impl->modIds.contains(modId);
+}
+
+void ModSpec::clear()
+{
+    impl->mods.clear();
 }
 
 void ModSpec::reserve(qsizetype size)
@@ -76,39 +78,44 @@ void ModSpec::append(const SpecMod &specMod)
 
 bool ModSpec::appendFromFile(QIODevice &file, const QString &debugRef)
 {
-    return impl->appendFromFile(file, debugRef);
+    if (file.isOpen() || file.open(QIODevice::ReadOnly|QIODevice::Text))
+    {
+        QTextStream in(&file);
+        return impl->appendFromFile(in, debugRef);
+    }
+    return false;
+}
+
+bool ModSpec::appendFromFile(const QByteArray &content, const QString &debugRef)
+{
+    QTextStream in(content);
+    return impl->appendFromFile(in, debugRef);
 }
 
 ModSpec::~ModSpec() = default;
 
-ModSpec::Impl::Impl(const QList<SpecMod> &mods)
-    : mods(mods)
+ModSpec::Impl::Impl()
 {}
 
-bool ModSpec::Impl::appendFromFile(QIODevice &file, const QString &debugRef)
+bool ModSpec::Impl::appendFromFile(QTextStream &in, const QString &debugRef)
 {
-    if (file.isOpen() || file.open(QIODevice::ReadOnly|QIODevice::Text))
+    qsizetype lineNo = 0;
+    while (!in.atEnd())
     {
-        QTextStream in(&file);
-        qsizetype lineNo = 0;
-        while (!in.atEnd())
-        {
-            QString line = in.readLine().simplified();
-            ++lineNo;
-            // skip blank lines and comment lines
-            if (line.isEmpty() || line.startsWith('#'))
-                continue;
+        QString line = in.readLine().simplified();
+        ++lineNo;
+        // skip blank lines and comment lines
+        if (line.isEmpty() || line.startsWith('#'))
+            continue;
 
-            std::optional<SpecMod> sm = SpecMod::fromSpecString(line, debugRef, lineNo);
-            if (sm)
-            {
-                modIds[sm->id()] = mods.size();
-                mods.append(*sm);
-            }
+        std::optional<SpecMod> sm = SpecMod::fromSpecString(line, debugRef, lineNo);
+        if (sm)
+        {
+            modIds[sm->id()] = mods.size();
+            mods.append(*sm);
         }
-        return true;
     }
-    return false;
+    return true;
 }
 
 SpecMod::SpecMod(const QString &id, const QString &name)

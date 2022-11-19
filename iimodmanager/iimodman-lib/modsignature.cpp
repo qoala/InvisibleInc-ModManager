@@ -10,7 +10,7 @@ namespace iimodmanager {
 Q_DECLARE_LOGGING_CATEGORY(modsig)
 Q_LOGGING_CATEGORY(modsig, "modsignature", QtWarningMsg)
 
-void addFile(QCryptographicHash &hash, const QDir &rootDir, QString filePath)
+static void addFile(QCryptographicHash &hash, const QDir &rootDir, QString filePath)
 {
     QString localPath = rootDir.relativeFilePath(filePath);
     qCDebug(modsig) << "Hashing" << localPath;
@@ -28,7 +28,7 @@ void addFile(QCryptographicHash &hash, const QDir &rootDir, QString filePath)
     }
 }
 
-void addDir(QCryptographicHash &hash, const QDir &rootDir, QString dirPath)
+static void addDir(QCryptographicHash &hash, const QDir &rootDir, QString dirPath)
 {
     QDir dir(dirPath);
 

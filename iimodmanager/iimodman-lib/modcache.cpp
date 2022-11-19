@@ -19,6 +19,12 @@ namespace iimodmanager {
 
 Q_LOGGING_CATEGORY(modcache, "modcache", QtWarningMsg)
 
+enum OperationContext
+{
+    COMPLETE_OP,
+    PARTIAL_OP,
+};
+
 //! Private implementation of ModCache.
 //! Additionally exposes methods to the CachedMod/CachedVersion children defined in this file.
 class ModCache::Impl
@@ -26,20 +32,22 @@ class ModCache::Impl
 public:
     Impl(const ModManConfig &config);
 
-    inline const QList<CachedMod> mods() const { return mods_; };
+    inline const QList<CachedMod> &mods() const { return mods_; };
     bool contains(const QString &id) const;
-    const CachedMod *mod(const QString &id) const;
+    //! Returns index of the given mod within the mods list, or -1 if not present.
+    int modIndex(const QString &id) const;
+    const CachedMod *mod(const QString &id, int *modIdx = nullptr) const;
 
-    CachedMod *mod(const QString &id);
+    CachedMod *mod(const QString &id, int *modIdx = nullptr);
 
-    CachedMod *addUnloaded(const SteamModInfo &steamInfo);
-    const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile);
-    const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
+    CachedMod *addUnloaded(const SteamModInfo &steamInfo, OperationContext context, int *modIdx = nullptr);
+    const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo = nullptr);
+    const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath, QString *errorInfo = nullptr);
     void refresh(RefreshLevel = FULL);
-    const CachedVersion *refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level = FULL);
     inline void save();
 
 // file-visibility:
+    ModCache *q;
     inline QString modPath(const QString &modId) const;
     inline QString modVersionPath(const QString &modId, const QString &versionId) const;
 
@@ -48,10 +56,11 @@ private:
     //! All cached mods.
     QList<CachedMod> mods_;
     //! Index of mods by mod ID.
-    QMap<QString, qsizetype> modIds_;
+    QHash<QString, qsizetype> modIds_;
 
     void sortMods();
     void refreshIndex();
+    const QHash<QString, QString> saveInstalledVersionIds() const;
     bool readModManDb();
     bool writeModManDb();
 };
@@ -71,10 +80,11 @@ public:
 // file-visibility:
     CachedVersion *version(const QString &versionId);
 
-    bool refresh(ModCache::RefreshLevel = ModCache::FULL);
-    CachedVersion *refreshVersion(const QString &versionId, ModCache::RefreshLevel = ModCache::FULL);
+    bool refresh(ModCache::RefreshLevel = ModCache::FULL, const QString &previousInstalledVersionId = QString());
+    CachedVersion *refreshVersion(const QString &versionId, ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr);
     bool updateFromSteam(const SteamModInfo &steamInfo);
-    const CachedVersion *markInstalledVersion(const QString &hash, const QString expectedVersionId);
+    const CachedVersion *markInstalledVersion(const QString &hash, const QString &expectedVersionId, bool *modified);
+    inline void unmarkInstalled() { installedVersion_ = nullptr; };
 
     bool readDb(const QJsonObject &modObject);
     void writeDb(QJsonObject &modObject) const;
@@ -87,7 +97,7 @@ private:
 
     CachedVersion *installedVersion_;
 
-    CachedVersion *findVersionByHash(const QString &hash, const QString expectedVersionId);
+    CachedVersion *findVersionByHash(const QString &hash, const QString &expectedVersionId);
     void sortVersions();
 };
 
@@ -111,15 +121,15 @@ public:
 
 // file-visibility:
     void setInstalled(bool value) { installed_ = value; };
-    bool refresh(ModCache::RefreshLevel = ModCache::FULL);
+    bool refresh(ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr) const;
 
 private:
     const ModCache::Impl &cache;
     const QString modId;
     QString id_;
-    ModInfo info_;
-    std::optional<QDateTime> timestamp_;
-    std::optional<QString> version_;
+    mutable ModInfo info_;
+    mutable std::optional<QDateTime> timestamp_;
+    mutable std::optional<QString> version_;
 
     bool installed_;
     mutable QString hash_;
@@ -135,7 +145,7 @@ const QString formatVersionTime(const QDateTime &versionTime)
 
 const QDateTime parseVersionTime(const QString &versionId)
 {
-    return QDateTime::fromString(QString(versionId).replace('_', ':'), Qt::ISODate);
+    return QDateTime::fromString(QString(versionId).left(20).replace('_', ':'), Qt::ISODate);
 }
 
 const QJsonObject readJSON(QIODevice &file)
@@ -160,12 +170,12 @@ const QJsonObject readJSON(QIODevice &file)
     return json.object();
 }
 
-bool compareModIds(const CachedMod &a, const CachedMod &b)
+static bool compareModIds(const CachedMod &a, const CachedMod &b)
 {
     return a.id() < b.id();
 }
 
-bool compareVersionIds(const CachedVersion &a, const CachedVersion &b)
+static bool compareVersionIds(const CachedVersion &a, const CachedVersion &b)
 {
     return a.id() > b.id();
 }
@@ -179,7 +189,7 @@ bool compareVersionIds(const CachedVersion &a, const CachedVersion &b)
  * The Mod Uploader creates non-conforming ZIP files using the local path separator, but QuaZip::QuaZip explicitly does not support such files.
  * In that case, on non-Windows systems, files were incorrectly extracted with "path\filename".
  */
-void fixFileNames(const QDir &cacheDir, const QDir &dir, const QStringList &filePaths)
+static bool fixFileNames(const QDir &cacheDir, const QDir &dir, const QStringList &filePaths, QString *errorInfo = nullptr)
 {
     for (const QString &absolutePath : filePaths)
     {
@@ -192,18 +202,29 @@ void fixFileNames(const QDir &cacheDir, const QDir &dir, const QStringList &file
             QString newPath = dir.absoluteFilePath(name.replace('\\', '/'));
 
             if (QDir().mkpath(QFileInfo(newPath).absolutePath()) && file.rename(newPath))
+            {
                 qCWarning(modcache).noquote() << QStringLiteral("Renamed %1 to %2").arg(cacheDir.relativeFilePath(absolutePath), cacheDir.relativeFilePath(newPath));
+            }
             else
-                qFatal("Failed to rename %s to %s", cacheDir.relativeFilePath(absolutePath).toUtf8().constData(), cacheDir.relativeFilePath(newPath).toUtf8().constData());
+            {
+                QString msg = QStringLiteral("Failed to rename %1 to %2").arg(cacheDir.relativeFilePath(absolutePath).toUtf8().constData(), cacheDir.relativeFilePath(newPath).toUtf8().constData());
+                qCCritical(modcache).noquote() << msg;
+                if (errorInfo)
+                    *errorInfo = msg;
+                return false;
+            }
         }
     }
+    return true;
 }
 
 ModCache::ModCache(const ModManConfig &config, QObject *parent)
     : QObject(parent), impl{std::make_unique<Impl>(config)}
-{}
+{
+    impl->q = this;
+}
 
-const QList<CachedMod> ModCache::mods() const
+const QList<CachedMod> &ModCache::mods() const
 {
     return impl->mods();
 }
@@ -213,6 +234,11 @@ bool ModCache::contains(const QString &id) const
     return impl->contains(id);
 }
 
+int ModCache::modIndex(const QString &id) const
+{
+    return impl->modIndex(id);
+}
+
 const CachedMod *ModCache::mod(const QString &id) const
 {
     return impl->mod(id);
@@ -220,17 +246,17 @@ const CachedMod *ModCache::mod(const QString &id) const
 
 const CachedMod *ModCache::addUnloaded(const SteamModInfo &steamInfo)
 {
-    return impl->addUnloaded(steamInfo);
+    return impl->addUnloaded(steamInfo, COMPLETE_OP);
 }
 
-const CachedVersion *ModCache::addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile)
+const CachedVersion *ModCache::addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo)
 {
-    return impl->addZipVersion(steamInfo, zipFile);
+    return impl->addZipVersion(steamInfo, zipFile, errorInfo);
 }
 
-const CachedVersion *ModCache::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath)
+const CachedVersion *ModCache::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath, QString *errorInfo)
 {
-    return impl->addModVersion(modId, versionId, folderPath);
+    return impl->addModVersion(modId, versionId, folderPath, errorInfo);
 }
 
 void ModCache::refresh(ModCache::RefreshLevel level)
@@ -240,7 +266,15 @@ void ModCache::refresh(ModCache::RefreshLevel level)
 
 const CachedVersion *ModCache::refreshVersion(const QString &modId, const QString &versionId, ModCache::RefreshLevel level)
 {
-    return impl->refreshVersion(modId, versionId, level);
+    int modIdx;
+    CachedMod *m = impl->mod(modId, &modIdx);
+    if (!m)
+        return nullptr;
+
+    emit aboutToRefresh({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
+    const CachedVersion *v = m->impl()->refreshVersion(versionId, level);
+    emit refreshed({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
+    return v;
 }
 
 void ModCache::saveMetadata()
@@ -248,12 +282,30 @@ void ModCache::saveMetadata()
     impl->save();
 }
 
-const CachedVersion *ModCache::markInstalledVersion(const QString &modId, const QString &hash, const QString expectedVersionId)
+const CachedVersion *ModCache::markInstalledVersion(const QString &modId, const QString &hash, const QString &expectedVersionId)
 {
-    CachedMod *mod = impl->mod(modId);
-    if (mod)
-        return mod->impl()->markInstalledVersion(hash, expectedVersionId);
+    int modIdx;
+    CachedMod *m = impl->mod(modId, &modIdx);
+    if (m)
+    {
+        bool modified = false;
+        const CachedVersion *v = m->impl()->markInstalledVersion(hash, expectedVersionId, &modified);
+        if (modified)
+            emit metadataChanged({modId}, {modIdx});
+        return v;
+    }
     return nullptr;
+}
+
+void ModCache::unmarkInstalledMod(const QString &modId)
+{
+    int modIdx;
+    CachedMod *m = impl->mod(modId, &modIdx);
+    if (m)
+    {
+        m->impl()->unmarkInstalled();
+        emit metadataChanged({modId}, {modIdx});
+    }
 }
 
 ModCache::~ModCache() = default;
@@ -267,21 +319,38 @@ bool ModCache::Impl::contains(const QString &id) const
     return modIds_.contains(id);
 }
 
-const CachedMod *ModCache::Impl::mod(const QString &id) const
+int ModCache::Impl::modIndex(const QString &id) const
 {
     if (modIds_.contains(id))
-        return &mods_.at(modIds_[id]);
+        return modIds_[id];
+    return -1;
+}
+
+const CachedMod *ModCache::Impl::mod(const QString &id, int *modIdx) const
+{
+    if (modIds_.contains(id))
+    {
+        int idx = modIds_[id];
+        if (modIdx)
+            *modIdx = idx;
+        return &mods_.at(idx);
+    }
     return nullptr;
 }
 
-CachedMod *ModCache::Impl::mod(const QString &id)
+CachedMod *ModCache::Impl::mod(const QString &id, int *modIdx)
 {
     if (modIds_.contains(id))
+    {
+        int idx = modIds_[id];
+        if (modIdx)
+            *modIdx = idx;
         return &mods_[modIds_[id]];
+    }
     return nullptr;
 }
 
-CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo)
+CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo, OperationContext context, int *modIdx)
 {
     if (steamInfo.id.isEmpty())
         return nullptr;
@@ -293,15 +362,21 @@ CachedMod *ModCache::Impl::addUnloaded(const SteamModInfo &steamInfo)
     CachedMod mod(*this, modId);
     if (mod.impl()->updateFromSteam(steamInfo))
     {
-        modIds_[mod.id()] = mods_.size();
+        emit q->aboutToAppendMods({mod.id()});
+        int idx = mods_.size();
+        if (modIdx)
+            *modIdx = idx;
+        modIds_[mod.id()] = idx;
         mods_.append(mod);
+        if (context == COMPLETE_OP) // else, caller will emit the completion signal.
+            emit q->appendedMods();
         return &mods_.last();
     }
 
     return nullptr;
 }
 
-const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile)
+const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo)
 {
     if (steamInfo.id.isEmpty())
         return nullptr;
@@ -311,56 +386,94 @@ const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo
     const QDir cacheDir(config_.cachePath());
     QString outputPath = modVersionPath(modId, versionId);
 
-    CachedMod *m = mod(modId);
+    int modIdx;
+    CachedMod *m = mod(modId, &modIdx);
+    bool isNewMod = !m;
+    if (isNewMod)
+        m = addUnloaded(steamInfo, PARTIAL_OP, &modIdx);
     if (!m)
-        m = addUnloaded(steamInfo);
-    if (!m)
-        qFatal("Couldn't add mod to cache %s", modId.toUtf8().constData());
+    {
+        qCCritical(modcache).noquote() << "Couldn't add mod to cache " << modId;
+        if (errorInfo)
+            *errorInfo = "Failed adding new mod to cache";
+        return nullptr;
+    }
 
-    FileUtils::removeModDir(outputPath);
+    if (!FileUtils::removeModDir(outputPath, errorInfo))
+        return nullptr;
 
     qCDebug(modcache).noquote() << modId << "Unzip Start" << outputPath;
     QStringList files = JlCompress::extractDir(&zipFile, outputPath);
-    fixFileNames(cacheDir, QDir(outputPath), files);
+    bool ok = fixFileNames(cacheDir, QDir(outputPath), files, errorInfo);
     qCDebug(modcache).noquote() << modId << "Unzip End";
+    if (!ok) return nullptr;
 
-    return m->impl()->refreshVersion(versionId);
+    if (!isNewMod)
+        emit q->aboutToRefresh({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
+    const CachedVersion *v = m->impl()->refreshVersion(versionId, ModCache::FULL, errorInfo);
+    if (isNewMod)
+        emit q->appendedMods();
+    else
+        emit q->refreshed({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
+    return v;
 }
 
-const CachedVersion *ModCache::Impl::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath)
+const CachedVersion *ModCache::Impl::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath, QString *errorInfo)
 {
     QDir sourceDir(folderPath);
     if (!sourceDir.exists("modinfo.txt"))
     {
         qCWarning(modcache).noquote() << modId << "No modinfo in source folder: " << folderPath;
+        if (errorInfo)
+            *errorInfo = "No modinfo in source folder.";
         return nullptr;
     }
 
     QString outputPath = modVersionPath(modId, versionId);
-    FileUtils::removeModDir(outputPath);
+    if (!FileUtils::removeModDir(outputPath, errorInfo))
+        return nullptr;
     qCDebug(modcache) << "Copying" << folderPath << "to" << outputPath;
-    if (!FileUtils::copyRecursively(folderPath, outputPath))
+    if (!FileUtils::copyRecursively(folderPath, outputPath, errorInfo))
     {
         qCWarning(modcache).noquote() << modId << "Failed to copy" << folderPath << "to" << outputPath;
         return nullptr;
     }
 
-    CachedMod *m = mod(modId);
+    int modIdx;
+    CachedMod *m = mod(modId, &modIdx);
     if (m)
     {
-        return m->impl()->refreshVersion(versionId);
+        emit q->aboutToRefresh({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
+        const CachedVersion *v = m->impl()->refreshVersion(versionId, ModCache::FULL, errorInfo);
+        emit q->refreshed({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
+        return v;
     }
     else
     {
         CachedMod newMod(*this, modId);
-        const CachedVersion *v = newMod.impl()->refreshVersion(versionId);
+        const CachedVersion *v = newMod.impl()->refreshVersion(versionId, ModCache::FULL, errorInfo);
         if (v)
         {
+            emit q->aboutToAppendMods({modId});
             modIds_[modId] = mods_.size();
             mods_.append(newMod);
+            emit q->appendedMods();
         }
         return v;
     }
+}
+
+const QHash<QString, QString> ModCache::Impl::saveInstalledVersionIds() const
+{
+    QHash<QString, QString> map;
+    for (const auto &cm : mods())
+    {
+        const CachedVersion *iv = cm.impl()->installedVersion();
+        if (iv)
+            map.insert(cm.id(), iv->id());
+    }
+
+    return map;
 }
 
 void ModCache::Impl::refresh(RefreshLevel level)
@@ -368,6 +481,11 @@ void ModCache::Impl::refresh(RefreshLevel level)
     QDir cacheDir(config_.cachePath());
     qCDebug(modcache).noquote() << "cache:refresh() Start" << cacheDir.path();
 
+    emit q->aboutToRefresh();
+
+    const QHash<QString, QString> installedVersionIds = saveInstalledVersionIds();
+
+    modIds_.clear();
     mods_.clear();
     readModManDb();
     sortMods();
@@ -376,36 +494,31 @@ void ModCache::Impl::refresh(RefreshLevel level)
     cacheDir.setSorting(QDir::Name);
     const QStringList modIds = cacheDir.entryList();
     mods_.reserve(mods_.size() + modIds.size());
-    for (auto modId : modIds)
+    for (const auto &modId : modIds)
     {
         if (CachedMod *m = mod(modId))
         {
-            m->impl()->refresh(level);
+            m->impl()->refresh(level, installedVersionIds.value(modId));
         }
         else
         {
             CachedMod newMod(*this, modId);
-            if (newMod.impl()->refresh(level))
+            if (newMod.impl()->refresh(level, installedVersionIds.value(modId)))
                 mods_.append(newMod);
         }
     }
 
-    sortMods();
+    sortMods(); // Automatically refreshes the index.
 
     qCDebug(modcache).noquote().nospace() << "cache:refresh() End mods:" << mods_.size();
-}
-
-const CachedVersion *ModCache::Impl::refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level)
-{
-    CachedMod *m = mod(modId);
-    if (!m)
-        return nullptr;
-    return m->impl()->refreshVersion(versionId);
+    emit q->refreshed();
 }
 
 void ModCache::Impl::save()
 {
+    emit q->aboutToRefresh(QStringList(), QList<int>(), ModCache::SORT_ONLY_HINT);
     sortMods();
+    emit q->refreshed(QStringList(), QList<int>(), ModCache::SORT_ONLY_HINT);
     writeModManDb();
 }
 
@@ -535,7 +648,11 @@ const CachedVersion *CachedMod::version(const QString &versionId) const
     for (const CachedVersion &cachedVersion : impl()->versions())
     {
         if (cachedVersion.id() == versionId)
+        {
+            if (cachedVersion.info().isEmpty())
+                cachedVersion.impl()->refresh();
             return &cachedVersion;
+        }
     }
     return nullptr;
 }
@@ -567,11 +684,11 @@ CachedVersion *CachedMod::Impl::version(const QString &versionId)
     return nullptr;
 }
 
-bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
+bool CachedMod::Impl::refresh(ModCache::RefreshLevel level, const QString &previousInstalledVersionId)
 {
     QDir modDir(cache.modPath(id_));
 
-    QString installedVersionId = installedVersion_ ? installedVersion_->id() : QString();
+    QString installedVersionId = installedVersion_ ? installedVersion_->id() : previousInstalledVersionId;
 
     modDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     modDir.setSorting(QDir::Name | QDir::Reversed);
@@ -579,7 +696,7 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
     versions_.clear();
     versions_.reserve(versionPaths.size());
     ModCache::RefreshLevel versionLevel = level == ModCache::LATEST_ONLY ? ModCache::FULL : level;
-    for (auto versionPath : versionPaths)
+    for (const auto &versionPath : versionPaths)
     {
         CachedVersion cachedVersion(cache, id(), versionPath.fileName());
         if (cachedVersion.impl()->refresh(versionLevel))
@@ -595,7 +712,9 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
     if (!installedVersionId.isEmpty())
     {
         installedVersion_ = version(installedVersionId);
-        if (!installedVersion_)
+        if (installedVersion_)
+            installedVersion_->impl()->setInstalled(true);
+        else
             qCWarning(modcache) << info_.toString() << "no longer contains installed version after refresh:" << installedVersionId;
     }
 
@@ -607,7 +726,7 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level)
     return false;
 }
 
-CachedVersion *CachedMod::Impl::refreshVersion(const QString &versionId, ModCache::RefreshLevel level)
+CachedVersion *CachedMod::Impl::refreshVersion(const QString &versionId, ModCache::RefreshLevel level, QString *errorInfo)
 {
     if (CachedVersion *v = version(versionId))
     {
@@ -617,7 +736,7 @@ CachedVersion *CachedMod::Impl::refreshVersion(const QString &versionId, ModCach
     else
     {
         CachedVersion newVersion(cache, id(), versionId);
-        if (newVersion.impl()->refresh(level))
+        if (newVersion.impl()->refresh(level, errorInfo))
         {
             versions_.append(newVersion);
             sortVersions();
@@ -639,16 +758,25 @@ bool CachedMod::Impl::updateFromSteam(const SteamModInfo &steamInfo)
     return false;
 }
 
-const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, const QString expectedVersionId)
+const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, const QString &expectedVersionId, bool *modified)
 {
     CachedVersion *cachedVersion = findVersionByHash(hash, expectedVersionId);
 
-    if (!cachedVersion)
-        return nullptr;
+    if (cachedVersion == installedVersion_)
+    {
+        if (modified)
+            *modified = false;
+        return cachedVersion;
+    }
+    if (modified)
+        *modified = true;
 
     // Clear flags on any previously installed version.
     if (installedVersion_)
         installedVersion_->impl()->setInstalled(false);
+
+    if (!cachedVersion)
+        return nullptr;
 
     // Ensure the version's modinfo is available, in case this isn't latest.
     if (cachedVersion->info().isEmpty())
@@ -682,7 +810,7 @@ void CachedMod::Impl::writeDb(QJsonObject &modObject) const
     modObject["modName"] = info().name();
 }
 
-CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QString expectedVersionId)
+CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QString &expectedVersionId)
 {
     // Check the expected version first, to avoid hashing folders unnecessarily.
     if (!expectedVersionId.isEmpty())
@@ -798,12 +926,14 @@ QString CachedVersion::Impl::path() const
     return cache.modVersionPath(modId, id_);
 }
 
-bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level)
+bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level, QString *errorInfo) const
 {
     QDir modVersionDir(cache.modVersionPath(modId, id_));
     if (!modVersionDir.exists("modinfo.txt"))
     {
         qCDebug(modcache).noquote() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << "skipped: No modinfo.txt";
+        if (errorInfo)
+            *errorInfo = QStringLiteral("No modinfo.txt");
         return false;
     }
 

@@ -6,7 +6,9 @@
 #include <experimental/propagate_const>
 
 #include <QString>
+#include <QObject>
 #include <memory>
+#include <optional>
 
 class QIODevice;
 template <typename T> class QList;
@@ -16,20 +18,21 @@ namespace iimodmanager {
 class SpecMod;
 
 //! List of mods in a mod-specification. A current or prospective state for installed mods.
-class IIMODMANLIBSHARED_EXPORT ModSpec
+class IIMODMANLIBSHARED_EXPORT ModSpec : public QObject
 {
 
 public:
-    ModSpec();
-    ModSpec(const QList<SpecMod> &mods);
+    ModSpec(QObject *parent = nullptr);
 
     const QList<SpecMod> mods() const;
     bool contains(QString modId) const;
 
+    void clear();
     void reserve(qsizetype);
     void append(const SpecMod &specMod);
 
     bool appendFromFile(QIODevice &file, const QString &debugRef = QString());
+    bool appendFromFile(const QByteArray &content, const QString &debugRef = QString());
 
     ~ModSpec();
 private:

@@ -18,7 +18,7 @@ class ModCache;
 class ModInfo;
 class ModManConfig;
 class SpecMod;
-class SteamModInfo;
+struct SteamModInfo;
 
 
 class InstalledMod;
@@ -26,6 +26,8 @@ class InstalledMod;
 //! Mods installed to the Invisible Inc application.
 class IIMODMANLIBSHARED_EXPORT ModList : public QObject
 {
+    Q_OBJECT
+
 public:
     //! Private implementation. Only accessible to classes in this file.
     class Impl;
@@ -39,16 +41,28 @@ public:
         ID_ONLY,
     };
 
-    ModList(const ModManConfig &config, ModCache *cache = nullptr, QObject *parent = nullptr);
+    ModList(const ModManConfig &config, ModCache *cache, QObject *parent = nullptr);
 
-    const QList<InstalledMod> mods() const;
+    const QList<InstalledMod> &mods() const;
+    bool contains(const QString &id) const;
     const InstalledMod *mod(const QString &id) const;
 
     void refresh(RefreshLevel level = FULL);
-    const InstalledMod *installMod(const SpecMod &specMod);
-    const InstalledMod *removeMod(const QString &modId);
+    //! Installs the specified mod from the cache.
+    //! Does not re-sort the mods list.
+    const InstalledMod *installMod(const SpecMod &specMod, QString *errorInfo = nullptr);
+    //! Uninstalls the specified mod.
+    //! Requires a refresh before the removal is reflected in the mods list and cache.
+    bool removeMod(const QString &modId, QString *errorInfo = nullptr);
 
     ~ModList();
+
+signals:
+    //! Emitted before mods are arbitrarily changed.
+    void aboutToRefresh();
+    //! Emitted after mods are arbitrarily changed.
+    void refreshed();
+
 private:
     std::experimental::propagate_const<std::unique_ptr<Impl>> impl;
 };
@@ -59,7 +73,7 @@ public:
     //! Private implementation. Only accessible to classes in this file.
     class Impl;
 
-    InstalledMod(const ModList::Impl &parent, const QString &id);
+    InstalledMod(ModList::Impl &parent, const QString &id);
 
     const QString &id() const;
     const ModInfo &info() const;

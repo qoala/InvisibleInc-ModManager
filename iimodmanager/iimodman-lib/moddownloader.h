@@ -62,6 +62,7 @@ public:
 
     inline const QString &workshopId() const { return id_; };
     inline const SteamModInfo &result() const { return result_; };
+    inline const QString &errorDetail() const { return errorDetail_; };
 
 signals:
     void finished();
@@ -71,6 +72,7 @@ private:
     QNetworkAccessManager &qnam_;
     QString id_;
     SteamModInfo result_;
+    QString errorDetail_;
 };
 
 class IIMODMANLIBSHARED_EXPORT ModDownloadCall : public QObject
@@ -85,6 +87,7 @@ public:
 
     inline const SteamModInfo& steamInfo() const { return info_; };
     const CachedVersion *resultVersion() const;
+    inline const QString &errorDetail() const { return errorDetail_; };
 
 signals:
     void finished();
@@ -96,6 +99,7 @@ private:
 
     SteamModInfo info_;
     QString resultVersionId_;
+    QString errorDetail_;
 };
 
 }  // namespace iimodmanager

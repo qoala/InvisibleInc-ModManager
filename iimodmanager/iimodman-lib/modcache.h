@@ -8,6 +8,7 @@
 #include <QLoggingCategory>
 #include <QObject>
 #include <memory>
+#include <optional>
 
 class QDateTime;
 template <typename T> class QList;
@@ -18,7 +19,7 @@ namespace iimodmanager {
 class ModInfo;
 class ModManConfig;
 class SpecMod;
-class SteamModInfo;
+struct SteamModInfo;
 
 
 Q_DECLARE_LOGGING_CATEGORY(modcache)
@@ -35,9 +36,12 @@ enum StringFormat {
 //! Mods cached locally, but not installed. May be downloaded or just have an ID-to-name registration.
 class IIMODMANLIBSHARED_EXPORT ModCache : public QObject
 {
+    Q_OBJECT
+
 public:
     //! Private implementation. Only accessible to classes in this file.
     class Impl;
+    //! Specifies how deeply a cache refresh should check the filesystem.
     enum RefreshLevel
     {
         //! Refresh all fields on all mods and all versions.
@@ -47,34 +51,64 @@ public:
         //! Refresh the latest version of each mod fully, with available IDs for older versions.
         LATEST_ONLY,
     };
+    //! Specifies restrictions on what may change in a refresh event.
+    enum ChangeHint
+    {
+        //! Anything may change.
+        NO_HINT,
+        //! Mods will be re-sorted. No mods will be added or removed.
+        SORT_ONLY_HINT,
+        //! Only metadata and versions will change. No mods will be added or removed.
+        VERSION_ONLY_HINT,
+    };
 
     ModCache(const ModManConfig &config, QObject *parent = nullptr);
 
-    const QList<CachedMod> mods() const;
+    const QList<CachedMod> &mods() const;
     bool contains(const QString &id) const;
+    //! The position of the mod with the given ID in the mods list, or -1 if it isn't in the cache.
+    int modIndex(const QString &id) const;
     //! The mod with the given ID, or nullptr if it isn't in the cache.
     const CachedMod *mod(const QString &id) const;
 
-    //! Add a CachedMod for the given Steam Workshop details.
+    //! Adds a CachedMod for the given Steam Workshop details.
     //! Returns the mod if successful, or nullptr otherwise.
     //! If the mod is already in the cache, returns nullptr as the result wouldn't be a non-downloaded mod.
     const CachedMod *addUnloaded(const SteamModInfo &steamInfo);
-    //! Extract the zip contents into a new or existing CachedVersion
-    const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile);
-    //! Copy the given folder's contents into a new or existing CachedVersion
-    const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
-    //! Refresh all mods from disk to the specified level.
+    //! Extracts the zip contents into a new or existing CachedVersion
+    const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo = nullptr);
+    //! Copies the given folder's contents into a new or existing CachedVersion
+    const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath, QString *errorInfo = nullptr);
+    //! Refreshes all mods from disk to the specified level.
     void refresh(RefreshLevel level = FULL);
-    //! Refresh and return the specific mod version from disk. Nullptr if not present.
+    //! Refreshes and returns the specific mod version from disk. Nullptr if not present.
     const CachedVersion *refreshVersion(const QString &modId, const QString &versionId, RefreshLevel level = FULL);
+    //! Re-sorts the cache and persists metadata to disk.
     void saveMetadata();
 
-    //! Find the currently installed version by hash and set its installed flag.
+    //! Finds the currently installed version by hash and set its installed flag.
     //! Returns the version, or nullptr if there is no match in the cache.
     //! If an expected version ID is provided, that version is compared first.
-    const CachedVersion *markInstalledVersion(const QString &modId, const QString &hash, const QString expectedVersionId = QString());
+    const CachedVersion *markInstalledVersion(const QString &modId, const QString &hash, const QString &expectedVersionId = QString());
+    //! Clears the given mod's installed version.
+    void unmarkInstalledMod(const QString &modId);
 
     ~ModCache();
+
+signals:
+    //! Emitted just before new mods are appended to the end of the cache.
+    void aboutToAppendMods(const QStringList &newModIds);
+    //! Emitted after an append operation has completed.
+    void appendedMods();
+    //! Emitted before mods are arbitrarily changed. Indicates which mods are affected, or an empty list for all.
+    //! Indicates mods, both by their mod ID and current index within the mods list.
+    //! Notably adding new versions is a refresh event.
+    void aboutToRefresh(const QStringList &pendingModIds = QStringList(), const QList<int> &pendingModIdxs = QList<int>(), ChangeHint hint = NO_HINT);
+    //! Emitted after mods are arbitrarily changed.
+    void refreshed(const QStringList &updatedModIds = QStringList(), const QList<int> &updatedModIdxs = QList<int>(), ChangeHint hint = NO_HINT);
+    //! Emitted after a metadata-only change. Indicates which mods are affected, or an empty list for all.
+    void metadataChanged(const QStringList &updatedModIds = QStringList(), const QList<int> &updatedModIdxs = QList<int>());
+
 private:
     std::experimental::propagate_const<std::unique_ptr<Impl>> impl;
 };
