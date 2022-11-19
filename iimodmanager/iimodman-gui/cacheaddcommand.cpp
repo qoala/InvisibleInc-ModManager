@@ -25,7 +25,7 @@ void CacheAddCommand::execute()
     {
         bool ok = true;
         input = QInputDialog::getMultiLineText(
-                static_cast<QWidget*>(parent()), tr("Add Steam Workshop mod"),
+                static_cast<QWidget*>(parent()), tr("II Mod Manager: Add Steam Workshop mod"),
                 tr("Workshop URLs or mod IDs (\"workshop-123\"), one per line:"),
                 input, &ok, Qt::WindowFlags(), Qt::ImhUrlCharactersOnly);
         if (!ok)  // Cancel.
