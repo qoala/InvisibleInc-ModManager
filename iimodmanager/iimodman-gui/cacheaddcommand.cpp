@@ -1,4 +1,5 @@
 #include "cacheaddcommand.h"
+#include "guidownloader.h"
 #include "modmanguiapplication.h"
 #include "util.h"
 
@@ -13,7 +14,7 @@
 namespace iimodmanager {
 
 CacheAddCommand::CacheAddCommand(ModManGuiApplication  &app, QWidget *parent)
-    : QObject(parent), app(app), parentWidget(parent)
+    : QObject(parent), app(app)
 {}
 
 void CacheAddCommand::execute()
@@ -24,7 +25,7 @@ void CacheAddCommand::execute()
     {
         bool ok = true;
         input = QInputDialog::getMultiLineText(
-                parentWidget, tr("Add Steam Workshop mod"),
+                static_cast<QWidget*>(parent()), tr("Add Steam Workshop mod"),
                 tr("Workshop URLs or mod IDs (\"workshop-123\"), one per line:"),
                 input, &ok, Qt::WindowFlags(), Qt::ImhUrlCharactersOnly);
         if (!ok)  // Cancel.
@@ -38,7 +39,7 @@ void CacheAddCommand::execute()
         input = parseIds(input, &modIds, &ok, &failedIds);
         if (ok) break;  // Successfully parsed IDs.
 
-        int result = QMessageBox::warning(parentWidget, tr("Add Steam Workshop mod"),
+        int result = QMessageBox::warning(static_cast<QWidget*>(parent()), tr("Add Steam Workshop mod"),
                 tr("Not a mod ID or URL: %1").arg(failedIds.join(", ")));
         if (result != QMessageBox::Ok)  // Cancel.
         {
@@ -206,50 +207,22 @@ void CacheAddCommand::steamInfoFinished()
 
 void CacheAddCommand::startDownloads()
 {
-    steamDownloadCall = app.modDownloader().modDownloadCall(app.cache());
-    steamDownloadCall->setParent(this);
-    connect(steamDownloadCall, &ModDownloadCall::finished, this, &CacheAddCommand::steamDownloadFinished);
+    auto *downloader = new GuiModDownloader(app, steamInfos, this);
+    connect(downloader, &GuiModDownloader::finished, this, &CacheAddCommand::modDownloadFinished);
+    connect(downloader, &GuiModDownloader::textOutput, this, &CacheAddCommand::textOutput);
+    connect(downloader, &GuiModDownloader::beginProgress, this, &CacheAddCommand::beginProgress);
+    connect(downloader, &GuiModDownloader::updateProgress, this, &CacheAddCommand::updateProgress);
 
-    loopIndex = 0;
-    steamDownloadCall->start(steamInfos.first());
+    downloader->execute();
 }
 
-void CacheAddCommand::nextDownload()
+void CacheAddCommand::modDownloadFinished()
 {
-    if (++loopIndex < steamInfos.size())
-    {
-        // Next download.
-        emit updateProgress(loopIndex);
-        steamDownloadCall->start(steamInfos.at(loopIndex));
-    }
-    else
-    {
-        // Finished.
-        steamDownloadCall->deleteLater();
-        steamDownloadCall = nullptr;
+    emit textOutput("Finished downloading new mods.");
 
-        emit updateProgress(loopIndex);
-        emit textOutput("Finished downloading new mods.");
-
-        app.cache().saveMetadata();
-        emit finished();
-        deleteLater();
-    }
-}
-
-void CacheAddCommand::steamDownloadFinished()
-{
-    const CachedVersion *v = steamDownloadCall->resultVersion();
-    if (v)
-    {
-        emit textOutput(QString("  %1 downloaded.").arg(v->info().toString()));
-    }
-    else
-    {
-        emit textOutput(QString("  %1 download failed: %2").arg(steamDownloadCall->steamInfo().modId(), steamDownloadCall->errorDetail()));
-    }
-
-    nextDownload();
+    app.cache().saveMetadata();
+    emit finished();
+    deleteLater();
 }
 
 } // namespace iimodmanager

@@ -6,9 +6,9 @@
 
 namespace iimodmanager {
 
-class ModDownloadCall;
 class ModInfoCall;
 class ModManGuiApplication;
+struct SteamModInfo;
 
 
 class CacheUpdateCommand : public QObject
@@ -28,18 +28,16 @@ signals:
 
 private slots:
     void steamInfoFinished();
-    void steamDownloadFinished();
+    void modDownloadFinished();
 
 private:
     void startInfos();
     void nextSteamInfo();
     void startDownloads();
-    void nextDownload();
 
     ModManGuiApplication &app;
 
     ModInfoCall *steamInfoCall;
-    ModDownloadCall *steamDownloadCall;
     QStringList workshopIds;
     QList<SteamModInfo> steamInfos;
     qsizetype loopIndex;

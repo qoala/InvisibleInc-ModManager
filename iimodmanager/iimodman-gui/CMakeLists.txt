@@ -7,6 +7,7 @@ set(IIMODMAN_GUI_SOURCES
     cacheimportmodel.cpp
     cachesavecommand.cpp
     cacheupdatecommand.cpp
+    guidownloader.cpp
     main.cpp
     mainwindow.cpp
     markupdatescommand.cpp

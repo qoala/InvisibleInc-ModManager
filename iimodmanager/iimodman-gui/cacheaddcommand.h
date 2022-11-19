@@ -2,6 +2,7 @@
 #define CACHEADDCOMMAND_H
 
 #include <QObject>
+#include <moddownloader.h>
 
 namespace iimodmanager {
 
@@ -28,14 +29,12 @@ signals:
 
 private slots:
     void steamInfoFinished();
-    void steamDownloadFinished();
+    void modDownloadFinished();
 
 private:
     ModManGuiApplication &app;
-    QWidget *parentWidget;
 
     ModInfoCall *steamInfoCall;
-    ModDownloadCall *steamDownloadCall;
     QStringList workshopIds;
     QList<SteamModInfo> steamInfos;
     qsizetype loopIndex;
@@ -46,7 +45,6 @@ private:
     void startInfos();
     void nextSteamInfo();
     void startDownloads();
-    void nextDownload();
 };
 
 } // namespace iimodmanager

@@ -1,11 +1,11 @@
 #ifndef CACHEIMPORTMODEL_H
 #define CACHEIMPORTMODEL_H
 
-#include "moddownloader.h"
 #include "modelutil.h"
 #include "modsmodel.h"
 
 #include <utility>
+#include <moddownloader.h>
 
 namespace iimodmanager {
 
@@ -13,6 +13,7 @@ class ModCache;
 class ModList;
 class ModSpec;
 class SpecMod;
+struct SteamModInfo;
 
 //! Tracks details for a pending import of installed mods to the cache.
 class CacheImportModel : public ModsModel

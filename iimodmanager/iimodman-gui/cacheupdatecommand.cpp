@@ -1,4 +1,5 @@
 #include "cacheupdatecommand.h"
+#include "guidownloader.h"
 #include "modmanguiapplication.h"
 #include "util.h"
 
@@ -108,46 +109,22 @@ void CacheUpdateCommand::steamInfoFinished()
 
 void CacheUpdateCommand::startDownloads()
 {
-    steamDownloadCall = app.modDownloader().modDownloadCall(app.cache());
-    steamDownloadCall->setParent(this);
-    connect(steamDownloadCall, &ModDownloadCall::finished, this, &CacheUpdateCommand::steamDownloadFinished);
+    auto *downloader = new GuiModDownloader(app, steamInfos, this);
+    connect(downloader, &GuiModDownloader::finished, this, &CacheUpdateCommand::modDownloadFinished);
+    connect(downloader, &GuiModDownloader::textOutput, this, &CacheUpdateCommand::textOutput);
+    connect(downloader, &GuiModDownloader::beginProgress, this, &CacheUpdateCommand::beginProgress);
+    connect(downloader, &GuiModDownloader::updateProgress, this, &CacheUpdateCommand::updateProgress);
 
-    loopIndex = 0;
-    steamDownloadCall->start(steamInfos.first());
+    downloader->execute();
 }
 
-void CacheUpdateCommand::nextDownload()
+void CacheUpdateCommand::modDownloadFinished()
 {
-    if (++loopIndex < steamInfos.size())
-    {
-        // Next download.
-        emit updateProgress(loopIndex);
-        steamDownloadCall->start(steamInfos.at(loopIndex));
-    }
-    else
-    {
-        // Finished.
-        steamDownloadCall->deleteLater();
-        steamDownloadCall = nullptr;
+    emit textOutput("All workshop mods are up to date.");
 
-        emit updateProgress(loopIndex);
-        emit textOutput("All workshop mods are up to date.");
-
-        app.cache().saveMetadata();
-        emit finished();
-        deleteLater();
-    }
-}
-
-void CacheUpdateCommand::steamDownloadFinished()
-{
-    const CachedVersion *v = steamDownloadCall->resultVersion();
-    if (v)
-        emit textOutput(QString("  %1 updated.").arg(v->info().toString()));
-    else
-        emit textOutput(QString("  %1 download failed: %2").arg(steamDownloadCall->steamInfo().modId(), steamDownloadCall->errorDetail()));
-
-    nextDownload();
+    app.cache().saveMetadata();
+    emit finished();
+    deleteLater();
 }
 
 } // namespace iimodmanager

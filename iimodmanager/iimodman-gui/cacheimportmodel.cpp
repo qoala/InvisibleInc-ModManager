@@ -6,6 +6,7 @@
 #include <QColor>
 #include <QRegularExpression>
 #include <modcache.h>
+#include <moddownloader.h>
 #include <modspec.h>
 #include <modlist.h>
 
