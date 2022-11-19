@@ -12,6 +12,7 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <modcache.h>
+#include <moddownloader.h>
 #include <modinfo.h>
 #include <modlist.h>
 #include <modspec.h>
@@ -88,10 +89,17 @@ void CacheImportInstalledCommand::dialogFinished(int result)
 {
     if (result != QDialog::Accepted)
     {
+        emit textOutput(QStringLiteral("Import cancelled."));
         emit finished();
         deleteLater();
         return;
     }
+
+    app.refreshMods();
+
+    QList<SteamModInfo> toDownloadMods;
+    QList<std::pair<QString, QString>> toCopyMods;
+    model->prepareChanges(&toDownloadMods, &toCopyMods);
 
     emit finished();
     deleteLater();

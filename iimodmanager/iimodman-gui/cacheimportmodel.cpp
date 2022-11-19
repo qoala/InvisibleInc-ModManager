@@ -378,6 +378,47 @@ bool CacheImportModel::isEmpty() const
     return true;
 }
 
+void CacheImportModel::prepareChanges(QList<SteamModInfo> *toDownloadMods, QList<std::pair<QString, QString>> *toCopyMods) const
+{
+    if (!toDownloadMods || !toCopyMods)
+    {
+        emit textOutput(QStringLiteral("! Pointer error in CacheImportModel::prepareChanges"));
+        return;
+    }
+
+    toDownloadMods->reserve(pendingImports.size());
+    toCopyMods->reserve(pendingImports.size());
+
+    for (const auto &pi : pendingImports)
+    {
+        if (!pi.isActive())
+            continue;
+        if (cache.contains(pi.modId))
+        {
+            emit textOutput(QStringLiteral("  Pending import to %1 cancelled: Exists in cache.").arg(pi.modId));
+            continue;
+        }
+
+        const InstalledMod *im = modList.mod(pi.installedId);
+        if (pi.status == PendingImport::IMPORT_DOWNLOAD)
+        {
+            SteamModInfo steamInfo = infoResults.value(pi.steamId);
+            if (steamInfo.valid())
+                *toDownloadMods << steamInfo;
+            else
+            {
+                emit textOutput(QStringLiteral("! Pending import to %1 cancelled: Steam info became invalid?").arg(pi.modId));
+                continue;
+            }
+        }
+        else if (!im)
+            emit textOutput(QStringLiteral("  Pending import for %1 cancelled: No longer in installed.").arg(pi.installedId));
+
+        if (im)
+            *toCopyMods << std::pair(im->id(), pi.modId);
+    }
+}
+
 void CacheImportModel::reportImportChanged(int row, bool modifiedByView)
 {
     int startRow, endRow;

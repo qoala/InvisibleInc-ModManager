@@ -531,6 +531,8 @@ void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMo
                 const auto *cv = cm ? cm->version(pc.versionId) : nullptr;
                 if (cv)
                     *toAddMods << cv->asSpec();
+                else
+                    emit textOutput(QStringLiteral("! Cannot install %1 '%2': Not in cache.").arg(pc.modId, pc.versionId));
             }
             break;
         case PendingChange::UPDATE:
@@ -539,6 +541,8 @@ void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMo
                 const auto *cv = cm ? cm->version(pc.versionId) : nullptr;
                 if (cv)
                     *toUpdateMods << cv->asSpec();
+                else
+                    emit textOutput(QStringLiteral("! Cannot update %1 to '%2': Not in cache.").arg(pc.modId, pc.versionId));
             }
             break;
         case PendingChange::REMOVE:
@@ -546,6 +550,8 @@ void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMo
                 const auto *im = modList.mod(pc.modId);
                 if (im)
                     *toRemoveMods << *im;
+                else
+                    emit textOutput(QStringLiteral("! Cannot remove %1: No longer installed.").arg(pc.modId, pc.versionId));
             }
             break;
         default:
