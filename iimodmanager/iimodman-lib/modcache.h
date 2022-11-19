@@ -78,7 +78,7 @@ public:
     //! Extracts the zip contents into a new or existing CachedVersion
     const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo = nullptr);
     //! Copies the given folder's contents into a new or existing CachedVersion
-    const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
+    const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath, QString *errorInfo = nullptr);
     //! Refreshes all mods from disk to the specified level.
     void refresh(RefreshLevel level = FULL);
     //! Refreshes and returns the specific mod version from disk. Nullptr if not present.

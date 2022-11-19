@@ -42,7 +42,7 @@ public:
 
     CachedMod *addUnloaded(const SteamModInfo &steamInfo, OperationContext context, int *modIdx = nullptr);
     const CachedVersion *addZipVersion(const SteamModInfo &steamInfo, QIODevice &zipFile, QString *errorInfo = nullptr);
-    const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath);
+    const CachedVersion *addModVersion(const QString &modId, const QString &versionId, const QString &folderPath, QString *errorInfo = nullptr);
     void refresh(RefreshLevel = FULL);
     inline void save();
 
@@ -254,9 +254,9 @@ const CachedVersion *ModCache::addZipVersion(const SteamModInfo &steamInfo, QIOD
     return impl->addZipVersion(steamInfo, zipFile, errorInfo);
 }
 
-const CachedVersion *ModCache::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath)
+const CachedVersion *ModCache::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath, QString *errorInfo)
 {
-    return impl->addModVersion(modId, versionId, folderPath);
+    return impl->addModVersion(modId, versionId, folderPath, errorInfo);
 }
 
 void ModCache::refresh(ModCache::RefreshLevel level)
@@ -418,20 +418,22 @@ const CachedVersion *ModCache::Impl::addZipVersion(const SteamModInfo &steamInfo
     return v;
 }
 
-const CachedVersion *ModCache::Impl::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath)
+const CachedVersion *ModCache::Impl::addModVersion(const QString &modId, const QString &versionId, const QString &folderPath, QString *errorInfo)
 {
     QDir sourceDir(folderPath);
     if (!sourceDir.exists("modinfo.txt"))
     {
         qCWarning(modcache).noquote() << modId << "No modinfo in source folder: " << folderPath;
+        if (errorInfo)
+            *errorInfo = "No modinfo in source folder.";
         return nullptr;
     }
 
     QString outputPath = modVersionPath(modId, versionId);
-    if (!FileUtils::removeModDir(outputPath))
+    if (!FileUtils::removeModDir(outputPath, errorInfo))
         return nullptr;
     qCDebug(modcache) << "Copying" << folderPath << "to" << outputPath;
-    if (!FileUtils::copyRecursively(folderPath, outputPath))
+    if (!FileUtils::copyRecursively(folderPath, outputPath, errorInfo))
     {
         qCWarning(modcache).noquote() << modId << "Failed to copy" << folderPath << "to" << outputPath;
         return nullptr;
@@ -442,14 +444,14 @@ const CachedVersion *ModCache::Impl::addModVersion(const QString &modId, const Q
     if (m)
     {
         emit q->aboutToRefresh({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
-        const CachedVersion *v = m->impl()->refreshVersion(versionId);
+        const CachedVersion *v = m->impl()->refreshVersion(versionId, ModCache::FULL, errorInfo);
         emit q->refreshed({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
         return v;
     }
     else
     {
         CachedMod newMod(*this, modId);
-        const CachedVersion *v = newMod.impl()->refreshVersion(versionId);
+        const CachedVersion *v = newMod.impl()->refreshVersion(versionId, ModCache::FULL, errorInfo);
         if (v)
         {
             emit q->aboutToAppendMods({modId});
