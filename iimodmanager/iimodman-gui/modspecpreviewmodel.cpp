@@ -209,7 +209,7 @@ std::optional<ModSpecPreviewModel::PendingChange> ModSpecPreviewModel::toPending
 }
 
 ModSpecPreviewModel::ModSpecPreviewModel(const ModCache &cache, const ModList &modList, QObject *parent)
-    : ModsModel(cache, modList, parent), dirty(true), previousEmptyState_(true), isLocked_(false)
+    : ModsModel(cache, modList, parent), isLocked_(false), dirty(true), previousEmptyState_(true)
 {}
 
 int ModSpecPreviewModel::columnCount(const QModelIndex &parent) const

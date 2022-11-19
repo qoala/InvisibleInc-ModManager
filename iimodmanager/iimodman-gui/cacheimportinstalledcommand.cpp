@@ -130,8 +130,8 @@ void CacheImportInstalledCommand::modDownloadFinished()
 
 void CacheImportInstalledCommand::startCopyImports()
 {
-    for (const auto [installedId, targetId] : toCopyMods)
-        copyMod(installedId, targetId);
+    for (const auto &pair : toCopyMods)
+        copyMod(pair.first, pair.second);
 
     emit textOutput("Finished import.");
     app.cache().saveMetadata();

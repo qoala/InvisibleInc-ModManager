@@ -71,7 +71,7 @@ public:
         inline bool isValid() const { return !installedId.isEmpty(); }
         inline bool isAvailable() const { return status >= NOT_WORKSHOP; }
         inline bool isActive() const { return status >= IMPORT_COPY; }
-        void updateStatus(const CachedMod *cm, const InstalledMod *im, const SteamModInfo *steamInfo);
+        void updateStatus(const CachedMod *cm, const SteamModInfo *steamInfo);
         bool activate();
         bool deactivate();
     };

@@ -16,7 +16,7 @@ namespace ColumnData {
     typedef modelutil::Status Status;
     typedef CacheImportModel::PendingImport PendingImport;
 
-    QVariant targetAction(const PendingImport &pi, Status baseStatus, int role)
+    QVariant targetAction(const PendingImport &pi, int role)
     {
         if (role == Qt::DisplayRole)
             switch (pi.status)
@@ -35,6 +35,8 @@ namespace ColumnData {
                 return QStringLiteral("IMPORT LOCAL");
             case PendingImport::IMPORT_DOWNLOAD:
                 return QStringLiteral("IMPORT STEAM");
+            default:
+                return QVariant();
             }
         else if (role == modelutil::SORT_ROLE)
             return QVariant::fromValue<int>(pi.status);
@@ -152,7 +154,7 @@ CacheImportModel::PendingImport *CacheImportModel::seekMutablePendingRow(int row
         pi->installedId = pi->modId = modId;
         if (util::isSteamModId(modId))
             pi->steamId = util::toSteamId(modId);
-        pi->updateStatus(cm, *im, nullptr);
+        pi->updateStatus(cm, nullptr);
     }
     return pi;
 }
@@ -195,7 +197,7 @@ QVariant CacheImportModel::data(const QModelIndex &index, int role) const
     case ACTION:
         if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(baseStatus);
-        return ColumnData::targetAction(pi, baseStatus, role);
+        return ColumnData::targetAction(pi, role);
     case ID:
         if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(baseStatus);
@@ -287,7 +289,7 @@ bool CacheImportModel::setData(const QModelIndex &index, const QVariant &value, 
             pi->steamId.clear();
 
         const CachedMod *cm = cache.mod(newId);
-        pi->updateStatus(cm, im, foundInfo ? &steamInfo : nullptr);
+        pi->updateStatus(cm, foundInfo ? &steamInfo : nullptr);
 
         reportImportChanged(row, true);
         if (pi->status == PendingImport::DOWNLOAD_AVAILABLE)
@@ -468,8 +470,7 @@ void CacheImportModel::steamInfoFinished()
         {
             row = rowOf(pi.installedId);
             const CachedMod *cm = cache.mod(modId);
-            const InstalledMod *im = modList.mod(pi.installedId);
-            pi.updateStatus(cm, im, &steamInfo);
+            pi.updateStatus(cm, &steamInfo);
             if (pi.status == PendingImport::DOWNLOAD_AVAILABLE)
                 pi.status = PendingImport::IMPORT_DOWNLOAD;
             break;
@@ -496,7 +497,7 @@ void CacheImportModel::nextInfo()
 }
 
 
-void CacheImportModel::PendingImport::updateStatus(const CachedMod *cm, const InstalledMod *im, const SteamModInfo *steamInfo)
+void CacheImportModel::PendingImport::updateStatus(const CachedMod *cm, const SteamModInfo *steamInfo)
 {
     if (cm)
         status = IN_CACHE;
