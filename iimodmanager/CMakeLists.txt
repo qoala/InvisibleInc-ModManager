@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.15...3.18)
 
-project(IIModManager VERSION 0.1)
+project(IIModManager VERSION 0.2.0)
 
 
 set(CMAKE_CXX_STANDARD 17)
 
 set(IIMODMAN_VERSION ${IIModManager_VERSION})
-set(IIMODMAN_SOVERSION 0.1.0)
+set(IIMODMAN_SOVERSION 0.1)
 
 option(BUILD_SHARED_LIBS "" OFF)
 set(IIMODMAN_QT_MAJOR_VERSION 5 CACHE STRING "Qt version to use, defaults to 5")
