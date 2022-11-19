@@ -1,5 +1,7 @@
 #include "util.h"
 
+#include <QRegularExpression>
+#include <QUrl>
 #include <modcache.h>
 #include <modinfo.h>
 #include <modlist.h>
@@ -29,6 +31,24 @@ const QString EMPTY_VERSION = QStringLiteral("-");
 const QString &displayVersion(const QString &version)
 {
     return version.isNull() ? EMPTY_VERSION : version;
+}
+
+bool isSteamModId(const QString &input)
+{
+    QRegularExpression re(QStringLiteral("^workshop-\\d+$"));
+    return re.match(input).hasMatch();
+}
+QString parseSteamModUrl(const QString &input)
+{
+    QUrl url(input);
+    if (url.host() != "steamcommunity.com")
+        return QString();
+
+    QRegularExpression re(QStringLiteral("(^|&)id=(\\d+)(&|$)"));
+    auto match = re.match(url.query());
+    if (match.hasMatch())
+        return QStringLiteral("workshop-%1").arg(match.captured(2));
+    return QString();
 }
 
 } // namespace util

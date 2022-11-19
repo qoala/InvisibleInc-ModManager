@@ -6,7 +6,6 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QRegularExpression>
-#include <QUrl>
 #include <modcache.h>
 #include <moddownloader.h>
 #include <modinfo.h>
@@ -73,25 +72,20 @@ QString CacheAddCommand::parseIds(QString input, QStringList *modIds, bool *ok, 
 
     QStringList inputItems = input.trimmed().split(QRegularExpression("\\s*\n\\s*"), Qt::SkipEmptyParts);
 
-    QRegularExpression modIdRe(QStringLiteral("^workshop-\\d+$"));
-    QRegularExpression urlRe(QStringLiteral("(^|&)id=(\\d+)(&|$)"));
-
     modIds->clear();
     modIds->reserve(inputItems.size());
     if (failedIds) failedIds->reserve(inputItems.size());
     for (auto inputItem : inputItems)
     {
-        QRegularExpressionMatch match = modIdRe.match(inputItem);
-        if (match.hasMatch())
+        if (util::isSteamModId(inputItem))
         {
             modIds->append(inputItem);
             continue;
         }
-        QUrl url(inputItem);
-        match = urlRe.match(url.query());
-        if (url.host() == "steamcommunity.com" && match.hasMatch())
+        QString parsed = util::parseSteamModUrl(inputItem);
+        if (!parsed.isEmpty())
         {
-            modIds->append(QStringLiteral("workshop-%1").arg(match.captured(2)));
+            modIds->append(parsed);
             continue;
         }
         errors = true;
