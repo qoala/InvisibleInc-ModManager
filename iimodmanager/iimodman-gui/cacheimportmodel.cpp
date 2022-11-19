@@ -1,7 +1,10 @@
 #include "modelutil.h"
 #include "cacheimportmodel.h"
+#include "util.h"
 
 #include <QAbstractItemModel>
+#include <QColor>
+#include <QRegularExpression>
 #include <modcache.h>
 #include <modspec.h>
 #include <modlist.h>
@@ -10,11 +13,68 @@ namespace iimodmanager {
 
 namespace ColumnData {
     typedef modelutil::Status Status;
+    typedef CacheImportModel::PendingImport PendingImport;
+
+    QVariant targetAction(const PendingImport &pi, Status baseStatus, int role)
+    {
+        if (role == Qt::DisplayRole)
+            switch (pi.status)
+            {
+            case PendingImport::IN_CACHE:
+                return QStringLiteral("(already in cache)");
+            case PendingImport::NOT_MOD:
+                return QStringLiteral("(invalid ID)");
+            case PendingImport::PENDING:
+                return QStringLiteral("...");
+            case PendingImport::NOT_WORKSHOP:
+                return QStringLiteral("(local mod)");
+            case PendingImport::DOWNLOAD_AVAILABLE:
+                return QStringLiteral("(steam mod)");
+            case PendingImport::IMPORT_COPY:
+                return QStringLiteral("IMPORT LOCAL");
+            case PendingImport::IMPORT_DOWNLOAD:
+                return QStringLiteral("IMPORT STEAM");
+            }
+        else if (role == modelutil::SORT_ROLE)
+            return QVariant::fromValue<int>(pi.status);
+        else if (role == Qt::CheckStateRole)
+            return pi.isActive() ? Qt::Checked : Qt::Unchecked;
+        return QVariant();
+    }
+
+    QString parseIdInput(const QString input)
+    {
+        if (util::isSteamModId(input))
+            return input;
+
+        QRegularExpression nonSteamRe(QStringLiteral("^[\\w.-]+$"));
+        if (nonSteamRe.match(input).hasMatch())
+            return input;
+
+        QString parsed = util::parseSteamModUrl(input);
+        return parsed.isEmpty() ? QString() : parsed;
+    }
 }
 
-CacheImportModel::CacheImportModel(const ModCache &cache, const ModList &modList, QObject *parent)
-    : ModsModel(cache, modList, parent), previousEmptyState_(true)
-{}
+
+CacheImportModel::CacheImportModel(const ModCache &cache, const ModList &modList, ModInfoCall *steamInfoCall, QObject *parent)
+    : ModsModel(cache, modList, parent), steamInfoCall(steamInfoCall), steamInfoIdle(true), previousEmptyState_(true)
+{
+    steamInfoCall->setParent(this);
+    connect(steamInfoCall, &ModInfoCall::finished, this, &CacheImportModel::steamInfoFinished);
+
+    // Load pending imports.
+    int total = rowCount(QModelIndex());
+    for (int i = cache.mods().size(); i < total; ++i)
+    {
+        const InstalledMod *im;
+        auto *pi = seekMutablePendingRow(i, &im);
+        // Only care about the side effect of creating the pending entry.
+        Q_UNUSED(pi)
+    }
+
+    nextInfo();
+}
 
 int CacheImportModel::columnCount(const QModelIndex &parent) const
 {
@@ -32,7 +92,6 @@ static bool isBase(int column)
     switch (column)
     {
     case CacheImportModel::NAME:
-    case CacheImportModel::FOLDER:
     case CacheImportModel::INSTALLED_VERSION:
         return true;
     default:
@@ -50,8 +109,6 @@ static int toBaseColumn(int column) {
     {
     case CacheImportModel::NAME:
         return ModsModel::NAME;
-    case CacheImportModel::FOLDER:
-        return ModsModel::ID;
     case CacheImportModel::INSTALLED_VERSION:
         return ModsModel::INSTALLED_VERSION;
     default:
@@ -63,32 +120,104 @@ inline QModelIndex toBaseColumn(const CacheImportModel *model, const QModelIndex
     return model->index(index.row(), toBaseColumn(index.column()));
 }
 
+const CacheImportModel::PendingImport CacheImportModel::seekPendingRow(int row, const InstalledMod **im) const
+{
+    if (!im)
+        return PendingImport();
+
+    const CachedMod *cm; // Unused.
+    seekRow(row, &cm, im);
+    if (!(*im))
+        return PendingImport();
+
+    const QString modId = (*im)->id();
+    return pendingImport(modId);
+}
+
+CacheImportModel::PendingImport *CacheImportModel::seekMutablePendingRow(int row, const InstalledMod **im)
+{
+    if (!im)
+        return nullptr;
+
+    const CachedMod *cm;
+    seekRow(row, &cm, im);
+    if (!(*im))
+        return nullptr;
+
+    const QString modId = (*im)->id();
+    PendingImport *pi = &pendingImports[modId];
+    if (!pi->isValid())
+    {
+        pi->installedId = pi->modId = modId;
+        if (util::isSteamModId(modId))
+            pi->steamId = util::toSteamId(modId);
+        pi->updateStatus(cm, *im, nullptr);
+    }
+    return pi;
+}
+
 QVariant CacheImportModel::data(const QModelIndex &index, int role) const
 {
     if (index.row() < cache.mods().size())
         return modelutil::nullData(role);
     if (isBase(index))
         return ModsModel::data(toBaseColumn(this, index), role);
+    if (role == Qt::BackgroundRole)
+    {
+        if (index.column() == ACTION || index.column() == ID)
+            return QColor::fromRgb(255, 255, 191);
+        return QVariant();
+    }
 
-    const CachedMod *cm;
     const InstalledMod *im;
-    seekRow(index.row(), &cm, &im);
+    const PendingImport &pi = seekPendingRow(index.row(), &im);
 
-    modelutil::Status baseStatus = modelutil::modStatus(cm, im, role);
+    modelutil::Status baseStatus = modelutil::modStatus(nullptr, im, role);
 
     if (!im)
-        return modelutil::nullData(role);
+    {
+        if (role == modelutil::SORT_ROLE && index.column() == ACTION)
+            return -1;
+        else if (role == Qt::CheckStateRole && index.column() == ACTION)
+            return Qt::Unchecked;
+        return modelutil::nullData(role, baseStatus);
+    }
 
     switch (index.column())
     {
+    case FOLDER:
+        if (role == modelutil::STATUS_ROLE)
+            return modelutil::toVariant(baseStatus);
+        else if (role == Qt::DisplayRole)
+            return im->id();
+        break;
     case ACTION:
-        return QVariant();
+        if (role == modelutil::STATUS_ROLE)
+            return modelutil::toVariant(baseStatus);
+        return ColumnData::targetAction(pi, baseStatus, role);
     case ID:
-        return QVariant();
+        if (role == modelutil::STATUS_ROLE)
+            return modelutil::toVariant(baseStatus);
+        else if (role == Qt::DisplayRole || role == Qt::EditRole)
+            return pi.modId;
+        break;
     case STEAM_UPDATE_TIME:
-        return QVariant();
+        if (pi.steamId.isEmpty() || !infoResults.contains(pi.steamId))
+            return modelutil::nullData(role, baseStatus);
+        else if (role == modelutil::STATUS_ROLE)
+            return modelutil::toVariant(baseStatus);
+        else if (role == Qt::DisplayRole)
+            return infoResults.value(pi.steamId).lastUpdated;
     }
     return QVariant();
+}
+
+bool containsDupe(const QHash<QString, CacheImportModel::PendingImport> &pendingImports, const QString &newId, const QString &existingKey)
+{
+    for (const auto &pi : pendingImports)
+        if (pi.modId == newId && pi.installedId != existingKey)
+            return true;
+    return false;
 }
 
 bool CacheImportModel::setData(const QModelIndex &index, const QVariant &value, int role)
@@ -99,32 +228,72 @@ bool CacheImportModel::setData(const QModelIndex &index, const QVariant &value, 
     {
         auto state = value.value<Qt::CheckState>();
         int row = index.row();
-        const CachedMod *cm;
         const InstalledMod *im;
-        seekRow(index.row(), &cm, &im);
+        PendingImport *pi = seekMutablePendingRow(row, &im);
 
-        if (!im)
+        if (!im || !pi)
             return false;
 
         if (state == Qt::Checked)
         {
+            if (!pi->activate())
+                return false;
         }
         else if (state == Qt::Unchecked)
         {
+            if (!pi->deactivate())
+                return false;
         }
 
-        reportImportChanged(im->id());
+        reportImportChanged(row, true);
         return true;
     }
-    else if (index.column() == ID && role == Qt::DisplayRole)
+    else if (index.column() == ID && role == Qt::EditRole)
     {
-        auto newId = value.toString();
         int row = index.row();
-        const CachedMod *cm;
         const InstalledMod *im;
+        PendingImport *pi = seekMutablePendingRow(row, &im);
 
-        reportImportChanged(im->id());
-        return true;
+        if (!im || !pi)
+            return false;
+
+        bool ok = true;
+        QString newId = ColumnData::parseIdInput(value.toString().trimmed());
+        if (newId.isEmpty())
+        {
+            ok = false;
+            newId = pi->installedId;
+        }
+        if (containsDupe(pendingImports, newId, pi->installedId))
+        {
+            // Do not allow duplicate target IDs.
+            return false;
+        }
+
+        bool foundInfo = false;
+        SteamModInfo steamInfo;
+        pi->modId = newId;
+        if (util::isSteamModId(newId))
+        {
+            pi->steamId = util::toSteamId(newId);
+            if (infoResults.contains(pi->steamId))
+            {
+                foundInfo = true;
+                steamInfo = infoResults.value(pi->steamId);
+            }
+        }
+        else
+            pi->steamId.clear();
+
+        const CachedMod *cm = cache.mod(newId);
+        pi->updateStatus(cm, im, foundInfo ? &steamInfo : nullptr);
+
+        reportImportChanged(row, true);
+        if (pi->status == PendingImport::DOWNLOAD_AVAILABLE)
+            pi->status = PendingImport::IMPORT_DOWNLOAD;
+        else if (pi->status == PendingImport::PENDING)
+            nextInfo();
+        return ok;
     }
     return false;
 }
@@ -133,8 +302,6 @@ QVariant CacheImportModel::headerData(int section, Qt::Orientation orientation, 
 {
     if (orientation == Qt::Vertical)
         return QVariant();
-    if (section == FOLDER && role == Qt::DisplayRole)
-        return QStringLiteral("Folder");
     if (isBase(section))
         return ModsModel::headerData(toBaseColumn(section), orientation, role);
 
@@ -143,6 +310,8 @@ QVariant CacheImportModel::headerData(int section, Qt::Orientation orientation, 
     case Qt::DisplayRole:
         switch (section)
         {
+        case FOLDER:
+            return QStringLiteral("From Alias");
         case ACTION:
             return QStringLiteral("Status");
         case ID:
@@ -154,6 +323,7 @@ QVariant CacheImportModel::headerData(int section, Qt::Orientation orientation, 
     case Qt::InitialSortOrderRole:
         switch (section)
         {
+        case FOLDER:
         case ID:
             return Qt::AscendingOrder;
         case ACTION:
@@ -166,6 +336,7 @@ QVariant CacheImportModel::headerData(int section, Qt::Orientation orientation, 
         {
         case ACTION:
             return modelutil::ROLE_SORT;
+        case FOLDER:
         case ID:
             return modelutil::MOD_ID_SORT;
         case STEAM_UPDATE_TIME:
@@ -184,9 +355,15 @@ Qt::ItemFlags CacheImportModel::flags(const QModelIndex &index) const
     if (index.column() == ACTION)
     {
         Qt::ItemFlags f = Qt::ItemIsSelectable | Qt::ItemIsUserCheckable;
-        if (true)
+        const InstalledMod *im;
+        const PendingImport pi = seekPendingRow(index.row(), &im);
+        if (pi.isAvailable())
             f |= Qt::ItemIsEnabled;
         return f;
+    }
+    else if (index.column() == ID)
+    {
+        return Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled;
     }
 
     return QAbstractItemModel::flags(index);
@@ -194,29 +371,29 @@ Qt::ItemFlags CacheImportModel::flags(const QModelIndex &index) const
 
 bool CacheImportModel::isEmpty() const
 {
+    for (const auto &pi : pendingImports)
+        if (pi.isActive())
+            return false;
+
     return true;
 }
 
-
-void CacheImportModel::reportImportChanged(const QString &modId, int row)
+void CacheImportModel::reportImportChanged(int row, bool modifiedByView)
 {
     int startRow, endRow;
 
-    if (modId.isEmpty())
+    if (row == -1)
     {
         // All uncached rows.
         startRow = cache.mods().size();
         endRow = rowCount() - 1;
     }
-    else if (row != -1)
-        startRow = endRow = row;
-    else if ((endRow = rowOf(modId)) == -1)
-        // Mod is not present.
-        return;
     else
         // Update a single mod row.
-        startRow = endRow;
+        startRow = endRow = row;
 
+    if (!modifiedByView)
+        emit dataChanged(QModelIndex(), QModelIndex(), {modelutil::CANCEL_SORTING_ROLE});
     emit dataChanged(
             createIndex(startRow, columnMin()),
             createIndex(endRow, columnMax()));
@@ -226,6 +403,106 @@ void CacheImportModel::reportImportChanged(const QString &modId, int row)
     {
         previousEmptyState_ = emptyState;
         emit isEmptyChanged(emptyState);
+    }
+}
+
+void CacheImportModel::steamInfoFinished()
+{
+    const SteamModInfo &steamInfo = steamInfoCall->result();
+    const QString modId = util::fromSteamId(steamInfoCall->workshopId());
+    if (!steamInfo.valid())
+    {
+        emit textOutput(QStringLiteral("  Skipping %1: %2").arg(modId, steamInfoCall->errorDetail()));
+        infoResults[steamInfoCall->workshopId()] = SteamModInfo();
+    }
+    else
+    {
+        infoResults[steamInfo.id] = steamInfo;
+    }
+
+    int row = -1;
+    for (auto &pi : pendingImports)
+        if (pi.modId == modId)
+        {
+            row = rowOf(pi.installedId);
+            const CachedMod *cm = cache.mod(modId);
+            const InstalledMod *im = modList.mod(pi.installedId);
+            pi.updateStatus(cm, im, &steamInfo);
+            if (pi.status == PendingImport::DOWNLOAD_AVAILABLE)
+                pi.status = PendingImport::IMPORT_DOWNLOAD;
+            break;
+        }
+
+    steamInfoIdle = true;
+    nextInfo();
+
+    if (row != -1)
+        reportImportChanged(row);
+}
+
+void CacheImportModel::nextInfo()
+{
+    if (!steamInfoIdle)
+        return;
+    for (const auto &pi : pendingImports)
+        if (pi.status == PendingImport::PENDING)
+        {
+            steamInfoIdle = false;
+            steamInfoCall->start(pi.steamId);
+            return;
+        }
+}
+
+
+void CacheImportModel::PendingImport::updateStatus(const CachedMod *cm, const InstalledMod *im, const SteamModInfo *steamInfo)
+{
+    if (cm)
+        status = IN_CACHE;
+    else if (steamId.isEmpty())
+    {
+        if (status != IMPORT_COPY)
+            status = NOT_WORKSHOP;
+    }
+    else if (!steamInfo)
+        status = PENDING;
+    else if (!steamInfo->valid())
+        status = NOT_MOD;
+    else if (status != IMPORT_DOWNLOAD)
+        status = DOWNLOAD_AVAILABLE;
+}
+
+bool CacheImportModel::PendingImport::activate()
+{
+    switch (status)
+    {
+        case NOT_WORKSHOP:
+            status = IMPORT_COPY;
+            return true;
+        case DOWNLOAD_AVAILABLE:
+            status = IMPORT_DOWNLOAD;
+            return true;
+        case IMPORT_COPY:
+        case IMPORT_DOWNLOAD:
+            return true;
+        default:
+            return false;
+    }
+}
+bool CacheImportModel::PendingImport::deactivate()
+{
+    switch (status)
+    {
+        case NOT_WORKSHOP:
+        case DOWNLOAD_AVAILABLE:
+            return true;
+        case IMPORT_COPY:
+            status = NOT_WORKSHOP;
+            return true;
+        case IMPORT_DOWNLOAD:
+            status = DOWNLOAD_AVAILABLE;
+            return true;
+        default:
+            return false;
     }
 }
 

@@ -42,8 +42,10 @@ namespace ColumnLessThan {
         QRegularExpression versionRe(QStringLiteral("^v?(\\d+(?:\\.\\d+)*)([^\\d.]\\S*)?"));
         QRegularExpressionMatch leftMatch = versionRe.match(leftData.toString());
         QRegularExpressionMatch rightMatch = versionRe.match(rightData.toString());
+        // Compare non-version strings lexically.
         if (!leftMatch.hasMatch() && !rightMatch.hasMatch())
             return leftData.toString() < rightData.toString();
+        // non-version strings are less than proper version strings.
         else if (leftMatch.hasMatch() != rightMatch.hasMatch())
             return !leftMatch.hasMatch();
 

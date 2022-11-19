@@ -21,6 +21,10 @@ namespace util {
     bool isSteamModId(const QString &inputId);
     //! Returns a steam mod ID, if the string parses correctly, otherwise the default QString.
     QString parseSteamModUrl(const QString &input);
+    //! Returns the steam workshop ID from a mod ID. Assumes that the mod ID already satisfies #isSteamModId.
+    QString toSteamId(const QString &modId);
+    //! Returns a mod ID from a steam workshop ID.
+    QString fromSteamId(const QString &workshopId);
 
 } // namespace util
 

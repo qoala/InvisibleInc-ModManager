@@ -328,6 +328,7 @@ void MainWindow::cacheAddMod()
 
 void MainWindow::cacheImportInstalled()
 {
+    logDisplay->appendPlainText("\n--");
     actionStarted();
     CacheImportInstalledCommand *command = new CacheImportInstalledCommand(app, this);
     connect(command, &CacheImportInstalledCommand::textOutput, this, &MainWindow::writeText);

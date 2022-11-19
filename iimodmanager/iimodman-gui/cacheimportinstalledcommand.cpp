@@ -32,18 +32,22 @@ public:
 
         QTreeView *treeView = new QTreeView;
         treeView->setModel(proxy);
+        treeView->setColumnWidth(CacheImportModel::ACTION, 160);
+        treeView->setColumnWidth(CacheImportModel::ID, 160);
         treeView->setColumnWidth(CacheImportModel::NAME, 300);
         treeView->setColumnWidth(CacheImportModel::FOLDER, 160);
-        treeView->setColumnWidth(CacheImportModel::ID, 160);
         treeView->setColumnWidth(CacheImportModel::INSTALLED_VERSION, 110);
         treeView->setColumnWidth(CacheImportModel::STEAM_UPDATE_TIME, 160);
         treeView->sortByColumn(CacheImportModel::ACTION, Qt::DescendingOrder);
+        treeView->setSortingEnabled(true);
 
         QDialogButtonBox *buttonBox = new QDialogButtonBox;
         applyButton = buttonBox->addButton(QDialogButtonBox::Apply);
+        connect(model, &CacheImportModel::isEmptyChanged, this, &CacheImportDialog::updateButtons);
         connect(applyButton, &QAbstractButton::clicked, this, &QDialog::accept);
         cancelButton = buttonBox->addButton(QDialogButtonBox::Cancel);
         connect(cancelButton, &QAbstractButton::clicked, this, &QDialog::reject);
+        updateButtons();
 
         QVBoxLayout *mainLayout = new QVBoxLayout;
         mainLayout->addWidget(treeView);
@@ -52,8 +56,11 @@ public:
 
         setWindowTitle(tr("II Mod Manager: Import Mods"));
         setSizeGripEnabled(true);
-        resize(1020, 400);
+        resize(1080, 400);
     }
+
+private slots:
+    void updateButtons() { applyButton->setEnabled(!model->isEmpty()); }
 
 private:
     CacheImportModel *model;
@@ -70,7 +77,8 @@ void CacheImportInstalledCommand::execute()
 {
     app.refreshMods();
 
-    model = new CacheImportModel(app.cache(), app.modList(), this);
+    model = new CacheImportModel(app.cache(), app.modList(), app.modDownloader().modInfoCall(), this);
+    connect(model, &CacheImportModel::textOutput, this, &CacheImportInstalledCommand::textOutput);
     CacheImportDialog *dialog = new CacheImportDialog(model, static_cast<QWidget*>(parent()));
     connect(dialog, &QDialog::finished, this, &CacheImportInstalledCommand::dialogFinished);
     dialog->show();

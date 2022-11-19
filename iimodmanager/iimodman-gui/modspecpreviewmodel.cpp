@@ -344,7 +344,9 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
         int row = index.row();
         const CachedMod *cm;
         const InstalledMod *im;
-        PendingChange &pc = *seekMutablePendingRow(row, &cm, &im);
+        PendingChange *pc = seekMutablePendingRow(row, &cm, &im);
+        if (!pc)
+            return false;
 
         if (state == Qt::Checked)
         {
@@ -353,7 +355,7 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
                 auto target = pinCurrent(im);
                 if (!target)
                     return false;
-                pc = *target;
+                *pc = *target;
             }
             else
             {
@@ -361,19 +363,19 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
                 auto target = useLatest(cm, im);
                 if (!target)
                     return false;
-                pc = *target;
+                *pc = *target;
             }
         }
         else if (state == Qt::Unchecked)
         {
             if (im)
-                pc.type = PendingChange::REMOVE;
+                pc->type = PendingChange::REMOVE;
             else
-                pc.type = PendingChange::NONE;
+                pc->type = PendingChange::NONE;
         }
 
         setDirty();
-        reportSpecChanged(pc.modId, row, true);
+        reportSpecChanged(row, true);
         return true;
     }
     return false;
@@ -501,9 +503,6 @@ QList<SpecMod> ModSpecPreviewModel::versionedModSpec() const
 
 bool ModSpecPreviewModel::isEmpty() const
 {
-    if (pendingChanges.isEmpty())
-        return true;
-
     for (const auto &change : pendingChanges)
         if (change.isActive())
             return false;
@@ -711,24 +710,19 @@ void ModSpecPreviewModel::reportAllChanged(const std::function<void ()> &cb, con
     }
 }
 
-void ModSpecPreviewModel::reportSpecChanged(const QString &modId, int row, bool modifiedByView)
+void ModSpecPreviewModel::reportSpecChanged(int row, bool modifiedByView)
 {
     int startRow, endRow;
 
-    if (modId.isEmpty())
+    if (row == -1)
     {
         // All rows.
         startRow = 0;
         endRow = rowCount() - 1;
     }
-    else if (row != -1)
-        startRow = endRow = row;
-    else if ((endRow = rowOf(modId)) == -1)
-        // Mod is not present.
-        return;
     else
         // Update a single mod row.
-        startRow = endRow;
+        startRow = endRow = row;
 
     if (!modifiedByView)
         emit dataChanged(QModelIndex(), QModelIndex(), {modelutil::CANCEL_SORTING_ROLE});

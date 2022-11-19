@@ -50,6 +50,18 @@ QString parseSteamModUrl(const QString &input)
         return QStringLiteral("workshop-%1").arg(match.captured(2));
     return QString();
 }
+QString toSteamId(const QString &modId)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return modId.sliced(9);
+#else
+    return modId.mid(9);
+#endif
+}
+QString fromSteamId(const QString &workshopId)
+{
+    return QStringLiteral("workshop-%1").arg(workshopId);
+}
 
 } // namespace util
 

@@ -148,14 +148,15 @@ private:
     //! If not present, a default pending change is provided.
     const PendingChange seekPendingRow(int row, const CachedMod **cmOut, const InstalledMod **imOut) const;
     //! Populates the cached mod, installed mod, and pending change.
-    //! If not present, a default pending change is inserted and provided for editing.
+    //! If the mod doesn't exist, nullptr is returned.
+    //! If a pending action is not present, a default is inserted and provided for editing.
     PendingChange *seekMutablePendingRow(int row, const CachedMod **cmOut, const InstalledMod **imOut);
 
     //! Marks the mod spec as needing to be regenerated.
     inline void setDirty() const { dirty = true; };
-    //! Report the the visible model has changed.
+    //! Report that the visible model has changed.
     //! Pass the updated mod ID for a single mod; leave blank for all mods.
-    void reportSpecChanged(const QString &modId = QString(), int row = -1, bool modifiedByView = false);
+    void reportSpecChanged(int row = -1, bool modifiedByView = false);
 
     std::optional<PendingChange> toPendingChange(const SpecMod &specMod) const;
     void generateModSpec() const;
