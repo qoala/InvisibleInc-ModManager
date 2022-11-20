@@ -21,4 +21,4 @@ out/iimodman-gui/iimodman-gui
 
 ## Usage
 
-[Usage](https://github.com/qoala/InvisibleInc-ModManager/wiki/Usage) on the wiki.
+[Usage](https://github.com/qoala/InvisibleInc-ModManager/wiki/GUI-Usage) on the wiki.
