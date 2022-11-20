@@ -171,7 +171,7 @@ void MainWindow::createMenuActions()
     cacheAddModAct = new QAction(tr("&Add Workshop Mod"), this);
     cacheAddModAct->setStatusTip(tr("Download and add a mod to the cache"));
     connect(cacheAddModAct, &QAction::triggered, this, &MainWindow::cacheAddMod);
-    cacheImportInstalledAct = new QAction(tr("&Import installed mods"), this);
+    cacheImportInstalledAct = new QAction(tr("&Import Installed Mods"), this);
     cacheImportInstalledAct->setStatusTip(tr("Copy existing installed mods to the download cache"));
     connect(cacheImportInstalledAct, &QAction::triggered, this, &MainWindow::cacheImportInstalled);
 
