@@ -8,6 +8,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+### Flatpak ###
+.flatpak-builder
+build
+build-dir
+repo
+
 ### C++, QtCreator ###
 
 # C++ objects and libs

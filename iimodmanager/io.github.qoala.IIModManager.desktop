@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Invisible Inc Mod Manager
+Exec=iimodman-gui
+Type=Application
+Icon=io.github.qoala.IIModManager
+Categories=Game

@@ -30,5 +30,10 @@ target_compile_definitions(${IIMODMAN_GUI_TARGET_NAME} PRIVATE
   )
 target_link_libraries(${IIMODMAN_GUI_TARGET_NAME}
     ${IIMODMAN_LIB_TARGET_NAME}
-    ${IIMODMAN_GUI_QT_LIBRARIES})
+    ${IIMODMAN_GUI_QT_LIBRARIES}
+  )
 
+if(FLATPAK)
+  install(TARGETS ${IIMODMAN_GUI_TARGET_NAME} ${INSTALL_TARGETS_DEFAULT_ARGS})
+  add_subdirectory(icons)
+endif()

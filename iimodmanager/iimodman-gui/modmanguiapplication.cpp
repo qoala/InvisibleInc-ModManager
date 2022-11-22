@@ -12,7 +12,7 @@ ModManGuiApplication::ModManGuiApplication(int &argc, char **argv[])
 {
     setApplicationName(ModManConfig::applicationName);
     setOrganizationName(ModManConfig::organizationName);
-    setWindowIcon(QIcon(":icons/iimm-icon-64.png"));
+    setWindowIcon(QIcon(":icons/64-apps-io.github.qoala.IIModManager.png"));
 
     cache_ = new ModCache(config_, this);
     modList_ = new ModList(config_, cache_, this);
