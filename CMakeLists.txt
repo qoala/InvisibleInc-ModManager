@@ -47,7 +47,7 @@ else()
 endif()
 
 set(QUAZIP_QT_MAJOR_VERSION ${IIMODMAN_QT_MAJOR_VERSION})
-add_subdirectory(quazip)
+add_subdirectory(thirdparty/quazip)
 
 if(NOT FLATPAK)
   add_subdirectory(iimodman-cli)
