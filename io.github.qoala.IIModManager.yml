@@ -1,0 +1,39 @@
+app-id: io.github.qoala.IIModManager
+runtime: org.kde.Platform
+runtime-version: '6.4'
+sdk: org.kde.Sdk
+command: iimodman-gui
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --share=network
+  - --filesystem=xdg-data/Steam/steamapps/common/InvisibleInc # Default steam install location.
+  - --filesystem=xdg-config/QoalatyEngineering:create
+cleanup:
+  - /include
+  - '*.a'
+modules:
+  - name: qt6-core5compat
+    buildsystem: cmake-ninja
+    builddir: true
+    cleanup-platform:
+      - /bin
+    post-install:
+      - 'ln -sr ${FLATPAK_DEST}/lib/${FLATPAK_ARCH}-linux-gnu/libQt*.so* -t ${FLATPAK_DEST}/lib/'
+    sources:
+      - type: archive
+        url: 'https://download.qt.io/official_releases/qt/6.4/6.4.0/submodules/qt5compat-everywhere-src-6.4.0.tar.xz'
+        md5: 614a697c302c9f38bb525714c3a0d3e7
+
+  - name: iimodman
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DFLATPAK=ON
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - -DIIMODMAN_QT_MAJOR_VERSION=6
+      - -DQUAZIP_QT_MAJOR_VERSION=6
+      - -DQUAZIP_INSTALL=OFF
+    sources:
+      - type: git
+        url: 'https://github.com/qoala/InvisibleInc-ModManager.git'
