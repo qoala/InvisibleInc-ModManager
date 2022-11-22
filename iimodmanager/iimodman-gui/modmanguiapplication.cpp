@@ -1,5 +1,6 @@
 #include "modmanguiapplication.h"
 
+#include <QIcon>
 #include <modcache.h>
 #include <moddownloader.h>
 #include <modlist.h>
@@ -11,6 +12,7 @@ ModManGuiApplication::ModManGuiApplication(int &argc, char **argv[])
 {
     setApplicationName(ModManConfig::applicationName);
     setOrganizationName(ModManConfig::organizationName);
+    setWindowIcon(QIcon(":icons/iimm-icon-64.png"));
 
     cache_ = new ModCache(config_, this);
     modList_ = new ModList(config_, cache_, this);

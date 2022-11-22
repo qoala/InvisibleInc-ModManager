@@ -19,6 +19,8 @@ set(IIMODMAN_GUI_SOURCES
     openspecfilecommand.cpp
     settingsdialog.cpp
     util.cpp
+
+    icon.qrc
   )
 
 add_executable(${IIMODMAN_GUI_TARGET_NAME} ${IIMODMAN_GUI_SOURCES})
