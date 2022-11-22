@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" version="1.1" viewBox="0 0 33.867 33.867" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+ <defs>
+  <clipPath id="clipPath1395">
+   <rect transform="matrix(1 0 -.28763 .95774 0 0)" x="23.314" y="17.518" width="3.7632" height="9.8638" fill="#00cff8" stop-color="#000000"/>
+  </clipPath>
+  <clipPath id="clipPath1395-2">
+   <rect transform="matrix(1 0 -.28763 .95774 0 0)" x="23.314" y="17.518" width="3.7632" height="9.8638" fill="#00cff8" stop-color="#000000"/>
+  </clipPath>
+  <clipPath id="clipPath1395-6">
+   <rect transform="matrix(1 0 -.28763 .95774 0 0)" x="23.314" y="17.518" width="3.7632" height="9.8638" fill="#00cff8" stop-color="#000000"/>
+  </clipPath>
+  <clipPath id="clipPath1395-2-9">
+   <rect transform="matrix(1 0 -.28763 .95774 0 0)" x="23.314" y="17.518" width="3.7632" height="9.8638" fill="#00cff8" stop-color="#000000"/>
+  </clipPath>
+ </defs>
+ <metadata>
+  <rdf:RDF>
+   <cc:Work rdf:about="">
+    <dc:format>image/svg+xml</dc:format>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:title/>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <g display="none">
+  <g>
+   <rect width="33.867" height="33.867" fill="#333" stop-color="#000000"/>
+   <rect x="8.7831" y="6.9651" width="1.9844" height="16.946" fill="#00cff8" stop-color="#000000"/>
+   <rect x="23.112" y="6.8645" width="1.9844" height="17.43" fill="#00cff8" stop-color="#000000"/>
+  </g>
+  <text x="11.484115" y="13.26074" fill="none" font-family="'Gobold Extra2'" font-size="4.6302px" letter-spacing="0px" stroke="#000000" stroke-width=".26458px" word-spacing="0px" style="line-height:1.25" xml:space="preserve"><tspan x="11.484115" y="13.26074" font-family="'Gobold Extra2'" stroke-width=".26458px"/></text>
+  <path d="m20.488 10.294v-4.3299h-7.107v4.3299l5.1446 12.004v2.6342" fill="none" stroke="#00cff8" stroke-linejoin="round" stroke-width="3.3674"/>
+  <rect transform="scale(-1,1)" x="-20.209" y="26.219" width="3.3674" height="3.3674" fill="#00cff8" stop-color="#000000"/>
+  <g fill="#00cff8">
+   <rect x="5.5872" y="4.4548" width="2.0489" height="10.932" stop-color="#000000"/>
+   <rect x="7.9702" y="18.654" width="2.0489" height="10.932" stop-color="#000000"/>
+   <rect x="3.2042" y="18.654" width="2.0489" height="10.932" stop-color="#000000"/>
+   <rect transform="matrix(1.0325 0 .31008 .98486 -20.868 2.1299)" x="18.275" y="16.778" width="1.9844" height="9.447" clip-path="url(#clipPath1395)" stop-color="#000000"/>
+   <rect transform="matrix(-1.0325 0 -.31008 .98486 34.091 2.1299)" x="18.275" y="16.778" width="1.9844" height="9.447" clip-path="url(#clipPath1395-2)" stop-color="#000000"/>
+   <rect x="26.244" y="4.4549" width="2.0489" height="10.932" stop-color="#000000"/>
+   <rect x="28.627" y="18.654" width="2.0489" height="10.932" stop-color="#000000"/>
+   <rect x="23.861" y="18.654" width="2.0489" height="10.932" stop-color="#000000"/>
+   <rect transform="matrix(1.0325 0 .31008 .98486 -.21134 2.1299)" x="18.275" y="16.778" width="1.9844" height="9.447" clip-path="url(#clipPath1395-6)" stop-color="#000000"/>
+   <rect transform="matrix(-1.0325 0 -.31008 .98486 54.748 2.1299)" x="18.275" y="16.778" width="1.9844" height="9.447" clip-path="url(#clipPath1395-2-9)" stop-color="#000000"/>
+  </g>
+ </g>
+ <g>
+  <rect x="1.0583" y="2.249" width="31.75" height="29.369" fill="#3e6b6b" stop-color="#000000"/>
+  <g transform="translate(9.1281 .52917)" fill="#8cffff">
+   <rect x="-7.5406" y="29.766" width="3.9688" height=".79375" stop-color="#000000"/>
+   <rect x="-7.5406" y="26.591" width=".79375" height="3.9688" stop-color="#000000"/>
+  </g>
+  <g transform="rotate(90 10.914 21.233)" fill="#8cffff">
+   <rect x="-7.5406" y="29.766" width="3.9688" height=".79375" stop-color="#000000"/>
+   <rect x="-7.5406" y="26.591" width=".79375" height="3.9688" stop-color="#000000"/>
+  </g>
+  <g transform="rotate(180 12.369 16.669)" fill="#8cffff">
+   <rect x="-7.5406" y="29.766" width="3.9688" height=".79375" stop-color="#000000"/>
+   <rect x="-7.5406" y="26.591" width=".79375" height="3.9688" stop-color="#000000"/>
+  </g>
+  <g transform="rotate(-90 12.634 10.914)" fill="#8cffff">
+   <rect x="-7.5406" y="29.766" width="3.9688" height=".79375" stop-color="#000000"/>
+   <rect x="-7.5406" y="26.591" width=".79375" height="3.9688" stop-color="#000000"/>
+  </g>
+ </g>
+ <g display="none">
+  <text x="11.484115" y="13.26074" fill="none" font-family="'Gobold Extra2'" font-size="4.6302px" letter-spacing="0px" stroke="#000000" stroke-width=".26458px" word-spacing="0px" style="line-height:1.25" xml:space="preserve"><tspan x="11.484115" y="13.26074" font-family="'Gobold Extra2'" stroke-width=".26458px"/></text>
+  <g fill="#3e6b6b" stroke="#3e6b6b" stroke-width="1.3229">
+   <path d="m13.381 4.2812a1.6839 1.6839 0 0 0-1.6836 1.6836v4.3281a1.6839 1.6839 0 0 0 0.13672 0.66406l5.0078 11.686v2.2891h3.3672v-2.6328a1.6839 1.6839 0 0 0-0.13672-0.66406l-5.0078-11.686v-2.3008h3.7402v2.6445h3.3672v-4.3281a1.6839 1.6839 0 0 0-1.6836-1.6836z" color="#000000" color-rendering="auto" display="inline" dominant-baseline="auto" fill-rule="evenodd" image-rendering="auto" shape-rendering="auto" solid-color="#000000" stop-color="#000000" style="font-feature-settings:normal;font-variant-alternates:normal;font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;font-variant-position:normal;font-variation-settings:normal;inline-size:0;isolation:auto;mix-blend-mode:normal;shape-margin:0;shape-padding:0;text-decoration-color:#000000;text-decoration-line:none;text-decoration-style:solid;text-indent:0;text-orientation:mixed;text-transform:none;white-space:normal"/>
+   <rect transform="scale(-1,1)" x="-20.209" y="26.219" width="3.3674" height="3.3674" stop-color="#000000"/>
+   <g>
+    <rect x="5.5872" y="4.4548" width="2.0489" height="10.932" stop-color="#000000"/>
+    <rect x="26.244" y="4.4549" width="2.0489" height="10.932" stop-color="#000000"/>
+    <path d="m3.2041 18.654v10.933h2.049v-4.4251l0.33435 1.0609v5.29e-4l0.54622 1.7348h0.95601l0.54622-1.7353v-5.29e-4l0.33435-1.0604v4.4251h2.049v-10.933h-2.049l-1.3586 4.3145-1.3586-4.3145z" display="inline" stop-color="#000000"/>
+    <path d="m23.861 18.654v10.933h2.049v-4.4251l0.33435 1.0609v5.29e-4l0.54622 1.7348h0.95601l0.54622-1.7353v-5.29e-4l0.33435-1.0604v4.4251h2.049v-10.933h-2.049l-1.3586 4.3145-1.3586-4.3145z" display="inline" stop-color="#000000"/>
+   </g>
+  </g>
+ </g>
+ <g>
+  <text x="11.484115" y="13.26074" fill="none" font-family="'Gobold Extra2'" font-size="4.6302px" letter-spacing="0px" stroke="#000000" stroke-width=".26458px" word-spacing="0px" style="line-height:1.25" xml:space="preserve"><tspan x="11.484115" y="13.26074" font-family="'Gobold Extra2'" stroke-width=".26458px"/></text>
+  <g fill="#8cffff">
+   <path d="m13.381 4.2812a1.6839 1.6839 0 0 0-1.6836 1.6836v4.3281a1.6839 1.6839 0 0 0 0.13672 0.66406l5.0078 11.686v2.2891h3.3672v-2.6328a1.6839 1.6839 0 0 0-0.13672-0.66406l-5.0078-11.686v-2.3008h3.7402v2.6445h3.3672v-4.3281a1.6839 1.6839 0 0 0-1.6836-1.6836z" color="#000000" color-rendering="auto" dominant-baseline="auto" fill-rule="evenodd" image-rendering="auto" shape-rendering="auto" solid-color="#000000" stop-color="#000000" style="font-feature-settings:normal;font-variant-alternates:normal;font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;font-variant-position:normal;font-variation-settings:normal;inline-size:0;isolation:auto;mix-blend-mode:normal;shape-margin:0;shape-padding:0;text-decoration-color:#000000;text-decoration-line:none;text-decoration-style:solid;text-indent:0;text-orientation:mixed;text-transform:none;white-space:normal"/>
+   <rect transform="scale(-1,1)" x="-20.209" y="26.219" width="3.3674" height="3.3674" stop-color="#000000"/>
+   <rect x="5.5872" y="4.4548" width="2.0489" height="10.932" stop-color="#000000"/>
+   <rect x="26.244" y="4.4549" width="2.0489" height="10.932" stop-color="#000000"/>
+   <path d="m3.2041 18.654v10.933h2.049v-4.4251l0.33435 1.0609v5.29e-4l0.54622 1.7348h0.95601l0.54622-1.7353v-5.29e-4l0.33435-1.0604v4.4251h2.049v-10.933h-2.049l-1.3586 4.3145-1.3586-4.3145z" stop-color="#000000"/>
+   <path d="m23.861 18.654v10.933h2.049v-4.4251l0.33435 1.0609v5.29e-4l0.54622 1.7348h0.95601l0.54622-1.7353v-5.29e-4l0.33435-1.0604v4.4251h2.049v-10.933h-2.049l-1.3586 4.3145-1.3586-4.3145z" stop-color="#000000"/>
+  </g>
+ </g>
+</svg>
