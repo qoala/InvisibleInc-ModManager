@@ -46,7 +46,7 @@ else()
         message(FATAL_ERROR "Qt version ${IIMODMAN_QT_MAJOR_VERSION} is not supported")
 endif()
 
-set(QUAZIP_QT_MAJOR_VERSION ${IIMODMAN_QT_MAJOR_VERSION})
+set(QUAZIP_QT_MAJOR_VERSION ${IIMODMAN_QT_MAJOR_VERSION} CACHE STRING "Qt version for quazip, defaults to IIMODMAN_QT_MAJOR_VERSION")
 add_subdirectory(thirdparty/quazip)
 
 if(NOT FLATPAK)

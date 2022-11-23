@@ -32,7 +32,6 @@ modules:
       - -DFLATPAK=ON
       - -DCMAKE_BUILD_TYPE=RelWithDebInfo
       - -DIIMODMAN_QT_MAJOR_VERSION=6
-      - -DQUAZIP_QT_MAJOR_VERSION=6
       - -DQUAZIP_INSTALL=OFF
     sources:
       - type: git
