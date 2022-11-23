@@ -10,7 +10,10 @@ int main(int argc, char *argv[])
     iimodmanager::ModManGuiApplication app(argc, &argv);
 
     iimodmanager::MainWindow window(app);
-    window.show();
+    if (app.config().openMaximized())
+        window.showMaximized();
+    else
+        window.show();
 
     return app.exec();
 }

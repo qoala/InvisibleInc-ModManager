@@ -286,6 +286,8 @@ void MainWindow::openSettings()
 {
     actionStarted();
     SettingsDialog dialog(app, this);
+    if (app.config().openMaximized())
+        dialog.setWindowState(Qt::WindowMaximized);
     if (dialog.exec() == QDialog::Accepted)
     {
         app.cache().refresh(ModCache::LATEST_ONLY);

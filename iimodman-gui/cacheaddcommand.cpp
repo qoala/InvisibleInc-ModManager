@@ -3,7 +3,6 @@
 #include "modmanguiapplication.h"
 #include "util.h"
 
-#include <QDialog>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QRegularExpression>

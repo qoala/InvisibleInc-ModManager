@@ -32,7 +32,7 @@ public:
     const QString defaultInstallPath() const;
     const QString defaultLocalPath() const;
 
-private:
+protected:
     QSettings settings_;
 };
 

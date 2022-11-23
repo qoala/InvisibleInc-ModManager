@@ -8,9 +8,9 @@ namespace iimodmanager {
 const QString ModManConfig::applicationName = QStringLiteral("InvisibleInc Mod Manager");
 const QString ModManConfig::organizationName = QStringLiteral("QoalatyEngineering");
 
-const QString cachePathKey = QStringLiteral("core/cachePath");
-const QString installPathKey = QStringLiteral("core/installPath");
-const QString localPathKey = QStringLiteral("core/localPath");
+static const QString cachePathKey = QStringLiteral("core/cachePath");
+static const QString installPathKey = QStringLiteral("core/installPath");
+static const QString localPathKey = QStringLiteral("core/localPath");
 
 ModManConfig::ModManConfig()
 #ifdef Q_OS_WIN

@@ -1,8 +1,9 @@
 #ifndef MODMANGUIAPPLICATION_H
 #define MODMANGUIAPPLICATION_H
 
+#include "guiconfig.h"
+
 #include <QApplication>
-#include <modmanconfig.h>
 
 namespace iimodmanager {
 
@@ -15,7 +16,8 @@ class ModManGuiApplication: public QApplication
 public:
     ModManGuiApplication(int &argc, char **argv[]);
 
-    inline ModManConfig &config() { return config_; }
+    inline const GuiConfig &config() const { return config_; }
+    inline GuiConfig &mutableConfig() { return config_; }
     inline ModCache &cache() { return *cache_; }
     inline ModList &modList() { return *modList_; }
     inline ModDownloader &modDownloader() { return *modDownloader_; }
@@ -28,7 +30,7 @@ public:
     void refreshMods();
 
 private:
-    ModManConfig config_;
+    GuiConfig config_;
     ModCache *cache_;
     ModList *modList_;
     ModDownloader *modDownloader_;

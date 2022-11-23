@@ -2,6 +2,7 @@
 #define SETTINGSDIALOG_H
 
 #include <QAction>
+#include <QCheckBox>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QLineEdit>
@@ -34,6 +35,8 @@ private:
     QPushButton *resetButton;
     QPushButton *cancelButton;
     QPushButton *okButton;
+
+    QCheckBox *openMaximizedCheckBox;
 
     ModManGuiApplication &app;
 
