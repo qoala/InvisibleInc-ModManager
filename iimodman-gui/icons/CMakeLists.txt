@@ -1,4 +1,4 @@
-if(IIMODMAN_FLATPAK)
+if(FLATPAK)
   ecm_install_icons(
       ICONS
         128-apps-io.github.qoala.IIModManager.png
