@@ -368,10 +368,19 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
         }
         else if (state == Qt::Unchecked)
         {
-            if (im)
-                pc->type = PendingChange::REMOVE;
-            else
+            if (!im)
                 pc->type = PendingChange::NONE;
+            else if (cm && cm->latestVersion() && cm->latestVersion()->id() != pc->versionId)
+            {
+                // Pseudo-tri-state. If checked and can update to latest, cycle through update before removing.
+                auto target = useLatest(cm, im);
+                if (target)
+                    *pc = *target;
+                else
+                    pc->type = PendingChange::REMOVE;
+            }
+            else
+                pc->type = PendingChange::REMOVE;
         }
 
         setDirty();
