@@ -123,7 +123,8 @@ public:
     QString path() const;
 
 // file-visibility:
-    void setInstalled(bool value) { installed_ = value; };
+    inline void setInstalled(bool value) { installed_ = value; };
+    inline void refreshSpecMod() const { specMod.reset(); };
     bool refresh(ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr) const;
 
 private:
@@ -307,6 +308,20 @@ void ModCache::unmarkInstalledMod(const QString &modId)
     if (m)
     {
         m->impl()->unmarkInstalled();
+        emit metadataChanged({modId}, {modIdx});
+    }
+}
+
+void ModCache::setDefaultAlias(const QString &modId, const QString &newAlias)
+{
+    int modIdx;
+    CachedMod *m = impl->mod(modId, &modIdx);
+    if (m)
+    {
+        m->impl()->setDefaultAlias(newAlias);
+        for (auto &v : m->impl()->versions())
+            v.impl()->refreshSpecMod();
+
         emit metadataChanged({modId}, {modIdx});
     }
 }
@@ -928,7 +943,13 @@ const QString &CachedVersion::Impl::hash() const
 const SpecMod CachedVersion::Impl::asSpec() const
 {
     if (!specMod)
-        specMod.emplace(modId, id_, info_.name(), info_.version());
+    {
+        const CachedMod *cm = cache.mod(modId);
+        if (cm)
+            specMod.emplace(modId, id_, cm->defaultAlias(), info_.name(), info_.version());
+        else
+            specMod.emplace(modId, id_, info_.name(), info_.version());
+    }
 
     return *specMod;
 }

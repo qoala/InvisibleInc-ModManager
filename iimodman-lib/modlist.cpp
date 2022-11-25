@@ -36,7 +36,7 @@ public:
     ModList *q;
     inline const ModCache *cache() const { return cache_; }
     inline ModCache *cache() { return cache_; }
-    QString modPath(const QString &modId) const;
+    QString modPath(const QString &installedId) const;
 
 private:
     const ModManConfig &config_;
@@ -59,6 +59,7 @@ public:
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
     inline const QString &alias() const { return alias_; };
+    inline const QString &installedId() const { return alias_.isEmpty() ? id_ : alias_; }
     const QString &hash() const;
 
     bool hasCacheVersion() const;
@@ -68,6 +69,7 @@ public:
 
 // file-visibility:
     inline const QString &cacheVersionId() const { return cacheVersionId_; }
+    inline void setAlias(const QString &newAlias) { alias_ = newAlias; }
     bool refresh(ModList::RefreshLevel level = ModList::FULL, const QString &expectedCacheVersionId = QString());
 
 private:
@@ -195,26 +197,37 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
 const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *errorInfo)
 {
     const QString &modId = specMod.id();
+    const QString &alias = specMod.alias();
+    const bool useAlias = !alias.isEmpty();
     const CachedMod *cm = cache()->mod(modId);
-    if (!cm)
-    {
-        if (errorInfo)
-            *errorInfo = QStringLiteral("Mod not in cache.");
-        return nullptr;
-    }
-
+    InstalledMod *im = mod(modId);
     bool useLatestVersion = specMod.versionId().isEmpty();
+
     if (specMod.versionId() == '-')
     {
         // Keep currently installed version, if possible.
         InstalledMod *im = mod(modId);
         if (im)
         {
+            if (im->alias() != alias)
+            {
+                if (errorInfo)
+                    *errorInfo = QStringLiteral("Cannot preserve existing version when alias doesn't match: %1 %2").arg(im->alias(), alias);
+                qCWarning(modlist).noquote() << "Alias mismatch " << modId << " currently: " << im->alias() << " requested: " << alias;
+                return nullptr;
+            }
             im->impl()->refresh();
             return im;
         }
         else
             useLatestVersion = true;
+    }
+
+    if (!cm)
+    {
+        if (errorInfo)
+            *errorInfo = QStringLiteral("Mod not in cache.");
+        return nullptr;
     }
     const CachedVersion *cv = useLatestVersion ? cm->latestVersion() : cm->version(specMod.versionId());
     if (!cv)
@@ -224,9 +237,16 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *e
         return nullptr;
     }
     const QString inputPath = cv->path();
-    const QString outputPath = modPath(modId);
+    const QString outputPath = modPath(useAlias ? alias : modId);
     if (!FileUtils::removeModDir(outputPath, errorInfo))
         return nullptr;
+    if (im && im->alias() != alias)
+    {
+        // Also uninstall the existing install of this mod with a different folder.
+        const QString aliasPath = modPath(im->alias());
+        if (!FileUtils::removeModDir(aliasPath, errorInfo))
+            return nullptr;
+    }
     qCDebug(modlist) << "Copying" << inputPath << "to" << outputPath;
     if (!FileUtils::copyRecursively(inputPath, outputPath, errorInfo))
     {
@@ -234,15 +254,18 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *e
         return nullptr;
     }
 
-    InstalledMod *im = mod(modId);
     if (im)
     {
+        if (useAlias)
+            im->impl()->setAlias(alias);
         if (im->impl()->refresh(FULL, cv->id()))
             return im;
     }
     else
     {
         InstalledMod newMod(*this, modId);
+        if (useAlias)
+            newMod.impl()->setAlias(alias);
         if (newMod.impl()->refresh(FULL, cv->id()))
         {
             modIds_[modId] = mods_.size();
@@ -258,17 +281,19 @@ bool ModList::Impl::removeMod(const QString &modId, QString *errorInfo)
     InstalledMod *im = mod(modId);
     if (im)
     {
-        const QString outputPath = modPath(modId);
+        const QString outputPath = modPath(im->impl()->installedId());
         if (!FileUtils::removeModDir(outputPath, errorInfo))
             return false;
     }
     return im;
 }
 
-QString ModList::Impl::modPath(const QString &modId) const
+QString ModList::Impl::modPath(const QString &installedId) const
 {
+    if (installedId.isEmpty()) // Ensure we never accidentally try to "remove" the entire mod directory.
+        qFatal("Cannot process a mod with empty path.");
     QDir installDir(config_.modPath());
-    return installDir.absoluteFilePath(modId);
+    return installDir.absoluteFilePath(installedId);
 }
 
 void ModList::Impl::refreshIndex()
@@ -343,7 +368,7 @@ InstalledMod::Impl::Impl(ModList::Impl &parent, const QString &id)
 const QString &InstalledMod::Impl::hash() const
 {
     if (hash_.isEmpty())
-        hash_ = ModSignature::hashModPath(parent().modPath(id_));
+        hash_ = ModSignature::hashModPath(parent().modPath(installedId()));
     return hash_;
 }
 
@@ -374,12 +399,12 @@ const SpecMod InstalledMod::Impl::asSpec() const
 
 QString InstalledMod::Impl::path() const
 {
-    return parent().modPath(id_);
+    return parent().modPath(installedId());
 }
 
 bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &expectedCacheVersionId)
 {
-    QDir modDir(parent().modPath(id_));
+    QDir modDir(parent().modPath(installedId()));
     if (!modDir.exists("modinfo.txt"))
     {
         qCDebug(modlist).noquote() << QString("installedmod:refresh(%1)").arg(id_) << "skipped: No modinfo.txt";
