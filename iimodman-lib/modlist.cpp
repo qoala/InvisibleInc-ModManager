@@ -58,6 +58,7 @@ public:
 
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
+    inline const QString &alias() const { return alias_; };
     const QString &hash() const;
 
     bool hasCacheVersion() const;
@@ -73,6 +74,7 @@ private:
     ModList::Impl &parent_;
     QString id_;
     ModInfo info_;
+    QString alias_;
     QString cacheVersionId_;
 
     mutable QString hash_;
@@ -292,6 +294,11 @@ const QString &InstalledMod::id() const
 const ModInfo &InstalledMod::info() const
 {
     return impl()->info();
+}
+
+const QString &InstalledMod::alias() const
+{
+    return impl()->alias();
 }
 
 const QString &InstalledMod::hash() const

@@ -92,6 +92,8 @@ public:
     const CachedVersion *markInstalledVersion(const QString &modId, const QString &hash, const QString &expectedVersionId = QString());
     //! Clears the given mod's installed version.
     void unmarkInstalledMod(const QString &modId);
+    //! Updates the default alias of the mod given by mod ID.
+    void setDefaultAlias(const QString &modId, const QString &newAlias);
 
     ~ModCache();
 
@@ -125,6 +127,7 @@ public:
 
     const QString &id() const;
     const ModInfo &info() const;
+    const QString &defaultAlias() const;
     const QList<CachedVersion> &versions() const;
     bool downloaded() const;
 

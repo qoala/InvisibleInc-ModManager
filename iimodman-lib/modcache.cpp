@@ -74,6 +74,7 @@ public:
 
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
+    inline const QString &defaultAlias() const { return defaultAlias_; };
     inline const QList<CachedVersion> &versions() const { return versions_; };
     inline const CachedVersion *installedVersion() const { return installedVersion_; };
 
@@ -85,6 +86,7 @@ public:
     bool updateFromSteam(const SteamModInfo &steamInfo);
     const CachedVersion *markInstalledVersion(const QString &hash, const QString &expectedVersionId, bool *modified);
     inline void unmarkInstalled() { installedVersion_ = nullptr; };
+    inline void setDefaultAlias(const QString &newAlias) { defaultAlias_ = newAlias; }
 
     bool readDb(const QJsonObject &modObject);
     void writeDb(QJsonObject &modObject) const;
@@ -92,6 +94,7 @@ public:
 private:
     const ModCache::Impl &cache;
     QString id_;
+    QString defaultAlias_;
     QList<CachedVersion> versions_;
     ModInfo info_;
 
@@ -618,6 +621,11 @@ const ModInfo &CachedMod::info() const
     return impl()->info();
 }
 
+const QString &CachedMod::defaultAlias() const
+{
+    return impl()->defaultAlias();
+}
+
 const QList<CachedVersion> &CachedMod::versions() const
 {
     return impl()->versions();
@@ -795,6 +803,8 @@ bool CachedMod::Impl::readDb(const QJsonObject &modObject)
         id_ = modObject["modId"].toString();
     if (modObject.contains("modName") && modObject["modName"].isString())
         name = modObject["modName"].toString();
+    if (modObject.contains("defaultAlias") && modObject["defaultAlias"].isString())
+        defaultAlias_ = modObject["defaultAlias"].toString();
 
     if (!id_.isEmpty() && !name.isEmpty())
     {
@@ -808,6 +818,8 @@ void CachedMod::Impl::writeDb(QJsonObject &modObject) const
 {
     modObject["modId"] = id_;
     modObject["modName"] = info().name();
+    if (!defaultAlias().isEmpty())
+        modObject["defaultAlias"] = defaultAlias();
 }
 
 CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QString &expectedVersionId)

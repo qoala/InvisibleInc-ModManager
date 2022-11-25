@@ -75,7 +75,10 @@ public:
 
     InstalledMod(ModList::Impl &parent, const QString &id);
 
+    // Mod ID of the installed mod. Always matches the cache ID, even if installed with an alias.
     const QString &id() const;
+    // Installed alias, or null string if installed by its ID.
+    const QString &alias() const;
     const ModInfo &info() const;
     const QString &hash() const;
 
