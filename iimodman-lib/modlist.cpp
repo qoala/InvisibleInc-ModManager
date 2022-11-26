@@ -6,6 +6,7 @@
 #include "modspec.h"
 
 #include <QDir>
+#include <QJsonObject>
 #include <QList>
 #include <QLoggingCategory>
 #include <optional>
@@ -254,6 +255,17 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *e
         return nullptr;
     }
 
+    QJsonObject root;
+    root["modId"] = modId;
+    root["versionId"] = cv->id();
+    QDir outputDir(outputPath);
+    QString sideErrorInfo;
+    if (!FileUtils::writeJSON(outputDir.filePath("modman.json"), root, &sideErrorInfo))
+    {
+        qCWarning(modlist).noquote() << "Failed to write modman.json to " << outputPath << ": " << sideErrorInfo;
+        // Continue even on failure. The metadata isn't critical.
+    }
+
     if (im)
     {
         if (useAlias)
@@ -415,19 +427,29 @@ bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &exp
     hash_.clear();
     specMod.reset();
 
-    if (level == ModList::ID_ONLY)
+    const QJsonObject savedMetadata = FileUtils::readJSON(modDir.filePath("modman.json"));
+    if (savedMetadata.contains("modId") && savedMetadata["modId"].isString())
     {
-        return true;
+        QString modId = savedMetadata["modId"].toString();
+        if (modId != id_)
+        {
+            alias_ = id_;
+            id_ = modId;
+        }
     }
+    // Prefer to use an in-memory recognized version ID. Will be refreshed below when marking installed version.
+    if (cacheVersionId_.isEmpty() && savedMetadata.contains("versionId") && savedMetadata["versionId"].isString())
+        cacheVersionId_ = savedMetadata["versionId"].toString();
+
+    if (level == ModList::ID_ONLY)
+        return true;
 
     QFile infoFile = QFile(modDir.filePath("modinfo.txt"));
     info_ = ModInfo::readModInfo(infoFile, id_);
     infoFile.close();
 
     if (level == ModList::CONTENT_ONLY)
-    {
         return true;
-    }
 
     ModCache *cache = parent_.cache();
     assert(cache);

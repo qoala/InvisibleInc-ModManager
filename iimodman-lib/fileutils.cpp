@@ -59,6 +59,8 @@ bool FileUtils::copyRecursively(const QString &srcPath, const QString &destPath,
     }
     for(auto entry : srcDir.entryList(QDir::Files | QDir::Hidden))
     {
+        if (entry == "modman.json")
+            continue;
         if (!QFile::copy(srcDir.filePath(entry), destDir.filePath(entry)))
         {
             if (errorInfo)
