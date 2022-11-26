@@ -9,7 +9,6 @@
 #include <QDateTime>
 #include <QDir>
 #include <QJsonArray>
-#include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QList>
@@ -142,36 +141,14 @@ private:
 
 // Folder Structure: {cachePath}/workshop-{steamId}/{versionTime}/
 // Time format is ISO8601, but with ':' replaced with '_' to be a valid folder name on Windows.
-const QString formatVersionTime(const QDateTime &versionTime)
+static const QString formatVersionTime(const QDateTime &versionTime)
 {
     return versionTime.toString(Qt::ISODate).replace(':', '_');
 }
 
-const QDateTime parseVersionTime(const QString &versionId)
+static const QDateTime parseVersionTime(const QString &versionId)
 {
     return QDateTime::fromString(QString(versionId).left(20).replace('_', ':'), Qt::ISODate);
-}
-
-const QJsonObject readJSON(QIODevice &file)
-{
-    QByteArray rawData = file.readAll();
-    file.close();
-    QJsonParseError errors;
-    const QJsonDocument json = QJsonDocument::fromJson(rawData, &errors);
-
-    if (json.isNull())
-    {
-        qCWarning(modcache) << "JSON Parse Error:", errors.errorString();
-        qCDebug(modcache) << rawData;
-        return QJsonObject();
-    }
-    if (!json.isObject())
-    {
-        qCWarning(modcache) << "JSON: not an object";
-        return QJsonObject();
-    }
-
-    return json.object();
 }
 
 static bool compareModIds(const CachedMod &a, const CachedMod &b)
@@ -573,28 +550,23 @@ void ModCache::Impl::refreshIndex()
 bool ModCache::Impl::readModManDb()
 {
     QDir cacheDir(config_.cachePath());
-    QFile file(cacheDir.filePath("modmandb.json"));
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        const QJsonObject root = readJSON(file);
-        if (root.isEmpty())
-            return false;
+    const QJsonObject root = FileUtils::readJSON(cacheDir.filePath("modmandb.json"));
+    if (root.isEmpty())
+        return false;
 
-        if (root.contains("mods") && root["mods"].isArray())
+    if (root.contains("mods") && root["mods"].isArray())
+    {
+        const QJsonArray modsArray = root["mods"].toArray();
+        mods_.reserve(modsArray.size());
+        for (const QJsonValue &v : modsArray)
         {
-            const QJsonArray modsArray = root["mods"].toArray();
-            mods_.reserve(modsArray.size());
-            for (const QJsonValue &v : modsArray)
-            {
-                const QJsonObject modObject = v.toObject();
-                CachedMod mod(*this);
-                if (mod.impl()->readDb(modObject))
-                    mods_.append(mod);
-            }
+            const QJsonObject modObject = v.toObject();
+            CachedMod mod(*this);
+            if (mod.impl()->readDb(modObject))
+                mods_.append(mod);
         }
-        return true;
     }
-    return false;
+    return true;
 }
 
 bool ModCache::Impl::writeModManDb()
@@ -610,16 +582,8 @@ bool ModCache::Impl::writeModManDb()
     }
     root["mods"] = modsArray;
 
-    QJsonDocument json(root);
-
     QDir cacheDir(config_.cachePath());
-    QFile file(cacheDir.filePath("modmandb.json"));
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        file.write(json.toJson());
-        return true;
-    }
-    return false;
+    return FileUtils::writeJSON(cacheDir.filePath("modmandb.json"), root);
 }
 
 CachedMod::CachedMod(const ModCache::Impl &cache, const QString id)

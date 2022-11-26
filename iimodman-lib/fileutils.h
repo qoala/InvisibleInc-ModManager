@@ -3,14 +3,18 @@
 
 #include "iimodman-lib_global.h"
 
+class QJsonObject;
+
 
 namespace iimodmanager {
 
-class FileUtils
+namespace FileUtils
 {
-public:
-    static bool removeModDir(const QString &path, QString *errorInfo = nullptr);
-    static bool copyRecursively(const QString &srcPath, const QString &destPath, QString *errorInfo = nullptr);
+    bool removeModDir(const QString &path, QString *errorInfo = nullptr);
+    bool copyRecursively(const QString &srcPath, const QString &destPath, QString *errorInfo = nullptr);
+
+    const QJsonObject readJSON(const QString &filePath, QString *errorInfo = nullptr);
+    bool writeJSON(const QString &filePath, const QJsonObject &root, QString *errorInfo = nullptr);
 };
 
 } // namespace iimodmanager
