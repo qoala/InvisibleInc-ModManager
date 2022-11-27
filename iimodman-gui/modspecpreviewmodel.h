@@ -45,6 +45,8 @@ public:
     struct PendingChange
     {
         enum ChangeType {
+            //! No change. An uninstalled mod remains so. An installed mod remains installed.
+            //! The latter case may be further specified with PIN_CURRENT or PIN_LATEST to modify how this change reacts to cache changes.
             NONE,
             //! Like NONE, but specifically pinning the current installed version.
             PIN_CURRENT,
@@ -53,6 +55,11 @@ public:
             PIN_LATEST,
             INSTALL,
             REMOVE,
+            //! Remove the currently installed mod, and re-install it with a different alias.
+            //! The installed version may change.
+            RE_ALIAS,
+            //! Install a different version of the mod (not necessarily newer).
+            //! The mod will be installed under the same alias/ID as the current installation.
             UPDATE,
 
             ACTIVE_CHANGE_MIN = INSTALL,

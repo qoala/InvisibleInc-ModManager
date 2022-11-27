@@ -25,6 +25,8 @@ namespace ColumnData {
                 return QStringLiteral("INSTALL");
             case PendingChange::REMOVE:
                 return QStringLiteral("REMOVE");
+            case PendingChange::RE_ALIAS:
+                return QStringLiteral("RE-ALIAS");
             case PendingChange::UPDATE:
                 return QStringLiteral("UPDATE");
             default:
@@ -68,10 +70,13 @@ namespace ColumnData {
                 return QStringLiteral("INSTALL");
             case PendingChange::REMOVE:
                 return QStringLiteral("REMOVE");
+            case PendingChange::RE_ALIAS:
+                return QStringLiteral("MOVE ALIAS");
             case PendingChange::UPDATE:
                 return QStringLiteral("UPDATE");
             }
         else if (role == modelutil::SORT_ROLE)
+            // not installed < installed unchanged < update in place < reinstall with new alias < install new < remove existing
             switch (pc.type)
             {
             case PendingChange::NONE:
@@ -81,10 +86,12 @@ namespace ColumnData {
                 return 1;
             case PendingChange::UPDATE:
                 return 2;
-            case PendingChange::INSTALL:
+            case PendingChange::RE_ALIAS:
                 return 3;
-            case PendingChange::REMOVE:
+            case PendingChange::INSTALL:
                 return 4;
+            case PendingChange::REMOVE:
+                return 5;
             }
         else if (role == Qt::CheckStateRole)
             // We never arrive here unless either there's an already-installed version
@@ -156,7 +163,7 @@ static std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const Instal
     if (iv)
         pc.versionId = iv->id();
     pc.versionPin = PendingChange::CURRENT;
-    pc.type = PendingChange::PIN_CURRENT;
+    pc.type = pc.alias == im->alias() ? PendingChange::PIN_CURRENT : PendingChange::RE_ALIAS;
     return pc;
 }
 
@@ -175,6 +182,8 @@ static std::optional<ModSpecPreviewModel::PendingChange> useLatest(const CachedM
     pc.versionPin = PendingChange::LATEST;
     if (!im)
         pc.type = PendingChange::INSTALL;
+    else if (pc.alias != im->alias())
+        pc.type = PendingChange::RE_ALIAS;
     else if (lv == cm->installedVersion())
         pc.type = PendingChange::PIN_LATEST;
     else
@@ -226,8 +235,9 @@ std::optional<ModSpecPreviewModel::PendingChange> ModSpecPreviewModel::toPending
     pc.versionPin = PendingChange::PINNED;
     if (!im)
         pc.type = PendingChange::INSTALL;
+    else if (pc.alias != im->alias())
+        pc.type = PendingChange::RE_ALIAS;
     else if (tv == cm->installedVersion())
-        // TODO: handle RE_ALIAS status.
         pc.type = PendingChange::PIN_CURRENT;
     else
         pc.type = PendingChange::UPDATE;
@@ -574,7 +584,6 @@ void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMo
     toUpdateMods->reserve(pendingChanges.size());
     toRemoveMods->reserve(pendingChanges.size());
 
-    // TODO: Apply alias to spec.
     for (const auto &pc : pendingChanges)
         switch (pc.type)
         {
@@ -583,7 +592,7 @@ void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMo
                 const auto *cm = cache.mod(pc.modId);
                 const auto *cv = cm ? cm->version(pc.versionId) : nullptr;
                 if (cv)
-                    *toAddMods << cv->asSpec();
+                    *toAddMods << cv->asSpec().withAlias(pc.alias);
                 else
                     emit textOutput(QStringLiteral("! Cannot install %1 '%2': Not in cache.").arg(pc.modId, pc.versionId));
             }
@@ -593,7 +602,7 @@ void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMo
                 const auto *cm = cache.mod(pc.modId);
                 const auto *cv = cm ? cm->version(pc.versionId) : nullptr;
                 if (cv)
-                    *toUpdateMods << cv->asSpec();
+                    *toUpdateMods << cv->asSpec().withAlias(pc.alias);
                 else
                     emit textOutput(QStringLiteral("! Cannot update %1 to '%2': Not in cache.").arg(pc.modId, pc.versionId));
             }
@@ -641,18 +650,35 @@ void ModSpecPreviewModel::refreshPendingChange(PendingChange &pc)
             pc.type = PendingChange::NONE;
         return;
     }
-    if (pc.type == PendingChange::PIN_CURRENT)
+    if (pc.versionPin == PendingChange::CURRENT)
     {
         const InstalledMod *im = modList.mod(pc.modId);
         const CachedVersion *iv = im ? im->cacheVersion() : nullptr;
         const QString versionId = iv ? iv->id() : QString();
-        if (im && pc.versionId == versionId)
-        {}    // Already done.
-        else if (im)
+        if (im)
         {
-            // Update pinned version.
-            pc.versionId = versionId;
-            setDirty();
+            if (pc.versionId != versionId)
+            {
+                // Update pinned version.
+                pc.versionId = versionId;
+                setDirty();
+            }
+            if (pc.type == PendingChange::RE_ALIAS)
+            {
+                if (pc.alias == im->alias())
+                {
+                    pc.type == PendingChange::PIN_CURRENT;
+                    setDirty();
+                }
+            }
+            else if (pc.type == PendingChange::PIN_CURRENT)
+            {
+                if (pc.alias != im->alias())
+                {
+                    pc.alias = im->alias();
+                    setDirty();
+                }
+            }
         }
         else
         {
@@ -675,7 +701,9 @@ void ModSpecPreviewModel::refreshPendingChange(PendingChange &pc)
         return;
     }
 
-    // Preserving Installed-only Uncached mods should be eliminated as PIN_CURRENT above.
+    // Preserving uncached mods/versions were eliminated as PIN_CURRENT above.
+    // Everything else considers an installed version informative, but not critical.
+    const InstalledMod *im = modList.mod(pc.modId);
     const CachedVersion *iv = cm->installedVersion();
     if (!iv)
         switch (pc.type)
@@ -684,6 +712,7 @@ void ModSpecPreviewModel::refreshPendingChange(PendingChange &pc)
             return;
         case PendingChange::PIN_LATEST:
         case PendingChange::INSTALL:
+        case PendingChange::RE_ALIAS:
         case PendingChange::UPDATE:
             // Need to install the mod.
             pc.type = PendingChange::INSTALL;
@@ -693,20 +722,12 @@ void ModSpecPreviewModel::refreshPendingChange(PendingChange &pc)
         // Change is clear.
         return;
 
-    // Only PIN_CURRENT/INSTALL/UPDATE remain.
+    // Only PIN_LATEST/INSTALL/RE_ALIAS/UPDATE remain.
     // Check if target versionId is still correct.
     switch (pc.versionPin)
     {
     case PendingChange::CURRENT:
-        if (iv && pc.versionId != iv->id())
-        {
-            // Current has changed. Abandon attempts to keep it pinned.
-            pc.type = PendingChange::NONE;
-            pc.versionId = QString();
-            setDirty();
-        }
-        // Target version matches (or abandoned) installed version. Done here.
-        return;
+        return; // Eliminated above.
     case PendingChange::LATEST:
         if (pc.versionId != lv->id())
         {
@@ -726,16 +747,23 @@ void ModSpecPreviewModel::refreshPendingChange(PendingChange &pc)
             setDirty();
         }
     }
+    // Re-alias takes precedence over other changes.
+    if (im && pc.alias != im->alias())
+    {
+        pc.type = PendingChange::RE_ALIAS;
+        setDirty();
+    }
     // Now check if target version is already installed.
-    if (iv && pc.versionId == iv->id())
+    else if (iv && pc.versionId == iv->id())
     {
         if (pc.isActive())
         {
             // Installation/Update complete.
             if (pc.versionPin == PendingChange::LATEST)
                 pc.type = PendingChange::PIN_LATEST;
-            if (pc.versionPin == PendingChange::PINNED)
+            else if (pc.versionPin == PendingChange::PINNED)
                 pc.type = PendingChange::PIN_CURRENT;
+            setDirty();
         }
     }
 }

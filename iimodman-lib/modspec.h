@@ -56,6 +56,7 @@ public:
     QString versionName() const;
 
     SpecMod withoutVersion() const;
+    SpecMod withAlias(const QString &alias) const;
 
     QString asSpecString() const;
     QString asVersionedSpecString() const;

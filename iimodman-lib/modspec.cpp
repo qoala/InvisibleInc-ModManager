@@ -178,7 +178,12 @@ QString SpecMod::versionName() const
 
 SpecMod SpecMod::withoutVersion() const
 {
-    return SpecMod(impl->id, impl->name);
+    return SpecMod(impl->id, /* versionId= */ QString(), impl->alias, impl->name, /* versionName= */ QString());
+}
+
+SpecMod SpecMod::withAlias(const QString &newAlias) const
+{
+    return SpecMod(impl->id, impl->versionId, newAlias, impl->name, impl->versionName);
 }
 
 QString SpecMod::asSpecString() const
