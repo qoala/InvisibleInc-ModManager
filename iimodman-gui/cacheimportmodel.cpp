@@ -50,7 +50,7 @@ namespace ColumnData {
         if (util::isSteamModId(input))
             return input;
 
-        QRegularExpression nonSteamRe(QStringLiteral("^[\\w.-]+$"));
+        static const QRegularExpression nonSteamRe(QStringLiteral("^[\\w.-]+$"));
         if (nonSteamRe.match(input).hasMatch())
             return input;
 
@@ -101,7 +101,7 @@ static bool isBase(int column)
         return false;
     }
 }
-inline bool isBase(const QModelIndex &index)
+static inline bool isBase(const QModelIndex &index)
 {
     return (!index.isValid()
             || (!index.parent().isValid() && isBase(index.column())));
@@ -119,7 +119,7 @@ static int toBaseColumn(int column) {
     }
 }
 
-inline QModelIndex toBaseColumn(const CacheImportModel *model, const QModelIndex &index) {
+static inline QModelIndex toBaseColumn(const CacheImportModel *model, const QModelIndex &index) {
     return model->index(index.row(), toBaseColumn(index.column()));
 }
 
@@ -192,7 +192,7 @@ QVariant CacheImportModel::data(const QModelIndex &index, int role) const
         if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(baseStatus);
         else if (role == Qt::DisplayRole)
-            return im->id();
+            return im->installedId();
         break;
     case ACTION:
         if (role == modelutil::STATUS_ROLE)

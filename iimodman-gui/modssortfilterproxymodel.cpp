@@ -8,12 +8,19 @@ namespace iimodmanager {
 typedef modelutil::Status Status;
 
 namespace ColumnLessThan {
+
     bool modId(const QVariant &leftData, const QVariant &rightData)
     {
+        // NULL is greater than any other value. (IDs are sorted ascending, unlike versions & times)
+        if (!leftData.isValid() || !rightData.isValid())
+            return leftData.isValid() && !rightData.isValid();
+
+        QString left = leftData.toString();
+        QString right = rightData.toString();
         // Sort steam IDs numerically.
-        QRegularExpression steamRe(QStringLiteral("^workshop-(\\d+)(\\D.*)?"));
-        QRegularExpressionMatch leftMatch = steamRe.match(leftData.toString());
-        QRegularExpressionMatch rightMatch = steamRe.match(rightData.toString());
+        static const QRegularExpression steamRe(QStringLiteral("^workshop-(\\d+)(\\D.*)?"));
+        QRegularExpressionMatch leftMatch = steamRe.match(left);
+        QRegularExpressionMatch rightMatch = steamRe.match(right);
         if (leftMatch.hasMatch() && rightMatch.hasMatch())
         {
             // Steam workshop IDs have crossed the int boundary.
@@ -27,7 +34,7 @@ namespace ColumnLessThan {
         }
 
         // Sort everything else alphabetically.
-        return leftData.toString() < rightData.toString();
+        return left < right;
     }
 
     bool modVersion(const QVariant &leftData, Status leftStatus, const QVariant &rightData, Status rightStatus)
@@ -39,7 +46,7 @@ namespace ColumnLessThan {
         if (leftStatus.testFlag(modelutil::UNLABELLED_STATUS) || rightStatus.testFlag(modelutil::UNLABELLED_STATUS))
             return leftStatus.testFlag(modelutil::UNLABELLED_STATUS) && !rightStatus.testFlag(modelutil::UNLABELLED_STATUS);
 
-        QRegularExpression versionRe(QStringLiteral("^v?(\\d+(?:\\.\\d+)*)([^\\d.]\\S*)?"));
+        static const QRegularExpression versionRe(QStringLiteral("^v?(\\d+(?:\\.\\d+)*)([^\\d.]\\S*)?"));
         QRegularExpressionMatch leftMatch = versionRe.match(leftData.toString());
         QRegularExpressionMatch rightMatch = versionRe.match(rightData.toString());
         // Compare non-version strings lexically.
@@ -62,7 +69,7 @@ namespace ColumnLessThan {
             rightNumbers << p.toInt();
 
         // Compare each component.
-        for (int i = 0; i < leftNumbers.size() && rightNumbers.size(); i++)
+        for (int i = 0; i < leftNumbers.size() && i < rightNumbers.size(); i++)
             if (leftNumbers.at(i) != rightNumbers.at(i))
                 return leftNumbers.at(i) < rightNumbers.at(i);
         // Shorter component lists are first.
@@ -194,10 +201,10 @@ bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelInd
     case modelutil::VERSION_TIME_SORT:
         // Continue processing below.
         break;
-    case modelutil::ROLE_SORT:
-        return sourceModel()->data(left, modelutil::SORT_ROLE).toInt() < sourceModel()->data(right, modelutil::SORT_ROLE).toInt();
     case modelutil::MOD_ID_SORT:
         return ColumnLessThan::modId(sourceModel()->data(left), sourceModel()->data(right));
+    case modelutil::ROLE_SORT:
+        return sourceModel()->data(left, modelutil::SORT_ROLE).toInt() < sourceModel()->data(right, modelutil::SORT_ROLE).toInt();
     default:
         // Skip the extraction if we're falling through to superclass method.
         return QSortFilterProxyModel::lessThan(left, right);

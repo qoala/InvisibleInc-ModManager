@@ -32,6 +32,25 @@ namespace ColumnData {
         }
     }
 
+    QVariant targetAlias(const PendingChange &pc, Status baseStatus, int role)
+    {
+        if (pc.type == PendingChange::REMOVE)
+            return modelutil::nullData(role, baseStatus);
+
+        if (role == Qt::DisplayRole)
+            return pc.alias.isEmpty() ? pc.modId : pc.alias;
+        else if (role == modelutil::STATUS_ROLE)
+        {
+            if (pc.alias.isEmpty())
+                return modelutil::toVariant(baseStatus | modelutil::UNLABELLED_STATUS);
+            else
+                return modelutil::toVariant(baseStatus);
+        }
+        else if (role == Qt::ForegroundRole && pc.alias.isEmpty())
+            return QColor(Qt::gray);
+        return QVariant();
+    }
+
     QVariant targetAction(const PendingChange &pc, Status baseStatus, int role)
     {
         if (role == modelutil::STATUS_ROLE)
@@ -123,7 +142,7 @@ namespace ColumnData {
     }
 }
 
-static std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const InstalledMod *im)
+static std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const InstalledMod *im, const ModSpecPreviewModel::PendingChange *previous, const QString &requestedAlias = QString())
 {
     using PendingChange = ModSpecPreviewModel::PendingChange;
 
@@ -132,6 +151,7 @@ static std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const Instal
 
     PendingChange pc(im->id());
     pc.modName = im->info().name();
+    pc.alias = previous ? previous->alias : im->alias();
     const CachedVersion *iv = im->cacheVersion();
     if (iv)
         pc.versionId = iv->id();
@@ -140,16 +160,17 @@ static std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const Instal
     return pc;
 }
 
-static std::optional<ModSpecPreviewModel::PendingChange> useLatest(const CachedMod *cm, const InstalledMod *im)
+static std::optional<ModSpecPreviewModel::PendingChange> useLatest(const CachedMod *cm, const InstalledMod *im, const ModSpecPreviewModel::PendingChange *previous)
 {
     using PendingChange = ModSpecPreviewModel::PendingChange;
 
     const CachedVersion *lv = cm ? cm->latestVersion() : nullptr;
     if (!lv || !cm)
-        return pinCurrent(im);
+        return pinCurrent(im, previous);
 
     PendingChange pc(cm->id());
     pc.modName = cm->info().name();
+    pc.alias = previous ? previous->alias : im ? im->alias() : cm->defaultAlias();
     pc.versionId = lv->id();
     pc.versionPin = PendingChange::LATEST;
     if (!im)
@@ -175,15 +196,18 @@ std::optional<ModSpecPreviewModel::PendingChange> ModSpecPreviewModel::toPending
         return std::nullopt;
     }
 
+    PendingChange base(sm.id());
+    base.alias = sm.alias();
+
     if (sm.versionId().isEmpty())
-        return useLatest(cm, im);
+        return useLatest(cm, im, &base);
     if (sm.versionId() == '-')
     {
         // Keep current, if possible.
         if (im)
-            return pinCurrent(im);
+            return pinCurrent(im, &base);
         else
-            return useLatest(cm, im);
+            return useLatest(cm, im, &base);
     }
     // A specific version ID was requested.
 
@@ -192,16 +216,18 @@ std::optional<ModSpecPreviewModel::PendingChange> ModSpecPreviewModel::toPending
     {
         emit textOutput(QStringLiteral("! Replacing requested version (%3) with latest for %2 [%1]: Not in cache.")
                 .arg(sm.id(), sm.name(), sm.versionId()));
-        return useLatest(cm, im);
+        return useLatest(cm, im, &base);
     }
 
     PendingChange pc(cm->id());
     pc.modName = cm->info().name();
+    pc.alias = sm.alias();
     pc.versionId = tv->id();
     pc.versionPin = PendingChange::PINNED;
     if (!im)
         pc.type = PendingChange::INSTALL;
     else if (tv == cm->installedVersion())
+        // TODO: handle RE_ALIAS status.
         pc.type = PendingChange::PIN_CURRENT;
     else
         pc.type = PendingChange::UPDATE;
@@ -229,6 +255,7 @@ static bool isBase(int column)
     {
     case ModSpecPreviewModel::NAME:
     case ModSpecPreviewModel::ID:
+    case ModSpecPreviewModel::INSTALLED_ALIAS:
     case ModSpecPreviewModel::INSTALLED_VERSION:
     case ModSpecPreviewModel::INSTALLED_VERSION_TIME:
     case ModSpecPreviewModel::LATEST_VERSION:
@@ -238,7 +265,7 @@ static bool isBase(int column)
         return false;
     }
 }
-inline bool isBase(const QModelIndex &index)
+static inline bool isBase(const QModelIndex &index)
 {
     return (!index.isValid()
             || (!index.parent().isValid() && isBase(index.column())));
@@ -251,6 +278,8 @@ static int toBaseColumn(int column) {
         return ModsModel::NAME;
     case ModSpecPreviewModel::ID:
         return ModsModel::ID;
+    case ModSpecPreviewModel::INSTALLED_ALIAS:
+        return ModsModel::INSTALLED_ALIAS;
     case ModSpecPreviewModel::INSTALLED_VERSION:
         return ModsModel::INSTALLED_VERSION;
     case ModSpecPreviewModel::INSTALLED_VERSION_TIME:
@@ -264,7 +293,7 @@ static int toBaseColumn(int column) {
     }
 }
 
-inline QModelIndex toBaseColumn(const ModSpecPreviewModel *model, const QModelIndex &index) {
+static inline QModelIndex toBaseColumn(const ModSpecPreviewModel *model, const QModelIndex &index) {
     return model->index(index.row(), toBaseColumn(index.column()));
 }
 
@@ -293,7 +322,10 @@ ModSpecPreviewModel::PendingChange *ModSpecPreviewModel::seekMutablePendingRow(i
     const QString modId = *cm ? (*cm)->id() : *im ? (*im)-> id() : QString();
     PendingChange *pc = &pendingChanges[modId];
     if (pc->modId.isEmpty())
+    {
         pc->modId = modId;
+        pc->alias = *im ? (*im)->alias() : *cm ? (*cm)->defaultAlias() : QString();
+    }
     return pc;
 }
 
@@ -326,6 +358,11 @@ QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 
     switch (index.column())
     {
+    case INSTALLED_ALIAS:
+        if (role == Qt::ForegroundRole && im && im->alias().isEmpty())
+            return QColor(Qt::gray);
+    case TARGET_ALIAS:
+        return ColumnData::targetAlias(pc, baseStatus, role);
     case ACTION:
         return ColumnData::targetAction(pc, baseStatus, role);
     case TARGET_VERSION:
@@ -352,7 +389,7 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
         {
             if (im)
             {
-                auto target = pinCurrent(im);
+                auto target = pinCurrent(im, pc);
                 if (!target)
                     return false;
                 *pc = *target;
@@ -360,7 +397,7 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
             else
             {
                 // Install new.
-                auto target = useLatest(cm, im);
+                auto target = useLatest(cm, im, pc);
                 if (!target)
                     return false;
                 *pc = *target;
@@ -373,7 +410,7 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
             else if (cm && cm->latestVersion() && cm->latestVersion()->id() != pc->versionId)
             {
                 // Pseudo-tri-state. If checked and can update to latest, cycle through update before removing.
-                auto target = useLatest(cm, im);
+                auto target = useLatest(cm, im, pc);
                 if (target)
                     *pc = *target;
                 else
@@ -402,6 +439,8 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
     case Qt::DisplayRole:
         switch (section)
         {
+        case TARGET_ALIAS:
+            return QStringLiteral("Target Alias");
         case ACTION:
             return QStringLiteral("Status");
         case TARGET_VERSION:
@@ -413,6 +452,8 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
     case Qt::InitialSortOrderRole:
         switch (section)
         {
+        case TARGET_ALIAS:
+            return Qt::AscendingOrder;
         case ACTION:
         case TARGET_VERSION:
         case TARGET_VERSION_TIME:
@@ -422,6 +463,8 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
     case modelutil::SORT_ROLE:
         switch (section)
         {
+        case TARGET_ALIAS:
+            return modelutil::MOD_ID_SORT;
         case ACTION:
             return modelutil::ROLE_SORT;
         case TARGET_VERSION:
@@ -431,7 +474,7 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
         }
         break;
     case modelutil::CANCEL_SORTING_ROLE:
-        return QVariant::fromValue<QVector<int>>({ACTION, TARGET_VERSION, TARGET_VERSION_TIME});
+        return QVariant::fromValue<QVector<int>>({ACTION, TARGET_ALIAS, TARGET_VERSION, TARGET_VERSION_TIME});
     }
 
     return QVariant();
@@ -531,6 +574,7 @@ void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMo
     toUpdateMods->reserve(pendingChanges.size());
     toRemoveMods->reserve(pendingChanges.size());
 
+    // TODO: Apply alias to spec.
     for (const auto &pc : pendingChanges)
         switch (pc.type)
         {

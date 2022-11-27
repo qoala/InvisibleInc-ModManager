@@ -23,6 +23,8 @@ public:
     {
         NAME,
         ID,
+        DEFAULT_ALIAS,
+        INSTALLED_ALIAS,
         INSTALLED_VERSION,
         INSTALLED_VERSION_TIME,
         LATEST_VERSION,

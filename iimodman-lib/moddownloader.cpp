@@ -11,7 +11,6 @@ namespace iimodmanager {
 
 Q_LOGGING_CATEGORY(steamAPI, "steamapi", QtWarningMsg)
 
-const QString getPublishedFileDetails = QStringLiteral("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/");
 
 ModDownloader::ModDownloader(const ModManConfig &config, QObject *parent)
     : QObject(parent), config_(config)
@@ -131,6 +130,7 @@ void ModInfoCall::start(const QString &id)
     const QString callDebugInfo = QString("ModInfo(%1)").arg(id);
     id_ = id;
 
+    static const QString getPublishedFileDetails = QStringLiteral("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/");
     QNetworkRequest request(getPublishedFileDetails);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     QString postData;

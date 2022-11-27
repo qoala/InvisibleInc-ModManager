@@ -151,6 +151,7 @@ bool CacheImportInstalledCommand::copyMod(const QString &installedId, const QStr
         return false;
     }
 
+    // TODO: Correctly handle installedId != targetId.
     const CachedMod *cm = app.cache().mod(im->id());
     if (cm && cm->latestVersion() && cm->latestVersion()->installed())
     {

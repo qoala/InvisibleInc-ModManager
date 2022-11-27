@@ -25,6 +25,9 @@ public:
         NAME, // from base
         ID, // from base
 
+        INSTALLED_ALIAS, // from base
+        TARGET_ALIAS,
+
         ACTION,
 
         INSTALLED_VERSION, // from base
@@ -67,12 +70,13 @@ public:
 
         QString modId;
         QString modName;
+        QString alias;
         QString versionId;
         VersionPinning versionPin;
         ChangeType type;
 
         PendingChange(const QString &modId = QString())
-            : modId(modId), versionId(), versionPin(CURRENT), type(NONE) {};
+            : modId(modId), versionPin(CURRENT), type(NONE) {};
 
         inline bool isValid() const { return !modId.isNull(); };
         inline bool isNone() const { return type == NONE; };

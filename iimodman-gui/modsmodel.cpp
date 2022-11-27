@@ -1,6 +1,7 @@
 #include "modelutil.h"
 #include "modsmodel.h"
 
+#include <QColor>
 #include <QDateTime>
 #include <modcache.h>
 #include <modinfo.h>
@@ -36,6 +37,43 @@ namespace ColumnData {
         }
         else if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(modelutil::modStatus(cm, im));
+        return QVariant();
+    }
+
+    QVariant defaultAlias(const CachedMod *cm, const InstalledMod *im, int role)
+    {
+        if (role == Qt::DisplayRole && cm)
+        {
+            if (!cm->defaultAlias().isEmpty())
+                return cm->defaultAlias();
+        }
+        else if (role == modelutil::STATUS_ROLE)
+        {
+            if (!cm)
+                return modelutil::toVariant(modelutil::modStatus(cm, im) | modelutil::NULL_STATUS);
+            else if (cm->defaultAlias().isEmpty())
+                return modelutil::toVariant(modelutil::modStatus(cm, im) | modelutil::UNLABELLED_STATUS);
+            else
+                return modelutil::toVariant(modelutil::modStatus(cm, im));
+        }
+        return QVariant();
+    }
+
+    QVariant installedAlias(const CachedMod *cm, const InstalledMod *im, int role)
+    {
+        if (role == Qt::DisplayRole && im)
+            return im->installedId();
+        else if (role == modelutil::STATUS_ROLE)
+        {
+            if (!im)
+                return modelutil::toVariant(modelutil::modStatus(cm, im) | modelutil::NULL_STATUS);
+            else if (im->alias().isEmpty())
+                return modelutil::toVariant(modelutil::modStatus(cm, im) | modelutil::UNLABELLED_STATUS);
+            else
+                return modelutil::toVariant(modelutil::modStatus(cm, im));
+        }
+        else if (role == Qt::ForegroundRole && im && im->alias().isEmpty())
+            return QColor(Qt::gray);
         return QVariant();
     }
 
@@ -174,6 +212,10 @@ QVariant ModsModel::data(const QModelIndex &index, int role) const
         return ColumnData::modName(cm, im, role);
     case ID:
         return ColumnData::modId(cm, im, role);
+    case DEFAULT_ALIAS:
+        return ColumnData::defaultAlias(cm, im, role);
+    case INSTALLED_ALIAS:
+        return ColumnData::installedAlias(cm, im, role);
     case INSTALLED_VERSION:
         return ColumnData::installedLatestVersion(cm, im, role);
     case INSTALLED_VERSION_TIME:
@@ -199,6 +241,10 @@ QVariant ModsModel::headerData(int section, Qt::Orientation orientation, int rol
             return QStringLiteral("Name");
         case ID:
             return QStringLiteral("ID");
+        case DEFAULT_ALIAS:
+            return QStringLiteral("Default Alias");
+        case INSTALLED_ALIAS:
+            return QStringLiteral("Installed Alias");
         case INSTALLED_VERSION:
             return QStringLiteral("Installed Version");
         case INSTALLED_VERSION_TIME:
@@ -213,6 +259,8 @@ QVariant ModsModel::headerData(int section, Qt::Orientation orientation, int rol
         {
         case NAME:
         case ID:
+        case DEFAULT_ALIAS:
+        case INSTALLED_ALIAS:
             return Qt::AscendingOrder;
         case INSTALLED_VERSION:
         case LATEST_VERSION:
@@ -226,6 +274,8 @@ QVariant ModsModel::headerData(int section, Qt::Orientation orientation, int rol
         case NAME:
             return modelutil::NORMAL_SORT;
         case ID:
+        case DEFAULT_ALIAS:
+        case INSTALLED_ALIAS:
             return modelutil::MOD_ID_SORT;
         case INSTALLED_VERSION:
         case LATEST_VERSION:

@@ -70,12 +70,13 @@ QString CacheAddCommand::parseIds(QString input, QStringList *modIds, bool *ok, 
     if (ok) *ok = true;
     bool errors = false;
 
-    QStringList inputItems = input.trimmed().split(QRegularExpression("\\s*\n\\s*"), Qt::SkipEmptyParts);
+    static const QRegularExpression stripItemRe("\\s*\n\\s*");
+    QStringList inputItems = input.trimmed().split(stripItemRe, Qt::SkipEmptyParts);
 
     modIds->clear();
     modIds->reserve(inputItems.size());
     if (failedIds) failedIds->reserve(inputItems.size());
-    for (auto inputItem : inputItems)
+    for (auto &inputItem : inputItems)
     {
         if (util::isSteamModId(inputItem))
         {

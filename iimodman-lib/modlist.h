@@ -79,6 +79,7 @@ public:
     const QString &id() const;
     // Installed alias, or null string if installed by its ID.
     const QString &alias() const;
+    const QString &installedId() const { return alias().isEmpty() ? id() : alias(); }
     const ModInfo &info() const;
     const QString &hash() const;
 

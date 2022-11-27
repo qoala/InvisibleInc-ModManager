@@ -96,7 +96,7 @@ const ModInfo ModInfo::readModInfo(QIODevice &file, const QString &id)
 
     if (file.isOpen() || file.open(QIODevice::ReadOnly))
     {
-        const QRegularExpression linePattern("^\\s*(\\w+)\\s*=\\s*(.*)$");
+        static const QRegularExpression linePattern("^\\s*(\\w+)\\s*=\\s*(.*)$");
         QTextStream in(&file);
         while (!in.atEnd())
         {
