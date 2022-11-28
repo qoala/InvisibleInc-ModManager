@@ -6,6 +6,7 @@ namespace iimodmanager {
 
 class CachedMod;
 class InstalledMod;
+class ModInfo;
 class SpecMod;
 
 
@@ -16,6 +17,8 @@ namespace util {
     bool compareSpecModNames(const SpecMod &a, const SpecMod &b);
 
     const QString &displayVersion(const QString &version);
+    const QString displayInfo(const ModInfo &info, const QString &alias = QString());
+    const QString displayInfo(const SpecMod &sm);
 
     //! True if the input is a steam mod ID.
     bool isSteamModId(const QString &inputId);

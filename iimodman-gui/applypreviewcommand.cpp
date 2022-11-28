@@ -76,15 +76,15 @@ bool ApplyPreviewCommand::removeMod(const InstalledMod &im)
     QString errorInfo;
     if (app.modList().removeMod(im.id(), &errorInfo))
     {
-        emit textOutput(QStringLiteral("  %1 removed \t%2").arg(
-                    im.info().toString(),
+        emit textOutput(QStringLiteral("  Removed %1 \t%2").arg(
+                    util::displayInfo(im.info(), im.alias()),
                     util::displayVersion(im.info().version())));
         return true;
     }
     else
     {
         emit textOutput(QStringLiteral("Failed to remove %1: %2").arg(
-                    im.info().toString(), errorInfo));
+                    util::displayInfo(im.info(), im.alias()), errorInfo));
         return false;
     }
 }
@@ -95,15 +95,15 @@ bool ApplyPreviewCommand::installMod(const SpecMod &sm)
     const InstalledMod *im = app.modList().installMod(sm, &errorInfo);
     if (im)
     {
-        emit textOutput(QStringLiteral("  %1 installed \t%2").arg(
-                    im->info().toString(),
+        emit textOutput(QStringLiteral("  Installed %1 \t%2").arg(
+                    util::displayInfo(im->info(), im->alias()),
                     util::displayVersion(im->info().version())));
     }
     else
     {
         const CachedMod *cm = app.cache().mod(sm.id());
         emit textOutput(QStringLiteral("Failed to install %1: %2").arg(
-                    cm ? cm->info().toString() : sm.id(), errorInfo));
+                    cm ? util::displayInfo(cm->info(), sm.alias()) : util::displayInfo(sm), errorInfo));
     }
     return im;
 }
@@ -117,8 +117,8 @@ bool ApplyPreviewCommand::updateMod(const SpecMod &sm)
     const InstalledMod *im = app.modList().installMod(sm, &errorInfo);
     if (im)
     {
-        emit textOutput(QStringLiteral("  %1 installed \t%2 => %3").arg(
-                    im->info().toString(),
+        emit textOutput(QStringLiteral("  Installed %1 \t%2 => %3").arg(
+                    util::displayInfo(im->info(), im->alias()),
                     util::displayVersion(fromVersion),
                     util::displayVersion(im->info().version())));
     }
@@ -126,7 +126,7 @@ bool ApplyPreviewCommand::updateMod(const SpecMod &sm)
     {
         const CachedMod *cm = app.cache().mod(sm.id());
         emit textOutput(QStringLiteral("Failed to install %1: %2").arg(
-                    cm ? cm->info().toString() : sm.id(), errorInfo));
+                    cm ? util::displayInfo(cm->info(), sm.alias()) : util::displayInfo(sm), errorInfo));
     }
     return im;
 }

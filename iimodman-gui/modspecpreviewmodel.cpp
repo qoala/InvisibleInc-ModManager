@@ -317,7 +317,15 @@ const ModSpecPreviewModel::PendingChange ModSpecPreviewModel::seekPendingRow(int
         return PendingChange();
 
     const QString modId = *cm ? (*cm)->id() : *im ? (*im)-> id() : QString();
-    return pendingChange(modId);
+
+    if (pendingChanges.contains(modId))
+        return pendingChanges.value(modId);
+    else
+    {
+        PendingChange pc(modId);
+        pc.alias = *im ? (*im)->alias() : *cm ? (*cm)->defaultAlias() : QString();
+        return pc;
+    }
 }
 
 ModSpecPreviewModel::PendingChange *ModSpecPreviewModel::seekMutablePendingRow(int row, const CachedMod **cm, const InstalledMod **im)
@@ -653,6 +661,7 @@ void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMo
                     emit textOutput(QStringLiteral("! Cannot install %1 '%2': Not in cache.").arg(pc.modId, pc.versionId));
             }
             break;
+        case PendingChange::RE_ALIAS:
         case PendingChange::UPDATE:
             {
                 const auto *cm = cache.mod(pc.modId);
@@ -723,7 +732,7 @@ void ModSpecPreviewModel::refreshPendingChange(PendingChange &pc)
             {
                 if (pc.alias == im->alias())
                 {
-                    pc.type == PendingChange::PIN_CURRENT;
+                    pc.type = PendingChange::PIN_CURRENT;
                     setDirty();
                 }
             }

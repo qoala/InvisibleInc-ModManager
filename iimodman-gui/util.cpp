@@ -33,6 +33,22 @@ const QString &displayVersion(const QString &version)
     return version.isNull() ? emptyVersion : version;
 }
 
+const QString displayInfo(const ModInfo &info, const QString &alias)
+{
+    if (alias.isEmpty())
+        return QStringLiteral("%2 [%1]").arg(info.id(), info.name());
+    else
+        return QStringLiteral("%2 [%1@%3]").arg(info.id(), info.name(), alias);
+}
+
+const QString displayInfo(const SpecMod &sm)
+{
+    if (sm.alias().isEmpty())
+        return QStringLiteral("%2 [%1]").arg(sm.id(), sm.name());
+    else
+        return QStringLiteral("%2 [%1@%3]").arg(sm.id(), sm.name(), sm.alias());
+}
+
 bool isSteamModId(const QString &input)
 {
     static const QRegularExpression re(QStringLiteral("^workshop-\\d+$"));

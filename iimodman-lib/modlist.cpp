@@ -245,7 +245,7 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *e
     if (im && im->alias() != alias)
     {
         // Also uninstall the existing install of this mod with a different folder.
-        const QString aliasPath = modPath(im->alias());
+        const QString aliasPath = modPath(im->impl()->installedId());
         if (!FileUtils::removeModDir(aliasPath, errorInfo))
             return nullptr;
     }
@@ -269,16 +269,14 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *e
 
     if (im)
     {
-        if (useAlias)
-            im->impl()->setAlias(alias);
+        im->impl()->setAlias(alias);
         if (im->impl()->refresh(FULL, cv->id()))
             return im;
     }
     else
     {
         InstalledMod newMod(*this, modId);
-        if (useAlias)
-            newMod.impl()->setAlias(alias);
+        newMod.impl()->setAlias(alias);
         if (newMod.impl()->refresh(FULL, cv->id()))
         {
             modIds_[modId] = mods_.size();

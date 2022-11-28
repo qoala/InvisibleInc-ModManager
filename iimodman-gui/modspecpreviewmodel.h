@@ -153,8 +153,6 @@ private:
 
     inline bool isLocked() const { return isLocked_; };
 
-    inline const PendingChange pendingChange(const QString &modId) const
-    { return pendingChanges.value(modId, PendingChange(modId)); }
     //! Populates the cached mod, installed mod, and pending change.
     //! If not present, a default pending change is provided.
     const PendingChange seekPendingRow(int row, const CachedMod **cmOut, const InstalledMod **imOut) const;
