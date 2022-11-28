@@ -53,6 +53,10 @@ bool ApplyPreviewCommand::doSync()
     QList<SpecMod> toUpdateMods;
     QList<InstalledMod> toRemoveMods;
     preview->prepareChanges(&toAddMods, &toUpdateMods, &toRemoveMods);
+    // TODO: Support re-alias of uncached mods (or make it unavailable).
+    // TODO: Prompt to update default aliases if targets differ from defaults.
+    // TODO: Confirmation dialog with list of changes.
+    // TODO: Warn if about to delete uncached mod versions.
 
     emit textOutput("Syncing mods...");
     for (const InstalledMod &sm : toRemoveMods)

@@ -44,19 +44,6 @@ namespace ColumnData {
             return pi.isActive() ? Qt::Checked : Qt::Unchecked;
         return QVariant();
     }
-
-    QString parseIdInput(const QString input)
-    {
-        if (util::isSteamModId(input))
-            return input;
-
-        static const QRegularExpression nonSteamRe(QStringLiteral("^[\\w.-]+$"));
-        if (nonSteamRe.match(input).hasMatch())
-            return input;
-
-        QString parsed = util::parseSteamModUrl(input);
-        return parsed.isEmpty() ? QString() : parsed;
-    }
 }
 
 
@@ -260,13 +247,9 @@ bool CacheImportModel::setData(const QModelIndex &index, const QVariant &value, 
         if (!im || !pi)
             return false;
 
-        bool ok = true;
-        QString newId = ColumnData::parseIdInput(value.toString().trimmed());
+        QString newId = modelutil::parseIdInput(value.toString().trimmed());
         if (newId.isEmpty())
-        {
-            ok = false;
             newId = pi->installedId;
-        }
         if (containsDupe(pendingImports, newId, pi->installedId))
         {
             // Do not allow duplicate target IDs.
@@ -296,7 +279,7 @@ bool CacheImportModel::setData(const QModelIndex &index, const QVariant &value, 
             pi->status = PendingImport::IMPORT_DOWNLOAD;
         else if (pi->status == PendingImport::PENDING)
             nextInfo();
-        return ok;
+        return true;
     }
     return false;
 }

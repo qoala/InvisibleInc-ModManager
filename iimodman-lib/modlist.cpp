@@ -161,6 +161,7 @@ const QHash<QString, QString> ModList::Impl::saveCacheVersionIds() const
 
 void ModList::Impl::refresh(ModList::RefreshLevel level)
 {
+    // TODO: enforce unique mod IDs.
     QDir installDir(config_.modPath());
     qCDebug(modlist).noquote() << "installed:refresh() Start" << installDir.path();
 

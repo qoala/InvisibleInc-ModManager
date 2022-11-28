@@ -39,7 +39,7 @@ namespace ColumnData {
         if (pc.type == PendingChange::REMOVE)
             return modelutil::nullData(role, baseStatus);
 
-        if (role == Qt::DisplayRole)
+        if (role == Qt::DisplayRole || role == Qt::EditRole)
             return pc.alias.isEmpty() ? pc.modId : pc.alias;
         else if (role == modelutil::STATUS_ROLE)
         {
@@ -434,6 +434,49 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
         reportSpecChanged(row, true);
         return true;
     }
+    else if (index.column() == TARGET_ALIAS && role == Qt::EditRole)
+    {
+        int row = index.row();
+        const CachedMod *cm;
+        const InstalledMod *im;
+        PendingChange *pc = seekMutablePendingRow(row, &cm, &im);
+        if (!pc)
+            return false; // Only fails to return a model on error.
+
+        QString newAlias = modelutil::parseIdInput(value.toString().trimmed());
+        if (newAlias.isEmpty())
+            newAlias = im ? im->alias() : cm ? cm->defaultAlias() : QString();
+        else if (newAlias == pc->modId)
+            newAlias.clear();
+
+        if (newAlias == pc->alias)
+            return false;
+        pc->alias = newAlias;
+
+        if (im)
+        {
+            if (pc->type == PendingChange::REMOVE)
+                return false;
+            else if (newAlias != im->alias()) // Change alias trumps other chagnes.
+                pc->type = PendingChange::RE_ALIAS;
+            else if (pc->versionPin == PendingChange::CURRENT) // Return to pinning current version.
+                pc->type = PendingChange::PIN_CURRENT;
+            else if (cm && im->cacheVersion() != cm->latestVersion()) // Change version.
+                pc->type = PendingChange::UPDATE;
+            else if (pc->versionPin == PendingChange::LATEST)
+                pc->type = PendingChange::PIN_LATEST;
+            else
+                pc->type = PendingChange::NONE;
+        }
+        // If we're not supposed to be leaving it uninstalled, this must be a new install.
+        else if (pc->type != PendingChange::NONE)
+            pc->type = PendingChange::INSTALL;
+
+        // TODO: non-unique install IDs should prevent submission.
+        setDirty();
+        reportSpecChanged(row, true);
+        return true;
+    }
     return false;
 }
 
@@ -501,6 +544,19 @@ Qt::ItemFlags ModSpecPreviewModel::flags(const QModelIndex &index) const
             const InstalledMod *im;
             seekRow(index.row(), &cm, &im);
             if (im || (cm && cm->downloaded()))
+                f |= Qt::ItemIsEnabled;
+        }
+        return f;
+    }
+    else if (index.column() == TARGET_ALIAS)
+    {
+        Qt::ItemFlags f = Qt::ItemIsSelectable | Qt::ItemIsEditable;
+        if (!isLocked())
+        {
+            const CachedMod *cm;
+            const InstalledMod *im;
+            const PendingChange pc = seekPendingRow(index.row(), &cm, &im);
+            if (pc.type == PendingChange::INSTALL || (im && pc.type != PendingChange::REMOVE))
                 f |= Qt::ItemIsEnabled;
         }
         return f;
