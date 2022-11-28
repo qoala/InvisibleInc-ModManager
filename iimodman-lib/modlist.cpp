@@ -435,6 +435,7 @@ bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &exp
         {
             alias_ = id_;
             id_ = modId;
+            idStatus = ModInfo::ID_LOCKED; // Treat modman.json as truth.
         }
     }
     // Prefer to use an in-memory recognized version ID. Will be refreshed below when marking installed version.
@@ -447,8 +448,11 @@ bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &exp
     QFile infoFile = QFile(modDir.filePath("modinfo.txt"));
     info_ = ModInfo::readModInfo(infoFile, id_, idStatus);
     infoFile.close();
-    if (idStatus == ModInfo::ID_TENTATIVE)
+    if (idStatus == ModInfo::ID_TENTATIVE && id_ != info_.id())
+    {
+        alias_ = id_;
         id_ = info_.id();
+    }
 
     if (level == ModList::CONTENT_ONLY)
         return true;
