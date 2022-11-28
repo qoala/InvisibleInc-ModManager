@@ -40,7 +40,7 @@ void ApplyPreviewCommand::execute()
 void ApplyPreviewCommand::finish()
 {
     // Cleanup the preview's state if it applied cleanly.
-    if (preview->isEmpty())
+    if (!preview->canApply())
         preview->revert();
 
     emit finished();

@@ -83,8 +83,10 @@ public:
         VersionPinning versionPin;
         ChangeType type;
 
+        bool hasDupe;
+
         PendingChange(const QString &modId = QString())
-            : modId(modId), versionPin(CURRENT), type(NONE) {};
+            : modId(modId), versionPin(CURRENT), type(NONE), hasDupe(false) {};
 
         inline bool isValid() const { return !modId.isNull(); };
         inline bool isNone() const { return type == NONE; };
@@ -108,12 +110,12 @@ public:
     void prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMod> *toUpdateMods, QList<InstalledMod> *toRemoveMods) const;
     //! Returns true if there any differences compared to the currently installed state.
     //! \sa ::revert
-    bool isEmpty() const;
+    bool canApply() const;
 
 signals:
     void textOutput(QString value) const;
 
-    void isEmptyChanged(bool newValue) const;
+    void canApplyChanged(bool newValue) const;
 
 public slots:
     //! Resets the pending mods to the currently installed state.
@@ -121,7 +123,7 @@ public slots:
     //! Submitting changes should be handled outside of this model,
     //! instead of by calling ::submit.
     //!
-    //! \sa ::isEmpty
+    //! \sa ::canApply
     void revert() override;
 
     //! Replaces pending changes with an exact sync to the given mod specification.
@@ -149,8 +151,8 @@ private:
     //! True if modSpec_ needs to be regenerated.
     mutable bool dirty;
 
-    // Used to report ::isEmptyChanged.
-    mutable bool previousEmptyState_;
+    // Used to report ::canApplyChanged.
+    mutable bool previousAppliableState_;
 
     inline bool isLocked() const { return isLocked_; };
 
@@ -170,6 +172,7 @@ private:
 
     std::optional<PendingChange> toPendingChange(const SpecMod &specMod) const;
     void generateModSpec() const;
+    void checkDuplicates();
     void refreshPendingChange(PendingChange &pc);
     void refreshPendingChanges();
 };

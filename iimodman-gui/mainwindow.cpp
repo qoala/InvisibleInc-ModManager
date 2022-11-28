@@ -92,7 +92,7 @@ void MainWindow::createTabs()
     revertPreviewBtn = modsActionBtnBox->addButton(tr("Reset Changes"), QDialogButtonBox::ResetRole);
     revertPreviewBtn->setEnabled(false);
     connect(revertPreviewBtn, &QAbstractButton::clicked, this, &MainWindow::revertPreview);
-    connect(modsPreviewModel, &ModSpecPreviewModel::isEmptyChanged, this, &MainWindow::updatePreviewActionsEnabled);
+    connect(modsPreviewModel, &ModSpecPreviewModel::canApplyChanged, this, &MainWindow::updatePreviewActionsEnabled);
 
     QHBoxLayout *modsFilterBtnLayout = new QHBoxLayout;
     modsFilterBtnLayout->addWidget(modsInstalledCheckBox);
@@ -210,7 +210,7 @@ void MainWindow::setActionsEnabled(bool enabled)
 
 void MainWindow::updatePreviewActionsEnabled()
 {
-    bool enabled = !isLocked() && !modsPreviewModel->isEmpty();
+    bool enabled = !isLocked() && modsPreviewModel->canApply();
     applyPreviewBtn->setEnabled(enabled);
     revertPreviewBtn->setEnabled(enabled);
 }

@@ -245,7 +245,7 @@ std::optional<ModSpecPreviewModel::PendingChange> ModSpecPreviewModel::toPending
 }
 
 ModSpecPreviewModel::ModSpecPreviewModel(const ModCache &cache, const ModList &modList, QObject *parent)
-    : ModsModel(cache, modList, parent), isLocked_(false), dirty(true), previousEmptyState_(true)
+    : ModsModel(cache, modList, parent), isLocked_(false), dirty(true), previousAppliableState_(false)
 {}
 
 int ModSpecPreviewModel::columnCount(const QModelIndex &parent) const
@@ -352,7 +352,7 @@ ModSpecPreviewModel::PendingChange *ModSpecPreviewModel::seekMutablePendingRow(i
 
 QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 {
-    if (role != Qt::ForegroundRole && isBase(index))
+    if (role != Qt::ForegroundRole && role != Qt::BackgroundRole && isBase(index))
         return ModsModel::data(toBaseColumn(this, index), role);
 
     const CachedMod *cm;
@@ -360,6 +360,14 @@ QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
     const PendingChange pc = seekPendingRow(index.row(), &cm, &im);
 
     modelutil::Status baseStatus = modelutil::modStatus(cm, im, role);
+
+    if (role == Qt::BackgroundRole)
+    {
+        if (pc.hasDupe)
+            return QColor::fromRgb(255, 0, 0, 64);
+        else
+            return QVariant();
+    }
 
     if (!im && pc.isNone())
     {
@@ -486,7 +494,6 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
         else if (pc->type != PendingChange::NONE)
             pc->type = PendingChange::INSTALL;
 
-        // TODO: non-unique install IDs should prevent submission.
         setDirty();
         reportSpecChanged(row, true);
         return true;
@@ -633,13 +640,62 @@ QList<SpecMod> ModSpecPreviewModel::versionedModSpec() const
     return versionedModSpec_;
 }
 
-bool ModSpecPreviewModel::isEmpty() const
+bool ModSpecPreviewModel::canApply() const
 {
-    for (const auto &change : pendingChanges)
-        if (change.isActive())
+    bool hasChange = false;
+    for (const auto &pc : pendingChanges)
+    {
+        if (pc.isActive())
+            hasChange = true;
+        if (pc.hasDupe)
             return false;
+    }
 
-    return true;
+    return hasChange;
+}
+
+void ModSpecPreviewModel::checkDuplicates() {
+    QSet<QString> removedIds; // Mod IDs, for comparison against current installed mods.
+    QHash<QString, PendingChange*> changesByInstalledId; // Installed IDs
+
+    // Check for dupes within the active pending changes.
+    for (auto &pc : pendingChanges)
+    {
+        pc.hasDupe = false;
+        if (pc.type == PendingChange::REMOVE || pc.type == PendingChange::RE_ALIAS)
+            removedIds << pc.modId;
+        if (pc.isActive() && pc.type != PendingChange::REMOVE)
+        {
+            const QString &id = pc.alias.isEmpty() ? pc.modId : pc.alias;
+            if (changesByInstalledId.contains(id))
+            {
+                pc.hasDupe = true;
+                changesByInstalledId[id]->hasDupe = true;
+            }
+            else
+                changesByInstalledId.insert(id, &pc);
+        }
+    }
+    // Check for dupes between active pending changes and currently installed mods.
+    for (const auto &im : modList.mods())
+    {
+        const QString &installedId = im.installedId();
+        if (!removedIds.contains(im.id()) && changesByInstalledId.contains(installedId))
+        {
+            PendingChange *targetChange = changesByInstalledId.value(installedId);
+            if (im.id() != targetChange->modId)
+            {
+                PendingChange &pc = pendingChanges[im.id()];
+                if (pc.modId.isEmpty())
+                {
+                    pc.modId = im.id();
+                    pc.alias = im.alias();
+                }
+                pc.hasDupe = true;
+                targetChange->hasDupe = true;
+            }
+        }
+    }
 }
 
 void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMod> *toUpdateMods, QList<InstalledMod> *toRemoveMods) const
@@ -860,11 +916,12 @@ void ModSpecPreviewModel::reportAllChanged(const std::function<void ()> &cb, con
     emit dataChanged(QModelIndex(), QModelIndex(), {modelutil::CANCEL_SORTING_ROLE});
     ModsModel::reportAllChanged(cb, modId);
 
-    bool emptyState = isEmpty();
-    if (previousEmptyState_ != emptyState)
+    checkDuplicates();
+    bool emptyState = canApply();
+    if (previousAppliableState_ != emptyState)
     {
-        previousEmptyState_ = emptyState;
-        emit isEmptyChanged(emptyState);
+        previousAppliableState_ = emptyState;
+        emit canApplyChanged(emptyState);
     }
 }
 
@@ -888,11 +945,12 @@ void ModSpecPreviewModel::reportSpecChanged(int row, bool modifiedByView)
             createIndex(startRow, columnMin()),
             createIndex(endRow, columnMax()));
 
-    bool emptyState = isEmpty();
-    if (previousEmptyState_ != emptyState)
+    checkDuplicates();
+    bool emptyState = canApply();
+    if (previousAppliableState_ != emptyState)
     {
-        previousEmptyState_ = emptyState;
-        emit isEmptyChanged(emptyState);
+        previousAppliableState_ = emptyState;
+        emit canApplyChanged(emptyState);
     }
 }
 
