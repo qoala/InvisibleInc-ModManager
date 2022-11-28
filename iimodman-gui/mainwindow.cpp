@@ -53,13 +53,14 @@ void MainWindow::createTabs()
     connect(this, &MainWindow::lockChanged, modsPreviewModel, &ModSpecPreviewModel::setLock);
     modsSortFilterProxy = new ModsSortFilterProxyModel(this);
     modsSortFilterProxy->setSourceModel(modsPreviewModel);
-    modsSortFilterProxy->setFilterTextColumns({ModSpecPreviewModel::NAME, ModSpecPreviewModel::ID});
+    modsSortFilterProxy->setFilterTextColumns({ModSpecPreviewModel::NAME, ModSpecPreviewModel::ID, ModSpecPreviewModel::INSTALLED_ALIAS, ModSpecPreviewModel::DEFAULT_ALIAS});
     modsSortFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
     modsSortFilterProxy->setFilterStatusColumn(ModSpecPreviewModel::NAME);
     modsSortFilterProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
     modsView = new QTreeView;
     modsView->setModel(modsSortFilterProxy);
     modsView->header()->setStretchLastSection(false);
+    modsView->hideColumn(ModSpecPreviewModel::DEFAULT_ALIAS); // Column only exported by preview model for filtering.
     modsView->setColumnWidth(ModSpecPreviewModel::NAME, 300);
     modsView->setColumnWidth(ModSpecPreviewModel::ID, 160);
     modsView->setColumnWidth(ModSpecPreviewModel::INSTALLED_VERSION, 110);

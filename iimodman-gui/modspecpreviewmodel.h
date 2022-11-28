@@ -25,6 +25,7 @@ public:
         NAME, // from base
         ID, // from base
 
+        DEFAULT_ALIAS, // from base
         INSTALLED_ALIAS, // from base
         TARGET_ALIAS,
 

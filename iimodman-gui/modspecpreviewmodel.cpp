@@ -265,6 +265,7 @@ static bool isBase(int column)
     {
     case ModSpecPreviewModel::NAME:
     case ModSpecPreviewModel::ID:
+    case ModSpecPreviewModel::DEFAULT_ALIAS:
     case ModSpecPreviewModel::INSTALLED_ALIAS:
     case ModSpecPreviewModel::INSTALLED_VERSION:
     case ModSpecPreviewModel::INSTALLED_VERSION_TIME:
@@ -288,6 +289,8 @@ static int toBaseColumn(int column) {
         return ModsModel::NAME;
     case ModSpecPreviewModel::ID:
         return ModsModel::ID;
+    case ModSpecPreviewModel::DEFAULT_ALIAS:
+        return ModsModel::DEFAULT_ALIAS;
     case ModSpecPreviewModel::INSTALLED_ALIAS:
         return ModsModel::INSTALLED_ALIAS;
     case ModSpecPreviewModel::INSTALLED_VERSION:
@@ -376,6 +379,9 @@ QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 
     switch (index.column())
     {
+    case DEFAULT_ALIAS:
+        if (role == Qt::ForegroundRole && cm && cm->defaultAlias().isEmpty())
+            return QColor(Qt::gray);
     case INSTALLED_ALIAS:
         if (role == Qt::ForegroundRole && im && im->alias().isEmpty())
             return QColor(Qt::gray);
