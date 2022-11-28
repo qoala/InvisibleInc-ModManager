@@ -52,7 +52,7 @@ const QString displayInfo(const SpecMod &sm)
 bool isSteamModId(const QString &input)
 {
     static const QRegularExpression re(QStringLiteral("^workshop-\\d+$"));
-    return re.match(input).hasMatch();
+    return input.contains(re);
 }
 QString parseSteamModUrl(const QString &input)
 {

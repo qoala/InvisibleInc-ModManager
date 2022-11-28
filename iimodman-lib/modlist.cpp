@@ -71,7 +71,7 @@ public:
 // file-visibility:
     inline const QString &cacheVersionId() const { return cacheVersionId_; }
     inline void setAlias(const QString &newAlias) { alias_ = newAlias; }
-    bool refresh(ModList::RefreshLevel level = ModList::FULL, const QString &expectedCacheVersionId = QString());
+    bool refresh(ModList::RefreshLevel level = ModList::FULL, const QString &expectedCacheVersionId = QString(), ModInfo::IDStatus idStatus = ModInfo::ID_LOCKED);
 
 private:
     ModList::Impl &parent_;
@@ -153,7 +153,8 @@ const QHash<QString, QString> ModList::Impl::saveCacheVersionIds() const
     for (const auto &im : mods())
     {
         const QString &cvId = im.impl()->cacheVersionId();
-        map.insert(im.id(), cvId);
+        // Index by installed ID, because that's what will be available first on the refresh.
+        map.insert(im.impl()->installedId(), cvId);
     }
 
     return map;
@@ -179,7 +180,7 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
     for (const auto &modId : modIds)
     {
         InstalledMod mod(*this, modId);
-        if (mod.impl()->refresh(level, cacheVersionIds.value(modId)))
+        if (mod.impl()->refresh(level, cacheVersionIds.value(modId), ModInfo::ID_TENTATIVE))
             mods_.append(mod);
     }
 
@@ -402,7 +403,7 @@ const SpecMod InstalledMod::Impl::asSpec() const
     if (!specMod)
     {
         const CachedVersion *v = cacheVersion();
-        specMod.emplace(id_, v ? v->id() : QStringLiteral("-"), info_.name(), info_.version());
+        specMod.emplace(id_, v ? v->id() : QStringLiteral("-"), alias_, info_.name(), info_.version());
     }
 
     return *specMod;
@@ -413,7 +414,7 @@ QString InstalledMod::Impl::path() const
     return parent().modPath(installedId());
 }
 
-bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &expectedCacheVersionId)
+bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &expectedCacheVersionId, ModInfo::IDStatus idStatus)
 {
     QDir modDir(parent().modPath(installedId()));
     if (!modDir.exists("modinfo.txt"))
@@ -444,8 +445,10 @@ bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &exp
         return true;
 
     QFile infoFile = QFile(modDir.filePath("modinfo.txt"));
-    info_ = ModInfo::readModInfo(infoFile, id_);
+    info_ = ModInfo::readModInfo(infoFile, id_, idStatus);
     infoFile.close();
+    if (idStatus == ModInfo::ID_TENTATIVE)
+        id_ = info_.id();
 
     if (level == ModList::CONTENT_ONLY)
         return true;
