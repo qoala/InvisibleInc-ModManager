@@ -19,8 +19,10 @@
 #include <QKeySequence>
 #include <QLabel>
 #include <QMenuBar>
+#include <QMessageBox>
 #include <QShortcut>
 #include <QStringBuilder>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <modcache.h>
 #include <modlist.h>
@@ -40,6 +42,12 @@ static const QString statusMessage(const ModManGuiApplication &app, const QStrin
     return base % separator % installedDetail % separator % cacheDetail;
 }
 
+enum StartupStage {
+    ROOT = 0,
+    CONFIG_VALIDATED,
+    MODS_IMPORTED,
+};
+
 
 MainWindow::MainWindow(ModManGuiApplication &app)
     : app(app), isLocked_(false)
@@ -51,8 +59,7 @@ MainWindow::MainWindow(ModManGuiApplication &app)
     setWindowTitle(tr("II Mod Manager %1").arg(IIMODMAN_VERSION));
     resize(980, 700);
 
-    if (!app.config().hasValidPaths())
-        openSettings();
+    QTimer::singleShot(0, this, [=](){ this->onStartup(ROOT); });
 }
 
 void MainWindow::createTabs()
@@ -228,6 +235,34 @@ void MainWindow::updatePreviewActionsEnabled()
     revertPreviewBtn->setEnabled(enabled);
 }
 
+static bool hasUncachedMods(const ModCache &cache, const ModList &modList)
+{
+    for (const auto &im : modList.mods())
+        if (!cache.contains(im.id()))
+            return true;
+    return false;
+}
+
+void MainWindow::onStartup(int stage)
+{
+    if (stage <= ROOT && !app.config().hasValidPaths())
+    {
+        openSettings(true);
+        return;
+    }
+    if (stage <= CONFIG_VALIDATED && hasUncachedMods(app.cache(), app.modList()))
+    {
+        if (QMessageBox::question(this, tr("II Mod Manager"),
+                    tr("There exist installed mods that aren't in the download cache. Do you want to import those mods now?\n(This can also be done later via the Cache menu.)"),
+                    QMessageBox::Yes | QMessageBox::No)
+                == QMessageBox::Yes)
+        {
+            cacheImportInstalled(true);
+            return;
+        }
+    }
+}
+
 void MainWindow::actionStarted()
 {
     setLock(true);
@@ -296,7 +331,7 @@ void MainWindow::saveCacheSpec()
     command->execute();
 }
 
-void MainWindow::openSettings()
+void MainWindow::openSettings(bool isStartup)
 {
     actionStarted();
     SettingsDialog dialog(app, this);
@@ -311,6 +346,9 @@ void MainWindow::openSettings()
         logDisplay->appendPlainText(message);
     }
     actionFinished();
+
+    if (isStartup)
+        QTimer::singleShot(0, this, [=](){ this->onStartup(CONFIG_VALIDATED); });
 }
 
 // Cache actions.
@@ -346,13 +384,15 @@ void MainWindow::cacheAddMod()
     command->execute();
 }
 
-void MainWindow::cacheImportInstalled()
+void MainWindow::cacheImportInstalled(bool isStartup)
 {
     logDisplay->appendPlainText("\n--");
     actionStarted();
     CacheImportInstalledCommand *command = new CacheImportInstalledCommand(app, this);
     connect(command, &CacheImportInstalledCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &CacheImportInstalledCommand::finished, this, &MainWindow::actionFinished);
+    if (isStartup)
+        connect(command, &CacheImportInstalledCommand::finished, this, [=](){ this->onStartup(MODS_IMPORTED); });
     command->execute();
 }
 
