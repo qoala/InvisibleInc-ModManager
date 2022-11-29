@@ -101,10 +101,7 @@ void ApplyPreviewCommand::execute()
                 tr("Preparing to install mods with a different alias than their current default. Update the default alias for these mods?"),
                 aliasChanges, static_cast<QWidget*>(parent()));
         connect(prompt, &QDialog::finished, this, &ApplyPreviewCommand::dialogFinished);
-        if (app.config().openMaximized())
-            prompt->showMaximized();
-        else
-            prompt->show();
+        prompt->show();
     }
 }
 

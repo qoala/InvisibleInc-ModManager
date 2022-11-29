@@ -83,10 +83,7 @@ void CacheImportInstalledCommand::execute()
     connect(model, &CacheImportModel::textOutput, this, &CacheImportInstalledCommand::textOutput);
     CacheImportDialog *dialog = new CacheImportDialog(model, static_cast<QWidget*>(parent()));
     connect(dialog, &QDialog::finished, this, &CacheImportInstalledCommand::dialogFinished);
-    if (app.config().openMaximized())
-        dialog->showMaximized();
-    else
-        dialog->show();
+    dialog->show();
 }
 
 void CacheImportInstalledCommand::dialogFinished(int result)

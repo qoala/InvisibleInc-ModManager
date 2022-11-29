@@ -46,7 +46,7 @@ SettingsDialog::SettingsDialog(ModManGuiApplication  &app, QWidget *parent)
 
     // Appearance settings.
 
-    openMaximizedCheckBox = new QCheckBox(tr("Open windows/dialogs maximized"));
+    openMaximizedCheckBox = new QCheckBox(tr("Open main window maximized."));
 
     QFormLayout *appearanceLayout = new QFormLayout;
     appearanceLayout->addRow(openMaximizedCheckBox);
