@@ -108,8 +108,10 @@ public:
     //! All versions are specified.
     QList<SpecMod> versionedModSpec() const;
     void prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMod> *toUpdateMods, QList<InstalledMod> *toRemoveMods) const;
-    //! Returns true if there any differences compared to the currently installed state.
+    //! Returns false if there any differences compared to the currently installed state.
     //! \sa ::revert
+    bool isEmpty() const;
+    //! Returns true if this spec is non-empty and has no validation errors.
     bool canApply() const;
 
 signals:
@@ -123,7 +125,7 @@ public slots:
     //! Submitting changes should be handled outside of this model,
     //! instead of by calling ::submit.
     //!
-    //! \sa ::canApply
+    //! \sa ::isEmpty
     void revert() override;
 
     //! Replaces pending changes with an exact sync to the given mod specification.

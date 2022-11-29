@@ -640,6 +640,15 @@ QList<SpecMod> ModSpecPreviewModel::versionedModSpec() const
     return versionedModSpec_;
 }
 
+bool ModSpecPreviewModel::isEmpty() const
+{
+    for (const auto &pc : pendingChanges)
+        if (pc.isActive())
+            return false;
+
+    return true;
+}
+
 bool ModSpecPreviewModel::canApply() const
 {
     bool hasChange = false;
@@ -700,7 +709,7 @@ void ModSpecPreviewModel::checkDuplicates() {
 
 void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMod> *toUpdateMods, QList<InstalledMod> *toRemoveMods) const
 {
-    if (!toAddMods || !toUpdateMods || !toRemoveMods)
+    if (!toAddMods || !toUpdateMods || !toRemoveMods || !canApply())
     {
         emit textOutput(QStringLiteral("! Pointer error in ModSpecPreviewModel::prepareChanges"));
         return;
@@ -713,6 +722,7 @@ void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMo
     for (const auto &pc : pendingChanges)
         switch (pc.type)
         {
+        case PendingChange::RE_ALIAS:
         case PendingChange::INSTALL:
             {
                 const auto *cm = cache.mod(pc.modId);
@@ -723,7 +733,6 @@ void ModSpecPreviewModel::prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMo
                     emit textOutput(QStringLiteral("! Cannot install %1 '%2': Not in cache.").arg(pc.modId, pc.versionId));
             }
             break;
-        case PendingChange::RE_ALIAS:
         case PendingChange::UPDATE:
             {
                 const auto *cm = cache.mod(pc.modId);
