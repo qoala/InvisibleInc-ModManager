@@ -28,8 +28,8 @@
 #include <modlist.h>
 #include <modspec.h>
 
-#ifndef IIMODMANVERSION
-#  define IIMODMANVERSION ""
+#ifndef IIMODMAN_VERSION
+#  define IIMODMAN_VERSION ""
 #endif
 
 namespace iimodmanager {

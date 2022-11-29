@@ -20,6 +20,7 @@ set(IIMODMAN_LIB_SOURCES
     modmanconfig.cpp
     modsignature.cpp
     modspec.cpp
+    modversion.cpp
   )
 
 add_library(${IIMODMAN_LIB_TARGET_NAME} ${IIMODMAN_LIB_SOURCES})

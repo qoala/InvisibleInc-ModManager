@@ -133,7 +133,9 @@ const ModInfo ModInfo::readModInfo(QIODevice &file, const QString &id, IDStatus 
 
     ModInfo mod;
     const QString modId = (status == ID_LOCKED || isSteamId(id) || steamId.isEmpty()) ? id : QStringLiteral("workshop-%1").arg(steamId);
-    mod.impl = std::make_shared<Impl>(modId, name, version.isEmpty() ? QString() : 'v' + version);
+    if (!version.isEmpty() && !version.startsWith('v'))
+        version = 'v' + version;
+    mod.impl = std::make_shared<Impl>(modId, name, version.isEmpty() ? QString() : version);
     return mod;
 }
 
