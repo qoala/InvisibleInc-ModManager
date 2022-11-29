@@ -151,14 +151,15 @@ bool CacheImportInstalledCommand::copyMod(const QString &installedId, const QStr
         return false;
     }
 
-    // TODO: Correctly handle installedId != targetId.
-    const CachedMod *cm = app.cache().mod(im->id());
-    if (cm && cm->latestVersion() && cm->latestVersion()->installed())
+    if (const CachedVersion *iv = im->alternateCacheVersion(targetId))
     {
-        emit textOutput(QStringLiteral("  %1 is up to date.").arg(cm->info().toString()));
+        im->writeMetadataClaim(iv->modId(), iv->id());
+        app.cache().setDefaultAlias(iv->modId(), im->installedId());
+        emit textOutput(QStringLiteral("  %1 is up to date.").arg(iv->info().toString()));
         return true;
     }
 
+    const CachedMod *cm = app.cache().mod(targetId);
     QString versionId;
     if (!im->info().isSteam())
         versionId = QStringLiteral("dev");
@@ -183,7 +184,11 @@ bool CacheImportInstalledCommand::copyMod(const QString &installedId, const QStr
     QString errorInfo;
     const CachedVersion *cv = app.cache().addModVersion(targetId, versionId, im->path(), &errorInfo);
     if (cv)
+    {
+        im->writeMetadataClaim(cv->modId(), cv->id());
+        app.cache().setDefaultAlias(cv->modId(), im->installedId());
         emit textOutput(QStringLiteral("  Existing version of %1 imported as %2.").arg(cv->info().toString(), versionId));
+    }
     else
         emit textOutput(QStringLiteral("  Copying existing version of %1 failed: %2").arg(im->info().toString(), errorInfo));
     return cv;

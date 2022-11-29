@@ -17,6 +17,7 @@ namespace iimodmanager {
 Q_DECLARE_LOGGING_CATEGORY(modlist)
 Q_LOGGING_CATEGORY(modlist, "modlist", QtWarningMsg);
 
+
 //! Private implementation of ModList.
 //! Additionally exposes methods to the InstalledMod children defined in this file.
 class ModList::Impl
@@ -63,10 +64,12 @@ public:
     inline const QString &installedId() const { return alias_.isEmpty() ? id_ : alias_; }
     const QString &hash() const;
 
-    bool hasCacheVersion() const;
     const CachedVersion *cacheVersion() const;
+    const CachedVersion *alternateCacheVersion(const QString &cacheId) const;
     const SpecMod asSpec() const;
     QString path() const;
+
+    bool writeMetadataClaim(const QString &cacheId, const QString &cacheVersionId) const;
 
 // file-visibility:
     inline const QString &cacheVersionId() const { return cacheVersionId_; }
@@ -79,13 +82,35 @@ private:
     QString id_;
     ModInfo info_;
     QString alias_;
-    QString cacheVersionId_;
 
+    mutable QString cacheVersionId_;
     mutable QString hash_;
     mutable std::optional<SpecMod> specMod;
 
     inline const ModList::Impl &parent() const { return parent_; }
 };
+
+
+static bool writeMetadata(const QString &installedPath, const CachedMod *cm, const CachedVersion *cv)
+{
+    if (!cm)
+        return false;
+
+    QJsonObject root;
+    root["modId"] = cm->id();
+    if (cv)
+        root["versionId"] = cv->id();
+
+    QDir installedDir(installedPath);
+    QString errorInfo;
+    if (!FileUtils::writeJSON(installedDir.filePath("modman.json"), root, &errorInfo))
+    {
+        qCWarning(modlist).noquote() << "Failed to write modman.json to " << installedPath << ": " << errorInfo;
+        return false;
+    }
+    return true;
+}
+
 
 ModList::ModList(const ModManConfig &config, ModCache *cache, QObject *parent)
     : QObject(parent), impl{std::make_unique<Impl>(config, cache)}
@@ -257,16 +282,8 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *e
         return nullptr;
     }
 
-    QJsonObject root;
-    root["modId"] = modId;
-    root["versionId"] = cv->id();
-    QDir outputDir(outputPath);
-    QString sideErrorInfo;
-    if (!FileUtils::writeJSON(outputDir.filePath("modman.json"), root, &sideErrorInfo))
-    {
-        qCWarning(modlist).noquote() << "Failed to write modman.json to " << outputPath << ": " << sideErrorInfo;
-        // Continue even on failure. The metadata isn't critical.
-    }
+    bool writeOk = writeMetadata(outputPath, cm, cv);
+    Q_UNUSED(writeOk); // Continue even on failure. The metadata isn't critical.
 
     if (im)
     {
@@ -366,12 +383,17 @@ const QString &InstalledMod::hash() const
 
 bool InstalledMod::hasCacheVersion() const
 {
-    return impl()->hasCacheVersion();
+    return impl()->cacheVersion();
 }
 
 const CachedVersion *InstalledMod::cacheVersion() const
 {
     return impl()->cacheVersion();
+}
+
+const CachedVersion *InstalledMod::alternateCacheVersion(const QString &cacheId) const
+{
+    return impl()->alternateCacheVersion(cacheId);
 }
 
 const SpecMod InstalledMod::asSpec() const
@@ -394,6 +416,12 @@ QString InstalledMod::versionString() const
     return QString();
 }
 
+bool InstalledMod::writeMetadataClaim(const QString &cacheId, const QString &cacheVersionId) const
+{
+    return impl()->writeMetadataClaim(cacheId, cacheVersionId);
+}
+
+
 InstalledMod::Impl::Impl(ModList::Impl &parent, const QString &id)
     : parent_(parent), id_(id)
 {}
@@ -405,18 +433,27 @@ const QString &InstalledMod::Impl::hash() const
     return hash_;
 }
 
-bool InstalledMod::Impl::hasCacheVersion() const
-{
-    if (const auto cachedMod = parent().cache()->mod(id_))
-        return cachedMod->installedVersion();
-    return false;
-}
-
 const CachedVersion *InstalledMod::Impl::cacheVersion() const
 {
-    if (const auto cachedMod = parent().cache()->mod(id_))
-        return cachedMod->installedVersion();
-    return nullptr;
+    if (cacheVersionId_.isEmpty())
+        return nullptr;
+
+    const auto *cm = parent().cache()->mod(id_);
+    if (!cm)
+        return nullptr;
+
+    const auto *cv = cm->versionFromHash(hash(), cacheVersionId_);
+    if (cv)
+        cacheVersionId_ = cv->id();
+    else
+        cacheVersionId_.clear();
+    return cv;
+}
+
+const CachedVersion *InstalledMod::Impl::alternateCacheVersion(const QString &cacheId) const
+{
+    const auto *cm = parent().cache()->mod(cacheId);
+    return cm ? cm->versionFromHash(hash(), cacheVersionId_) : nullptr;
 }
 
 const SpecMod InstalledMod::Impl::asSpec() const
@@ -433,6 +470,17 @@ const SpecMod InstalledMod::Impl::asSpec() const
 QString InstalledMod::Impl::path() const
 {
     return parent().modPath(installedId());
+}
+
+bool InstalledMod::Impl::writeMetadataClaim(const QString &cacheId, const QString &cacheVersionId) const
+{
+    const CachedMod *cm = parent().cache()->mod(cacheId);
+    if (!cm)
+        return false;
+
+    const CachedVersion *cv = cm->versionFromHash(hash(), cacheVersionId.isEmpty() ? cacheVersionId_ : cacheVersionId);
+    const QString installedPath = parent().modPath(installedId());
+    return writeMetadata(installedPath, cm, cv);
 }
 
 bool InstalledMod::Impl::refresh(ModList::RefreshLevel level, const QString &expectedCacheVersionId, ModInfo::IDStatus idStatus)

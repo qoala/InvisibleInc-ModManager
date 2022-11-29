@@ -47,6 +47,7 @@ public:
     bool contains(const QString &id) const;
     const InstalledMod *mod(const QString &id) const;
 
+
     void refresh(RefreshLevel level = FULL);
     //! Installs the specified mod from the cache.
     //! Does not re-sort the mods list.
@@ -86,10 +87,17 @@ public:
     bool hasCacheVersion() const;
     //! The cached version matching the currently installed mod, or nullptr if there is no match.
     const CachedVersion *cacheVersion() const;
+    //! Attempts to match a cache version by a different mod ID.
+    const CachedVersion *alternateCacheVersion(const QString &cacheId) const;
 
     const SpecMod asSpec() const;
     QString path() const;
     QString versionString() const;
+
+    //! Write a metadata file claiming the currently installed mod is for the given cache mod, which may have a different ID.
+    //! The cache mod ID is used as-is if it exists in the cache, but the version ID will be re-checked on hash.
+    //! Requires a refresh before the removal is reflected in the mods list and cache.
+    bool writeMetadataClaim(const QString &cacheId, const QString &cacheVersionId = QString()) const;
 
 private:
     friend ModList;

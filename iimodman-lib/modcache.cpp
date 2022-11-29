@@ -76,8 +76,10 @@ public:
     inline const QString &defaultAlias() const { return defaultAlias_; };
     inline const QList<CachedVersion> &versions() const { return versions_; };
     inline const CachedVersion *installedVersion() const { return installedVersion_; };
+    const CachedVersion *versionFromHash(const QString &hash, const QString &expectedVersionId) const;
 
 // file-visibility:
+    const CachedVersion *version(const QString &versionId) const;
     CachedVersion *version(const QString &versionId);
 
     bool refresh(ModCache::RefreshLevel = ModCache::FULL, const QString &previousInstalledVersionId = QString());
@@ -99,7 +101,6 @@ private:
 
     CachedVersion *installedVersion_;
 
-    CachedVersion *findVersionByHash(const QString &hash, const QString &expectedVersionId);
     void sortVersions();
 };
 
@@ -111,6 +112,7 @@ public:
     Impl(const ModCache::Impl &cache, const QString &modId, const QString &versionId);
 
     inline const QString &id() const { return id_; };
+    inline const QString &modId() const { return modId_; };
     inline const ModInfo &info() const { return info_; };
     inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
     inline const std::optional<QString> version() const { return version_; };
@@ -128,7 +130,7 @@ public:
 
 private:
     const ModCache::Impl &cache;
-    const QString modId;
+    const QString modId_;
     QString id_;
     mutable ModInfo info_;
     mutable std::optional<QDateTime> timestamp_;
@@ -289,11 +291,12 @@ void ModCache::unmarkInstalledMod(const QString &modId)
     }
 }
 
-void ModCache::setDefaultAlias(const QString &modId, const QString &newAlias)
+void ModCache::setDefaultAlias(const QString &modId, const QString &input)
 {
+    QString newAlias = (input == modId) ? QString() : input;
     int modIdx;
     CachedMod *m = impl->mod(modId, &modIdx);
-    if (m)
+    if (m && m->defaultAlias() != newAlias)
     {
         m->impl()->setDefaultAlias(newAlias);
         for (auto &v : m->impl()->versions())
@@ -632,16 +635,10 @@ bool CachedMod::containsVersion(const QDateTime &versionTime) const
 
 const CachedVersion *CachedMod::version(const QString &versionId) const
 {
-    for (const CachedVersion &cachedVersion : impl()->versions())
-    {
-        if (cachedVersion.id() == versionId)
-        {
-            if (cachedVersion.info().isEmpty())
-                cachedVersion.impl()->refresh();
-            return &cachedVersion;
-        }
-    }
-    return nullptr;
+    const CachedVersion *cv = impl()->version(versionId);
+    if (cv && cv->info().isEmpty())
+        cv->impl()->refresh();
+    return cv;
 }
 
 const CachedVersion *CachedMod::latestVersion() const
@@ -657,9 +654,24 @@ const CachedVersion *CachedMod::installedVersion() const
     return impl()->installedVersion();
 }
 
+const CachedVersion *CachedMod::versionFromHash(const QString &hash, const QString &expectedVersionId) const
+{
+    return impl()->versionFromHash(hash, expectedVersionId);
+}
+
 CachedMod::Impl::Impl(const ModCache::Impl &cache, const QString id)
     : cache(cache), id_(id), installedVersion_(nullptr)
 {}
+
+const CachedVersion *CachedMod::Impl::version(const QString &versionId) const
+{
+    for (const CachedVersion &cachedVersion : versions())
+    {
+        if (cachedVersion.id() == versionId)
+            return &cachedVersion;
+    }
+    return nullptr;
+}
 
 CachedVersion *CachedMod::Impl::version(const QString &versionId)
 {
@@ -747,7 +759,7 @@ bool CachedMod::Impl::updateFromSteam(const SteamModInfo &steamInfo)
 
 const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, const QString &expectedVersionId, bool *modified)
 {
-    CachedVersion *cachedVersion = findVersionByHash(hash, expectedVersionId);
+    CachedVersion *cachedVersion = const_cast<CachedVersion*>(versionFromHash(hash, expectedVersionId));
 
     if (cachedVersion == installedVersion_)
     {
@@ -801,17 +813,17 @@ void CachedMod::Impl::writeDb(QJsonObject &modObject) const
         modObject["defaultAlias"] = defaultAlias();
 }
 
-CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QString &expectedVersionId)
+const CachedVersion *CachedMod::Impl::versionFromHash(const QString &hash, const QString &expectedVersionId) const
 {
     // Check the expected version first, to avoid hashing folders unnecessarily.
     if (!expectedVersionId.isEmpty())
     {
-        CachedVersion *expectedVersion = version(expectedVersionId);
+        const CachedVersion *expectedVersion = version(expectedVersionId);
         if (expectedVersion && expectedVersion->hash() == hash)
             return expectedVersion;
     }
 
-    for (CachedVersion &version : versions_)
+    for (const CachedVersion &version : versions_)
     {
         if (version.hash() == hash)
             return &version;
@@ -840,6 +852,11 @@ CachedVersion::CachedVersion(const ModCache::Impl &cache, const QString &modId, 
 const QString &CachedVersion::id() const
 {
     return impl()->id();
+}
+
+const QString &CachedVersion::modId() const
+{
+    return impl()->modId();
 }
 
 const ModInfo &CachedVersion::info() const
@@ -894,13 +911,13 @@ QString CachedVersion::path() const
 }
 
 CachedVersion::Impl::Impl(const ModCache::Impl &cache, const QString &modId, const QString &versionId)
-    : cache(cache), modId(modId), id_(versionId), installed_(false)
+    : cache(cache), modId_(modId), id_(versionId), installed_(false)
 {}
 
 const QString &CachedVersion::Impl::hash() const
 {
     if (hash_.isEmpty())
-        hash_ = ModSignature::hashModPath(cache.modVersionPath(modId, id_));
+        hash_ = ModSignature::hashModPath(cache.modVersionPath(modId_, id_));
     return hash_;
 }
 
@@ -908,11 +925,11 @@ const SpecMod CachedVersion::Impl::asSpec() const
 {
     if (!specMod)
     {
-        const CachedMod *cm = cache.mod(modId);
+        const CachedMod *cm = cache.mod(modId_);
         if (cm)
-            specMod.emplace(modId, id_, cm->defaultAlias(), info_.name(), info_.version());
+            specMod.emplace(modId_, id_, cm->defaultAlias(), info_.name(), info_.version());
         else
-            specMod.emplace(modId, id_, info_.name(), info_.version());
+            specMod.emplace(modId_, id_, info_.name(), info_.version());
     }
 
     return *specMod;
@@ -920,15 +937,15 @@ const SpecMod CachedVersion::Impl::asSpec() const
 
 QString CachedVersion::Impl::path() const
 {
-    return cache.modVersionPath(modId, id_);
+    return cache.modVersionPath(modId_, id_);
 }
 
 bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level, QString *errorInfo) const
 {
-    QDir modVersionDir(cache.modVersionPath(modId, id_));
+    QDir modVersionDir(cache.modVersionPath(modId_, id_));
     if (!modVersionDir.exists("modinfo.txt"))
     {
-        qCDebug(modcache).noquote() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << "skipped: No modinfo.txt";
+        qCDebug(modcache).noquote() << QString("modversion:refresh(%1,%2)").arg(modId_, id_) << "skipped: No modinfo.txt";
         if (errorInfo)
             *errorInfo = QStringLiteral("No modinfo.txt");
         return false;
@@ -941,7 +958,7 @@ bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level, QString *errorIn
         return true;
 
     QFile infoFile = QFile(modVersionDir.filePath("modinfo.txt"));
-    info_ = ModInfo::readModInfo(infoFile, modId);
+    info_ = ModInfo::readModInfo(infoFile, modId_);
     infoFile.close();
     if (!info().version().isEmpty())
     {
@@ -958,7 +975,7 @@ bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level, QString *errorIn
         timestamp_.reset();
     }
 
-    qCDebug(modcache).noquote().nospace() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << " version=" << (version_ ? *version_ : "");
+    qCDebug(modcache).noquote().nospace() << QString("modversion:refresh(%1,%2)").arg(modId_, id_) << " version=" << (version_ ? *version_ : "");
     return true;
 }
 
