@@ -31,7 +31,7 @@ SettingsDialog::SettingsDialog(ModManGuiApplication  &app, QWidget *parent)
     installPathValidationLabel = new QLabel;
     installPathValidationLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     installPathLine = new QLineEdit;
-    connect(installPathLine, &QLineEdit::editingFinished, this, &SettingsDialog::installPathChanged);
+    connect(installPathLine, &QLineEdit::editingFinished, this, [=](){ this->installPathChanged(true); });
     installPathBrowseAct = installPathLine->addAction(style()->standardIcon(QStyle::SP_DirOpenIcon), QLineEdit::TrailingPosition);
     connect(installPathBrowseAct, &QAction::triggered, this, &SettingsDialog::browseInstallPath);
 
@@ -86,7 +86,7 @@ void SettingsDialog::loadSettings()
     openMaximizedCheckBox->setCheckState(config.openMaximized() ? Qt::Checked : Qt::Unchecked);
 
     cachePathChanged();
-    installPathChanged();
+    installPathChanged(false);
 }
 
 void SettingsDialog::resetSettings()
@@ -98,7 +98,7 @@ void SettingsDialog::resetSettings()
     openMaximizedCheckBox->setCheckState(Qt::Unchecked);
 
     cachePathChanged();
-    installPathChanged();
+    installPathChanged(false);
 }
 
 void SettingsDialog::applySettings()
@@ -127,7 +127,7 @@ void SettingsDialog::browseInstallPath()
     if (!dir.isEmpty())
     {
         installPathLine->setText(QDir::toNativeSeparators(dir));
-        installPathChanged();
+        installPathChanged(true);
     }
 }
 
@@ -151,12 +151,29 @@ void SettingsDialog::cachePathChanged()
     }
 }
 
-void SettingsDialog::installPathChanged()
+void SettingsDialog::installPathChanged(bool isUserInput)
 {
-    if (ModManConfig::isValidInstallPath(QDir::fromNativeSeparators(installPathLine->text())))
+    QString installPath = QDir::fromNativeSeparators(installPathLine->text());
+    if (ModManConfig::isValidInstallPath(installPath))
     {
         installPathValidationLabel->setText(tr("Invisible Inc found."));
         installPathValidationLabel->setStyleSheet("color: green");
+
+        if (isUserInput)
+        {
+            // Update cache path if it doesn't point to an existing cache.
+            QString cachePath = QDir::fromNativeSeparators(cachePathLine->text());
+            QDir cacheDir(cachePath);
+            if (!cacheDir.exists() || !cacheDir.exists("modmandb.json"))
+            {
+                QString proposedCachePath = installPath + "/mods-cache";
+                if (proposedCachePath != cachePath)
+                {
+                    cachePathLine->setText(QDir::toNativeSeparators(proposedCachePath));
+                    cachePathChanged();
+                }
+            }
+        }
     }
     else
     {

@@ -26,7 +26,7 @@ private slots:
     void browseCachePath();
     void browseInstallPath();
     void cachePathChanged();
-    void installPathChanged();
+    void installPathChanged(bool isUserInput);
 
 private:
     ModManGuiApplication &app;
