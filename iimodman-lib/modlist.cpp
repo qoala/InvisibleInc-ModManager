@@ -70,6 +70,7 @@ public:
 
 // file-visibility:
     inline const QString &cacheVersionId() const { return cacheVersionId_; }
+    inline void overrideId(const QString &newId) { id_ = newId; }
     inline void setAlias(const QString &newAlias) { alias_ = newAlias; }
     bool refresh(ModList::RefreshLevel level = ModList::FULL, const QString &expectedCacheVersionId = QString(), ModInfo::IDStatus idStatus = ModInfo::ID_LOCKED);
 
@@ -162,7 +163,6 @@ const QHash<QString, QString> ModList::Impl::saveCacheVersionIds() const
 
 void ModList::Impl::refresh(ModList::RefreshLevel level)
 {
-    // TODO: enforce unique mod IDs.
     QDir installDir(config_.modPath());
     qCDebug(modlist).noquote() << "installed:refresh() Start" << installDir.path();
 
@@ -314,7 +314,28 @@ void ModList::Impl::refreshIndex()
     for (qsizetype i = 0; i < mods_.size(); ++i)
     {
         const InstalledMod &mod = mods_.at(i);
-        const QString &modId = mod.id();
+        QString modId = mod.id();
+        if (!mod.alias().isEmpty())
+            while (modIds_.contains(modId))
+            {
+                // Conflict between folders claiming the same ID!
+                // This mod has an alias, so can move out of the way.
+                modId = modId + "-1";
+                mods_[i].impl()->overrideId(modId);
+            }
+        else if (modIds_.contains(modId))
+        {
+            // Conflict between folders claiming the same ID!
+            // This mod does not have an alias, so move the other mod.
+            InstalledMod &other = mods_[modIds_[modId]];
+            QString otherId = modId;
+            do
+            {
+                otherId = otherId + "-1";
+                other.impl()->overrideId(otherId);
+            }
+            while (modIds_.contains(otherId));
+        }
         modIds_[modId] = i;
     }
 }
