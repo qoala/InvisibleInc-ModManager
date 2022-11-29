@@ -25,8 +25,10 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <modcache.h>
+#include <moddownloader.h>
 #include <modlist.h>
 #include <modspec.h>
+#include <modversion.h>
 
 #ifndef IIMODMAN_VERSION
 #  define IIMODMAN_VERSION ""
@@ -46,6 +48,7 @@ enum StartupStage {
     ROOT = 0,
     CONFIG_VALIDATED,
     MODS_IMPORTED,
+    APP_VERSION_CHECKED,
 };
 
 
@@ -245,12 +248,12 @@ static bool hasUncachedMods(const ModCache &cache, const ModList &modList)
 
 void MainWindow::onStartup(int stage)
 {
-    if (stage <= ROOT && !app.config().hasValidPaths())
+    if (stage < CONFIG_VALIDATED && !app.config().hasValidPaths())
     {
         openSettings(true);
         return;
     }
-    if (stage <= CONFIG_VALIDATED && hasUncachedMods(app.cache(), app.modList()))
+    if (stage < MODS_IMPORTED && hasUncachedMods(app.cache(), app.modList()))
     {
         if (QMessageBox::question(this, tr("II Mod Manager"),
                     tr("There exist installed mods that aren't in the download cache. Do you want to import those mods now?\n(This can also be done later via the Cache menu.)"),
@@ -261,6 +264,26 @@ void MainWindow::onStartup(int stage)
             return;
         }
     }
+    if (stage < APP_VERSION_CHECKED)
+    {
+        ApplicationVersionCall *call = app.modDownloader().appVersionCall();
+        connect(call, &ApplicationVersionCall::finished, this, [=](){
+                    onNewAppVersion(call->version(), call->url(), call->errorDetail());
+                    call->deleteLater();
+                });
+        call->startLatest();
+        return;
+    }
+}
+
+void MainWindow::onNewAppVersion(const QString version, const QString url, const QString errorInfo)
+{
+    if (!errorInfo.isEmpty())
+        writeText(tr("Failed to check for new versions of II Mod Manager: %1").arg(errorInfo));
+    else if (isVersionLessThan(IIMODMAN_VERSION, version))
+        QMessageBox::warning(this, tr("II Mod Manager"), tr("A new version of Invisible Inc Mod Manager is now available:<br>v%1 -> %2<br><br><a href=\"%3\">%3</a>").arg(IIMODMAN_VERSION, version, url));
+
+    onStartup(APP_VERSION_CHECKED);
 }
 
 void MainWindow::actionStarted()
@@ -390,9 +413,10 @@ void MainWindow::cacheImportInstalled(bool isStartup)
     actionStarted();
     CacheImportInstalledCommand *command = new CacheImportInstalledCommand(app, this);
     connect(command, &CacheImportInstalledCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &CacheImportInstalledCommand::finished, this, &MainWindow::actionFinished);
     if (isStartup)
-        connect(command, &CacheImportInstalledCommand::finished, this, [=](){ this->onStartup(MODS_IMPORTED); });
+        connect(command, &CacheImportInstalledCommand::finished, this, [=](){ actionFinished(); onStartup(MODS_IMPORTED); });
+    else
+        connect(command, &CacheImportInstalledCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 

@@ -103,6 +103,8 @@ private:
     void createMenuActions();
     void setActionsEnabled(bool enabled);
     void onStartup(int stage);
+
+    void onNewAppVersion(QString version, QString url, const QString errorInfo);
 };
 
 } // namespace iimodmanager
