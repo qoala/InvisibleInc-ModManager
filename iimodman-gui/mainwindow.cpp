@@ -49,7 +49,10 @@ MainWindow::MainWindow(ModManGuiApplication &app)
     createMenuActions();
 
     setWindowTitle(tr("II Mod Manager %1").arg(IIMODMAN_VERSION));
-    resize(980, 460);
+    resize(980, 700);
+
+    if (!app.config().hasValidPaths())
+        openSettings();
 }
 
 void MainWindow::createTabs()

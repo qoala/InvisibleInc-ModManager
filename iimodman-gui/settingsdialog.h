@@ -4,7 +4,7 @@
 #include <QAction>
 #include <QCheckBox>
 #include <QDialog>
-#include <QDialogButtonBox>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 
@@ -25,20 +25,27 @@ private slots:
 
     void browseCachePath();
     void browseInstallPath();
+    void cachePathChanged();
+    void installPathChanged();
 
 private:
+    ModManGuiApplication &app;
+
+    // General
     QLineEdit *cachePathLine;
     QAction* cachePathBrowseAct;
+    QLabel *cachePathValidationLabel;
     QLineEdit *installPathLine;
     QAction* installPathBrowseAct;
-    QDialogButtonBox *buttonBox;
+    QLabel *installPathValidationLabel;
+
+    // Appearance
+    QCheckBox *openMaximizedCheckBox;
+
+    // Buttons
     QPushButton *resetButton;
     QPushButton *cancelButton;
     QPushButton *okButton;
-
-    QCheckBox *openMaximizedCheckBox;
-
-    ModManGuiApplication &app;
 
     void loadSettings();
 };
