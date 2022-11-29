@@ -91,6 +91,7 @@ public:
         inline bool isValid() const { return !modId.isNull(); };
         inline bool isNone() const { return type == NONE; };
         inline bool isActive() const { return type >= ACTIVE_CHANGE_MIN; }
+        inline bool isUncachedMove() const { return type == RE_ALIAS && versionId.isEmpty(); }
     };
 
     ModSpecPreviewModel(const ModCache &cache, const ModList &modList, QObject *parent);

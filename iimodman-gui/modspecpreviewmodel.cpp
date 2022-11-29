@@ -162,6 +162,8 @@ static std::optional<ModSpecPreviewModel::PendingChange> pinCurrent(const Instal
     const CachedVersion *iv = im->cacheVersion();
     if (iv)
         pc.versionId = iv->id();
+    else
+        pc.versionId.clear();
     pc.versionPin = PendingChange::CURRENT;
     pc.type = pc.alias == im->alias() ? PendingChange::PIN_CURRENT : PendingChange::RE_ALIAS;
     return pc;
@@ -346,13 +348,19 @@ ModSpecPreviewModel::PendingChange *ModSpecPreviewModel::seekMutablePendingRow(i
     {
         pc->modId = modId;
         pc->alias = *im ? (*im)->alias() : *cm ? (*cm)->defaultAlias() : QString();
+        const auto iv = *im ? (*im)->cacheVersion() : nullptr;
+        if (iv)
+            pc->versionId = iv->id();
+        else
+            pc->versionId.clear();
     }
     return pc;
 }
 
 QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 {
-    if (role != Qt::ForegroundRole && role != Qt::BackgroundRole && isBase(index))
+    if (role != Qt::ForegroundRole && role != Qt::BackgroundRole && role != Qt::ToolTipRole
+            && isBase(index))
         return ModsModel::data(toBaseColumn(this, index), role);
 
     const CachedMod *cm;
@@ -363,8 +371,17 @@ QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 
     if (role == Qt::BackgroundRole)
     {
-        if (pc.hasDupe)
+        if (pc.hasDupe || pc.isUncachedMove())
             return QColor::fromRgb(255, 0, 0, 64);
+        else
+            return QVariant();
+    }
+    else if (role == Qt::ToolTipRole)
+    {
+        if (pc.hasDupe)
+            return QStringLiteral("Can't install multiple mods to the same alias. Change one or both aliases.");
+        else if (pc.isUncachedMove())
+            return QStringLiteral("Can't preserve an uncached version when changing alias. Import uncached mods via the top menu or select a different version.");
         else
             return QVariant();
     }
@@ -656,7 +673,7 @@ bool ModSpecPreviewModel::canApply() const
     {
         if (pc.isActive())
             hasChange = true;
-        if (pc.hasDupe)
+        if (pc.hasDupe || pc.isUncachedMove())
             return false;
     }
 
@@ -699,6 +716,11 @@ void ModSpecPreviewModel::checkDuplicates() {
                 {
                     pc.modId = im.id();
                     pc.alias = im.alias();
+                    const auto iv = im.cacheVersion();
+                    if (iv)
+                        pc.versionId = iv->id();
+                    else
+                        pc.versionId.clear();
                 }
                 pc.hasDupe = true;
                 targetChange->hasDupe = true;

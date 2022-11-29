@@ -141,8 +141,6 @@ void ApplyPreviewCommand::applyChanges()
 
 bool ApplyPreviewCommand::doApply()
 {
-    // TODO: Support re-alias of uncached mods (or make it unavailable).
-
     emit textOutput("Syncing mods...");
     for (const InstalledMod &sm : toRemoveMods)
         if (!removeMod(sm))
