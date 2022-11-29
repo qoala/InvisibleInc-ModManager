@@ -36,6 +36,7 @@ public:
 
 // file-visibility:
     ModList *q;
+    inline const ModManConfig &config() const { return config_; }
     inline const ModCache *cache() const { return cache_; }
     inline ModCache *cache() { return cache_; }
     QString modPath(const QString &installedId) const;
@@ -194,13 +195,18 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
     const QHash<QString, QString> cacheVersionIds = saveCacheVersionIds();
 
     emit q->aboutToRefresh();
+    modIds_.clear();
+    mods_.clear();
 
+    if (!config_.hasValidPaths())
+    {
+        emit q->refreshed();
+        return;
+    }
 
     installDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     installDir.setSorting(QDir::Name);
     const QStringList modIds = installDir.entryList();
-    modIds_.clear();
-    mods_.clear();
     mods_.reserve(modIds.size());
     for (const auto &modId : modIds)
     {
@@ -224,6 +230,13 @@ void ModList::Impl::refresh(ModList::RefreshLevel level)
 
 const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *errorInfo)
 {
+    if (!config_.hasValidPaths())
+    {
+        if (errorInfo)
+            *errorInfo = QStringLiteral("No Invisible Inc. install found.");
+        return nullptr;
+    }
+
     const QString &modId = specMod.id();
     const QString &alias = specMod.alias();
     const bool useAlias = !alias.isEmpty();
@@ -307,6 +320,13 @@ const InstalledMod *ModList::Impl::installMod(const SpecMod &specMod, QString *e
 
 bool ModList::Impl::removeMod(const QString &modId, QString *errorInfo)
 {
+    if (!config_.hasValidPaths())
+    {
+        if (errorInfo)
+            *errorInfo = QStringLiteral("No Invisible Inc. install found.");
+        return false;
+    }
+
     InstalledMod *im = mod(modId);
     if (im)
     {
@@ -314,6 +334,9 @@ bool ModList::Impl::removeMod(const QString &modId, QString *errorInfo)
         if (!FileUtils::removeModDir(outputPath, errorInfo))
             return false;
     }
+    else if (errorInfo)
+        *errorInfo = QStringLiteral("Mod not installed.");
+
     return im;
 }
 
@@ -474,6 +497,9 @@ QString InstalledMod::Impl::path() const
 
 bool InstalledMod::Impl::writeMetadataClaim(const QString &cacheId, const QString &cacheVersionId) const
 {
+    if (!parent().config().hasValidPaths())
+        return false;
+
     const CachedMod *cm = parent().cache()->mod(cacheId);
     if (!cm)
         return false;

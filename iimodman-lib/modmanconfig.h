@@ -13,6 +13,8 @@ public:
     static const QString applicationName;
     static const QString organizationName;
 
+    static bool isValidInstallPath(const QString&);
+
     ModManConfig();
 
     // Configurable paths
@@ -31,6 +33,8 @@ public:
     const QString defaultCachePath() const;
     const QString defaultInstallPath() const;
     const QString defaultLocalPath() const;
+
+    inline bool hasValidPaths() const { return isValidInstallPath(installPath()); }
 
 protected:
     QSettings settings_;

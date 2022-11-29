@@ -20,6 +20,7 @@
 #include <QLabel>
 #include <QMenuBar>
 #include <QShortcut>
+#include <QStringBuilder>
 #include <QVBoxLayout>
 #include <modcache.h>
 #include <modlist.h>
@@ -30,6 +31,15 @@
 #endif
 
 namespace iimodmanager {
+
+static const QString statusMessage(const ModManGuiApplication &app, const QString &base)
+{
+    static const QString separator("  \t");
+    const QString installedDetail = (app.config().hasValidPaths()) ? QObject::tr("Installed: %1 mods").arg(app.modList().mods().size()) : QObject::tr("Invisible Inc. install not found.");
+    const QString cacheDetail = QObject::tr("Cache: %1 mods").arg(app.cache().mods().size());
+    return base % separator % installedDetail % separator % cacheDetail;
+}
+
 
 MainWindow::MainWindow(ModManGuiApplication &app)
     : app(app), isLocked_(false)
@@ -111,7 +121,7 @@ void MainWindow::createTabs()
 
 void MainWindow::createLogDock()
 {
-    QString initialMessage = QString("Mod Manager loaded.  \tInstalled: %1 mods  \tCache: %2 mods").arg(app.modList().mods().size()).arg(app.cache().mods().size());
+    QString initialMessage = statusMessage(app, tr("Mod Manager %1 loaded.").arg(IIMODMAN_VERSION));
 
     logDisplay = new QPlainTextEdit(initialMessage);
     logDisplay->setReadOnly(true);
@@ -294,7 +304,7 @@ void MainWindow::openSettings()
         app.cache().refresh(ModCache::LATEST_ONLY);
         app.modList().refresh();
         logDisplay->appendPlainText("\n--");
-        QString message = QString("Settings updated.  \tInstalled: %1 mods  \tCache: %2 mods").arg(app.modList().mods().size()).arg(app.cache().mods().size());
+        QString message = statusMessage(app, tr("Settings updated."));
         logDisplay->appendPlainText(message);
     }
     actionFinished();
