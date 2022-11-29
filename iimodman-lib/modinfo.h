@@ -32,7 +32,13 @@ public:
     //! Clear the contents and make this ModInfo empty.
     void clear();
 
-    static const ModInfo readModInfo(QIODevice &file, const QString &id);
+    enum IDStatus {
+        // Given ID is always used as-is.
+        ID_LOCKED,
+        // Given non-steam IDs may be replaced if the mod-info specifies a steam workshop ID.
+        ID_TENTATIVE,
+    };
+    static const ModInfo readModInfo(QIODevice &file, const QString &id, IDStatus status = ID_LOCKED);
 
 private:
     class Impl;

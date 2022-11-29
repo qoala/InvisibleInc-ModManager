@@ -24,7 +24,12 @@ set(IIMODMAN_GUI_SOURCES
     icon.qrc
   )
 
-add_executable(${IIMODMAN_GUI_TARGET_NAME} ${IIMODMAN_GUI_SOURCES})
+IF (WIN32)
+    set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/resources/iimm.rc")
+    add_executable(${IIMODMAN_GUI_TARGET_NAME} ${IIMODMAN_GUI_SOURCES} ${app_icon_resource_windows})
+ELSE()
+    add_executable(${IIMODMAN_GUI_TARGET_NAME} ${IIMODMAN_GUI_SOURCES})
+ENDIF()
 target_compile_definitions(${IIMODMAN_GUI_TARGET_NAME} PRIVATE
     QT_DEPRECATED_WARNINGS
     IIMODMAN_VERSION="${IIMODMAN_VERSION}"

@@ -20,6 +20,12 @@ ModManConfig::ModManConfig()
 #endif
 {}
 
+bool ModManConfig::isValidInstallPath(const QString &path)
+{
+    QDir installDir(path);
+    return installDir.exists() && installDir.exists("main.lua");
+}
+
 const QString ModManConfig::cachePath() const
 {
     return this->settings_.value(cachePathKey, this->defaultCachePath()).toString();

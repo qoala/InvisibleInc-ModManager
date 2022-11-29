@@ -2,6 +2,8 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLoggingCategory>
 #include <QString>
 
@@ -57,6 +59,8 @@ bool FileUtils::copyRecursively(const QString &srcPath, const QString &destPath,
     }
     for(auto entry : srcDir.entryList(QDir::Files | QDir::Hidden))
     {
+        if (entry == "modman.json")
+            continue;
         if (!QFile::copy(srcDir.filePath(entry), destDir.filePath(entry)))
         {
             if (errorInfo)
@@ -66,6 +70,56 @@ bool FileUtils::copyRecursively(const QString &srcPath, const QString &destPath,
     }
 
     return true;
+}
+
+const QJsonObject FileUtils::readJSON(const QString &filePath, QString *errorInfo)
+{
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        if (errorInfo)
+            *errorInfo = "Failed to open json file.";
+        return QJsonObject();
+    }
+    QByteArray rawData = file.readAll();
+    file.close();
+
+    QJsonParseError errors;
+    const QJsonDocument json = QJsonDocument::fromJson(rawData, &errors);
+
+    if (json.isNull())
+    {
+        if (errorInfo)
+            *errorInfo = errors.errorString();
+        qCWarning(fileutils) << "JSON Parse Error:", errors.errorString();
+        qCDebug(fileutils) << rawData;
+        return QJsonObject();
+    }
+    if (!json.isObject())
+    {
+        if (errorInfo)
+            *errorInfo = "Not a JSON object.";
+        qCWarning(fileutils) << "JSON: not an object";
+        return QJsonObject();
+    }
+
+    return json.object();
+}
+
+bool FileUtils::writeJSON(const QString &filePath, const QJsonObject &root, QString *errorInfo)
+{
+    QJsonDocument json(root);
+
+    QFile file(filePath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        file.write(json.toJson());
+        return true;
+    }
+
+    if (errorInfo)
+        *errorInfo = "Failed to open json file for writing.";
+    return false;
 }
 
 } // namespace iimodmanager

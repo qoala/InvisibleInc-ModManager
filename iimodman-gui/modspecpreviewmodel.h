@@ -25,6 +25,10 @@ public:
         NAME, // from base
         ID, // from base
 
+        DEFAULT_ALIAS, // from base
+        INSTALLED_ALIAS, // from base
+        TARGET_ALIAS,
+
         ACTION,
 
         INSTALLED_VERSION, // from base
@@ -42,6 +46,8 @@ public:
     struct PendingChange
     {
         enum ChangeType {
+            //! No change. An uninstalled mod remains so. An installed mod remains installed.
+            //! The latter case may be further specified with PIN_CURRENT or PIN_LATEST to modify how this change reacts to cache changes.
             NONE,
             //! Like NONE, but specifically pinning the current installed version.
             PIN_CURRENT,
@@ -50,6 +56,11 @@ public:
             PIN_LATEST,
             INSTALL,
             REMOVE,
+            //! Remove the currently installed mod, and re-install it with a different alias.
+            //! The installed version may change.
+            RE_ALIAS,
+            //! Install a different version of the mod (not necessarily newer).
+            //! The mod will be installed under the same alias/ID as the current installation.
             UPDATE,
 
             ACTIVE_CHANGE_MIN = INSTALL,
@@ -67,16 +78,20 @@ public:
 
         QString modId;
         QString modName;
+        QString alias;
         QString versionId;
         VersionPinning versionPin;
         ChangeType type;
 
+        bool hasDupe;
+
         PendingChange(const QString &modId = QString())
-            : modId(modId), versionId(), versionPin(CURRENT), type(NONE) {};
+            : modId(modId), versionPin(CURRENT), type(NONE), hasDupe(false) {};
 
         inline bool isValid() const { return !modId.isNull(); };
         inline bool isNone() const { return type == NONE; };
         inline bool isActive() const { return type >= ACTIVE_CHANGE_MIN; }
+        inline bool isUncachedMove() const { return type == RE_ALIAS && versionId.isEmpty(); }
     };
 
     ModSpecPreviewModel(const ModCache &cache, const ModList &modList, QObject *parent);
@@ -94,14 +109,16 @@ public:
     //! All versions are specified.
     QList<SpecMod> versionedModSpec() const;
     void prepareChanges(QList<SpecMod> *toAddMods, QList<SpecMod> *toUpdateMods, QList<InstalledMod> *toRemoveMods) const;
-    //! Returns true if there any differences compared to the currently installed state.
+    //! Returns false if there any differences compared to the currently installed state.
     //! \sa ::revert
     bool isEmpty() const;
+    //! Returns true if this spec is non-empty and has no validation errors.
+    bool canApply() const;
 
 signals:
     void textOutput(QString value) const;
 
-    void isEmptyChanged(bool newValue) const;
+    void canApplyChanged(bool newValue) const;
 
 public slots:
     //! Resets the pending mods to the currently installed state.
@@ -137,13 +154,11 @@ private:
     //! True if modSpec_ needs to be regenerated.
     mutable bool dirty;
 
-    // Used to report ::isEmptyChanged.
-    mutable bool previousEmptyState_;
+    // Used to report ::canApplyChanged.
+    mutable bool previousAppliableState_;
 
     inline bool isLocked() const { return isLocked_; };
 
-    inline const PendingChange pendingChange(const QString &modId) const
-    { return pendingChanges.value(modId, PendingChange(modId)); }
     //! Populates the cached mod, installed mod, and pending change.
     //! If not present, a default pending change is provided.
     const PendingChange seekPendingRow(int row, const CachedMod **cmOut, const InstalledMod **imOut) const;
@@ -160,6 +175,7 @@ private:
 
     std::optional<PendingChange> toPendingChange(const SpecMod &specMod) const;
     void generateModSpec() const;
+    void checkDuplicates();
     void refreshPendingChange(PendingChange &pc);
     void refreshPendingChanges();
 };

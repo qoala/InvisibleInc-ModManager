@@ -12,9 +12,9 @@ namespace iimodmanager {
 // {cacheModId}:{installedModId}:{cacheVersionId}:{unused}:{free text}
 // free text: human readable text with the mod name (and version specifier if versioned and available)
 // unused: In the future, could add a single-line json string or other format for additional fields.
-const QString specLineFormat = QStringLiteral("%1::%2::%3");
+const QString specLineFormat = QStringLiteral("%1:%2:%3::%4");
 const qsizetype specLineModId = 0;
-// unused: 1
+const qsizetype specLineAlias = 1;
 const qsizetype specLineVersionId = 2;
 // unused: 3
 const qsizetype specLineNameStart = 4;
@@ -35,10 +35,11 @@ public:
 class SpecMod::Impl
 {
 public:
-    Impl(const QString &id, const QString &versionId, const QString &name, const QString &versionName);
+    Impl(const QString &id, const QString &versionId, const QString &alias, const QString &name, const QString &versionName);
 
     const QString id;
     const QString versionId;
+    const QString alias;
     const QString name;
     const QString versionName;
 
@@ -119,12 +120,17 @@ bool ModSpec::Impl::appendFromFile(QTextStream &in, const QString &debugRef)
 }
 
 SpecMod::SpecMod(const QString &id, const QString &name)
-    : SpecMod(id, QString(), name, QString())
+    : SpecMod(id, QString(), QString(), name, QString())
 {}
 
 SpecMod::SpecMod(const QString &id, const QString &versionId, const QString &name, const QString &versionName)
-    : impl{std::make_shared<Impl>(id, versionId, name, versionName)}
+    : impl{std::make_shared<Impl>(id, versionId, QString(), name, versionName)}
 {}
+
+SpecMod::SpecMod(const QString &id, const QString &versionId, const QString &alias, const QString &name, const QString &versionName)
+    : impl{std::make_shared<Impl>(id, versionId, alias, name, versionName)}
+{}
+
 
 std::optional<SpecMod> SpecMod::fromSpecString(const QString &line, const QString &debugRef, qsizetype debugLineNo)
 {
@@ -137,11 +143,12 @@ std::optional<SpecMod> SpecMod::fromSpecString(const QString &line, const QStrin
     }
 
     const QString &modId = list[specLineModId];
+    const QString &alias = list[specLineAlias];
     const QString &versionId = list[specLineVersionId];
 
     const QString name = line.section(':', specLineNameStart);
 
-    return SpecMod(modId, versionId, name, QString());
+    return SpecMod(modId, versionId, alias, name, QString());
 }
 
 QString SpecMod::id() const
@@ -152,6 +159,11 @@ QString SpecMod::id() const
 QString SpecMod::versionId() const
 {
     return impl->versionId;
+}
+
+QString SpecMod::alias() const
+{
+    return impl->alias;
 }
 
 QString SpecMod::name() const
@@ -166,7 +178,12 @@ QString SpecMod::versionName() const
 
 SpecMod SpecMod::withoutVersion() const
 {
-    return SpecMod(impl->id, impl->name);
+    return SpecMod(impl->id, /* versionId= */ QString(), impl->alias, impl->name, /* versionName= */ QString());
+}
+
+SpecMod SpecMod::withAlias(const QString &newAlias) const
+{
+    return SpecMod(impl->id, impl->versionId, newAlias, impl->name, impl->versionName);
 }
 
 QString SpecMod::asSpecString() const
@@ -179,19 +196,19 @@ QString SpecMod::asVersionedSpecString() const
     return impl->asVersionedSpecString();
 }
 
-SpecMod::Impl::Impl(const QString &id, const QString &versionId, const QString &name, const QString &versionName)
-    : id(id), versionId(versionId), name(name), versionName(versionName)
+SpecMod::Impl::Impl(const QString &id, const QString &versionId, const QString &alias, const QString &name, const QString &versionName)
+    : id(id), versionId(versionId), alias(alias), name(name), versionName(versionName)
 {}
 
 QString SpecMod::Impl::asSpecString() const
 {
-    return specLineFormat.arg(id, QString(), name);
+    return specLineFormat.arg(id, alias, QString(), name);
 }
 
 QString SpecMod::Impl::asVersionedSpecString() const
 {
     const QString desc = versionName.isEmpty() ? name : QStringLiteral("%1 [%2]").arg(name, versionName);
-    return specLineFormat.arg(id, versionId, desc);
+    return specLineFormat.arg(id, alias, versionId, desc);
 }
 
 } // namespace iimodmanager

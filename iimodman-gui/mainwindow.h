@@ -49,12 +49,12 @@ private slots:
     void saveInstalledSpec();
     void saveInstalledVersionSpec();
     void saveCacheSpec();
-    void openSettings();
+    void openSettings(bool isStartup = false);
     // Cache Menu
     void cacheUpdate();
     void markUpdates();
     void cacheAddMod();
-    void cacheImportInstalled();
+    void cacheImportInstalled(bool isStartup = false);
 
     // Main Page
     void modsFilterStatusChanged();
@@ -102,6 +102,9 @@ private:
     void createLogDock();
     void createMenuActions();
     void setActionsEnabled(bool enabled);
+    void onStartup(int stage);
+
+    void onNewAppVersion(QString version, QString url, const QString errorInfo);
 };
 
 } // namespace iimodmanager

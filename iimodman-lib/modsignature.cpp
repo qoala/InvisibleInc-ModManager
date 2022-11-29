@@ -38,7 +38,7 @@ static void addDir(QCryptographicHash &hash, const QDir &rootDir, QString dirPat
     {
         if (entry.isDir())
             addDir(hash, rootDir, entry.filePath());
-        else if (entry.isFile())
+        else if (entry.isFile() and entry.fileName() != "modman.json")
             addFile(hash, rootDir, entry.filePath());
     }
 }

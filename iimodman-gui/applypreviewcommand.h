@@ -4,6 +4,8 @@
 #include "modspecpreviewmodel.h"
 
 #include <QObject>
+#include <modlist.h>
+#include <modspec.h>
 
 namespace iimodmanager {
 
@@ -15,7 +17,7 @@ class ApplyPreviewCommand : public QObject
     Q_OBJECT
 
 public:
-    ApplyPreviewCommand(ModManGuiApplication &app, ModSpecPreviewModel *preview, QObject *parent = nullptr);
+    ApplyPreviewCommand(ModManGuiApplication &app, ModSpecPreviewModel *preview, QWidget *parent = nullptr);
 
     void execute();
 
@@ -27,8 +29,14 @@ private:
     ModManGuiApplication &app;
     ModSpecPreviewModel *preview;
 
+    QList<SpecMod> toAddMods;
+    QList<SpecMod> toUpdateMods;
+    QList<InstalledMod> toRemoveMods;
+
     void finish();
-    bool doSync();
+    void dialogFinished(int result);
+    void applyChanges();
+    bool doApply();
     bool removeMod(const InstalledMod &installedMod);
     bool installMod(const SpecMod &specMod);
     bool updateMod(const SpecMod &specMod);

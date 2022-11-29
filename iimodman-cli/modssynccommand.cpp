@@ -166,10 +166,16 @@ std::optional<SpecMod> ModsSyncCommand::makeInstallTarget(const SpecMod &sm)
 {
     const InstalledMod *im = modList->mod(sm.id());
     const CachedMod *cm = cache->mod(sm.id());
-    if (!cm && im && sm.versionId().isEmpty())
+    if ((!cm && im && sm.versionId().isEmpty()) // Assume we're just using the existing version.
+            || (im && sm.versionId() == '-')) // Explicitly using the existing version.
     {
-        // Assume we're just using the existing version.
-        return im->asSpec();
+        if (sm.alias() == im->alias())
+            return im->asSpec();
+        else
+        {
+            QTextStream(stderr) << "Request has a different alias than the installed mod being retained: " << sm.name() << " [" << sm.id() << ']' << Qt::endl;
+            return {};
+        }
     }
     else if (!cm)
     {

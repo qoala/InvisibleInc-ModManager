@@ -1,6 +1,8 @@
 #include "modelutil.h"
+#include "util.h"
 
 #include <QDateTime>
+#include <QRegularExpression>
 #include <optional>
 #include <modcache.h>
 #include <modinfo.h>
@@ -89,6 +91,19 @@ namespace modelutil {
             return toVariant(baseStatus);
         else
             return QVariant();
+    }
+
+    QString parseIdInput(const QString &input)
+    {
+        if (util::isSteamModId(input))
+            return input;
+
+        static const QRegularExpression nonSteamRe(QStringLiteral("^[\\w.-]+$"));
+        if (nonSteamRe.match(input).hasMatch())
+            return input;
+
+        QString parsed = util::parseSteamModUrl(input);
+        return parsed.isEmpty() ? QString() : parsed;
     }
 }
 

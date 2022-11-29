@@ -9,7 +9,6 @@
 #include <QDateTime>
 #include <QDir>
 #include <QJsonArray>
-#include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QList>
@@ -74,10 +73,13 @@ public:
 
     inline const QString &id() const { return id_; };
     inline const ModInfo &info() const { return info_; };
+    inline const QString &defaultAlias() const { return defaultAlias_; };
     inline const QList<CachedVersion> &versions() const { return versions_; };
     inline const CachedVersion *installedVersion() const { return installedVersion_; };
+    const CachedVersion *versionFromHash(const QString &hash, const QString &expectedVersionId) const;
 
 // file-visibility:
+    const CachedVersion *version(const QString &versionId) const;
     CachedVersion *version(const QString &versionId);
 
     bool refresh(ModCache::RefreshLevel = ModCache::FULL, const QString &previousInstalledVersionId = QString());
@@ -85,6 +87,7 @@ public:
     bool updateFromSteam(const SteamModInfo &steamInfo);
     const CachedVersion *markInstalledVersion(const QString &hash, const QString &expectedVersionId, bool *modified);
     inline void unmarkInstalled() { installedVersion_ = nullptr; };
+    inline void setDefaultAlias(const QString &newAlias) { defaultAlias_ = newAlias; }
 
     bool readDb(const QJsonObject &modObject);
     void writeDb(QJsonObject &modObject) const;
@@ -92,12 +95,12 @@ public:
 private:
     const ModCache::Impl &cache;
     QString id_;
+    QString defaultAlias_;
     QList<CachedVersion> versions_;
     ModInfo info_;
 
     CachedVersion *installedVersion_;
 
-    CachedVersion *findVersionByHash(const QString &hash, const QString &expectedVersionId);
     void sortVersions();
 };
 
@@ -109,6 +112,7 @@ public:
     Impl(const ModCache::Impl &cache, const QString &modId, const QString &versionId);
 
     inline const QString &id() const { return id_; };
+    inline const QString &modId() const { return modId_; };
     inline const ModInfo &info() const { return info_; };
     inline const std::optional<QDateTime> timestamp() const { return timestamp_; };
     inline const std::optional<QString> version() const { return version_; };
@@ -120,12 +124,13 @@ public:
     QString path() const;
 
 // file-visibility:
-    void setInstalled(bool value) { installed_ = value; };
+    inline void setInstalled(bool value) { installed_ = value; };
+    inline void refreshSpecMod() const { specMod.reset(); };
     bool refresh(ModCache::RefreshLevel = ModCache::FULL, QString *errorInfo = nullptr) const;
 
 private:
     const ModCache::Impl &cache;
-    const QString modId;
+    const QString modId_;
     QString id_;
     mutable ModInfo info_;
     mutable std::optional<QDateTime> timestamp_;
@@ -138,36 +143,14 @@ private:
 
 // Folder Structure: {cachePath}/workshop-{steamId}/{versionTime}/
 // Time format is ISO8601, but with ':' replaced with '_' to be a valid folder name on Windows.
-const QString formatVersionTime(const QDateTime &versionTime)
+static const QString formatVersionTime(const QDateTime &versionTime)
 {
     return versionTime.toString(Qt::ISODate).replace(':', '_');
 }
 
-const QDateTime parseVersionTime(const QString &versionId)
+static const QDateTime parseVersionTime(const QString &versionId)
 {
     return QDateTime::fromString(QString(versionId).left(20).replace('_', ':'), Qt::ISODate);
-}
-
-const QJsonObject readJSON(QIODevice &file)
-{
-    QByteArray rawData = file.readAll();
-    file.close();
-    QJsonParseError errors;
-    const QJsonDocument json = QJsonDocument::fromJson(rawData, &errors);
-
-    if (json.isNull())
-    {
-        qCWarning(modcache) << "JSON Parse Error:", errors.errorString();
-        qCDebug(modcache) << rawData;
-        return QJsonObject();
-    }
-    if (!json.isObject())
-    {
-        qCWarning(modcache) << "JSON: not an object";
-        return QJsonObject();
-    }
-
-    return json.object();
 }
 
 static bool compareModIds(const CachedMod &a, const CachedMod &b)
@@ -304,6 +287,21 @@ void ModCache::unmarkInstalledMod(const QString &modId)
     if (m)
     {
         m->impl()->unmarkInstalled();
+        emit metadataChanged({modId}, {modIdx});
+    }
+}
+
+void ModCache::setDefaultAlias(const QString &modId, const QString &input)
+{
+    QString newAlias = (input == modId) ? QString() : input;
+    int modIdx;
+    CachedMod *m = impl->mod(modId, &modIdx);
+    if (m && m->defaultAlias() != newAlias)
+    {
+        m->impl()->setDefaultAlias(newAlias);
+        for (auto &v : m->impl()->versions())
+            v.impl()->refreshSpecMod();
+
         emit metadataChanged({modId}, {modIdx});
     }
 }
@@ -555,28 +553,23 @@ void ModCache::Impl::refreshIndex()
 bool ModCache::Impl::readModManDb()
 {
     QDir cacheDir(config_.cachePath());
-    QFile file(cacheDir.filePath("modmandb.json"));
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        const QJsonObject root = readJSON(file);
-        if (root.isEmpty())
-            return false;
+    const QJsonObject root = FileUtils::readJSON(cacheDir.filePath("modmandb.json"));
+    if (root.isEmpty())
+        return false;
 
-        if (root.contains("mods") && root["mods"].isArray())
+    if (root.contains("mods") && root["mods"].isArray())
+    {
+        const QJsonArray modsArray = root["mods"].toArray();
+        mods_.reserve(modsArray.size());
+        for (const QJsonValue &v : modsArray)
         {
-            const QJsonArray modsArray = root["mods"].toArray();
-            mods_.reserve(modsArray.size());
-            for (const QJsonValue &v : modsArray)
-            {
-                const QJsonObject modObject = v.toObject();
-                CachedMod mod(*this);
-                if (mod.impl()->readDb(modObject))
-                    mods_.append(mod);
-            }
+            const QJsonObject modObject = v.toObject();
+            CachedMod mod(*this);
+            if (mod.impl()->readDb(modObject))
+                mods_.append(mod);
         }
-        return true;
     }
-    return false;
+    return true;
 }
 
 bool ModCache::Impl::writeModManDb()
@@ -592,16 +585,8 @@ bool ModCache::Impl::writeModManDb()
     }
     root["mods"] = modsArray;
 
-    QJsonDocument json(root);
-
     QDir cacheDir(config_.cachePath());
-    QFile file(cacheDir.filePath("modmandb.json"));
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        file.write(json.toJson());
-        return true;
-    }
-    return false;
+    return FileUtils::writeJSON(cacheDir.filePath("modmandb.json"), root);
 }
 
 CachedMod::CachedMod(const ModCache::Impl &cache, const QString id)
@@ -616,6 +601,11 @@ const QString &CachedMod::id() const
 const ModInfo &CachedMod::info() const
 {
     return impl()->info();
+}
+
+const QString &CachedMod::defaultAlias() const
+{
+    return impl()->defaultAlias();
 }
 
 const QList<CachedVersion> &CachedMod::versions() const
@@ -645,16 +635,10 @@ bool CachedMod::containsVersion(const QDateTime &versionTime) const
 
 const CachedVersion *CachedMod::version(const QString &versionId) const
 {
-    for (const CachedVersion &cachedVersion : impl()->versions())
-    {
-        if (cachedVersion.id() == versionId)
-        {
-            if (cachedVersion.info().isEmpty())
-                cachedVersion.impl()->refresh();
-            return &cachedVersion;
-        }
-    }
-    return nullptr;
+    const CachedVersion *cv = impl()->version(versionId);
+    if (cv && cv->info().isEmpty())
+        cv->impl()->refresh();
+    return cv;
 }
 
 const CachedVersion *CachedMod::latestVersion() const
@@ -670,9 +654,24 @@ const CachedVersion *CachedMod::installedVersion() const
     return impl()->installedVersion();
 }
 
+const CachedVersion *CachedMod::versionFromHash(const QString &hash, const QString &expectedVersionId) const
+{
+    return impl()->versionFromHash(hash, expectedVersionId);
+}
+
 CachedMod::Impl::Impl(const ModCache::Impl &cache, const QString id)
     : cache(cache), id_(id), installedVersion_(nullptr)
 {}
+
+const CachedVersion *CachedMod::Impl::version(const QString &versionId) const
+{
+    for (const CachedVersion &cachedVersion : versions())
+    {
+        if (cachedVersion.id() == versionId)
+            return &cachedVersion;
+    }
+    return nullptr;
+}
 
 CachedVersion *CachedMod::Impl::version(const QString &versionId)
 {
@@ -760,7 +759,7 @@ bool CachedMod::Impl::updateFromSteam(const SteamModInfo &steamInfo)
 
 const CachedVersion *CachedMod::Impl::markInstalledVersion(const QString &hash, const QString &expectedVersionId, bool *modified)
 {
-    CachedVersion *cachedVersion = findVersionByHash(hash, expectedVersionId);
+    CachedVersion *cachedVersion = const_cast<CachedVersion*>(versionFromHash(hash, expectedVersionId));
 
     if (cachedVersion == installedVersion_)
     {
@@ -795,6 +794,8 @@ bool CachedMod::Impl::readDb(const QJsonObject &modObject)
         id_ = modObject["modId"].toString();
     if (modObject.contains("modName") && modObject["modName"].isString())
         name = modObject["modName"].toString();
+    if (modObject.contains("defaultAlias") && modObject["defaultAlias"].isString())
+        defaultAlias_ = modObject["defaultAlias"].toString();
 
     if (!id_.isEmpty() && !name.isEmpty())
     {
@@ -808,19 +809,21 @@ void CachedMod::Impl::writeDb(QJsonObject &modObject) const
 {
     modObject["modId"] = id_;
     modObject["modName"] = info().name();
+    if (!defaultAlias().isEmpty())
+        modObject["defaultAlias"] = defaultAlias();
 }
 
-CachedVersion *CachedMod::Impl::findVersionByHash(const QString &hash, const QString &expectedVersionId)
+const CachedVersion *CachedMod::Impl::versionFromHash(const QString &hash, const QString &expectedVersionId) const
 {
     // Check the expected version first, to avoid hashing folders unnecessarily.
     if (!expectedVersionId.isEmpty())
     {
-        CachedVersion *expectedVersion = version(expectedVersionId);
+        const CachedVersion *expectedVersion = version(expectedVersionId);
         if (expectedVersion && expectedVersion->hash() == hash)
             return expectedVersion;
     }
 
-    for (CachedVersion &version : versions_)
+    for (const CachedVersion &version : versions_)
     {
         if (version.hash() == hash)
             return &version;
@@ -849,6 +852,11 @@ CachedVersion::CachedVersion(const ModCache::Impl &cache, const QString &modId, 
 const QString &CachedVersion::id() const
 {
     return impl()->id();
+}
+
+const QString &CachedVersion::modId() const
+{
+    return impl()->modId();
 }
 
 const ModInfo &CachedVersion::info() const
@@ -903,35 +911,41 @@ QString CachedVersion::path() const
 }
 
 CachedVersion::Impl::Impl(const ModCache::Impl &cache, const QString &modId, const QString &versionId)
-    : cache(cache), modId(modId), id_(versionId), installed_(false)
+    : cache(cache), modId_(modId), id_(versionId), installed_(false)
 {}
 
 const QString &CachedVersion::Impl::hash() const
 {
     if (hash_.isEmpty())
-        hash_ = ModSignature::hashModPath(cache.modVersionPath(modId, id_));
+        hash_ = ModSignature::hashModPath(cache.modVersionPath(modId_, id_));
     return hash_;
 }
 
 const SpecMod CachedVersion::Impl::asSpec() const
 {
     if (!specMod)
-        specMod.emplace(modId, id_, info_.name(), info_.version());
+    {
+        const CachedMod *cm = cache.mod(modId_);
+        if (cm)
+            specMod.emplace(modId_, id_, cm->defaultAlias(), info_.name(), info_.version());
+        else
+            specMod.emplace(modId_, id_, info_.name(), info_.version());
+    }
 
     return *specMod;
 }
 
 QString CachedVersion::Impl::path() const
 {
-    return cache.modVersionPath(modId, id_);
+    return cache.modVersionPath(modId_, id_);
 }
 
 bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level, QString *errorInfo) const
 {
-    QDir modVersionDir(cache.modVersionPath(modId, id_));
+    QDir modVersionDir(cache.modVersionPath(modId_, id_));
     if (!modVersionDir.exists("modinfo.txt"))
     {
-        qCDebug(modcache).noquote() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << "skipped: No modinfo.txt";
+        qCDebug(modcache).noquote() << QString("modversion:refresh(%1,%2)").arg(modId_, id_) << "skipped: No modinfo.txt";
         if (errorInfo)
             *errorInfo = QStringLiteral("No modinfo.txt");
         return false;
@@ -944,7 +958,7 @@ bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level, QString *errorIn
         return true;
 
     QFile infoFile = QFile(modVersionDir.filePath("modinfo.txt"));
-    info_ = ModInfo::readModInfo(infoFile, modId);
+    info_ = ModInfo::readModInfo(infoFile, modId_);
     infoFile.close();
     if (!info().version().isEmpty())
     {
@@ -961,7 +975,7 @@ bool CachedVersion::Impl::refresh(ModCache::RefreshLevel level, QString *errorIn
         timestamp_.reset();
     }
 
-    qCDebug(modcache).noquote().nospace() << QString("modversion:refresh(%1,%2)").arg(modId, id_) << " version=" << (version_ ? *version_ : "");
+    qCDebug(modcache).noquote().nospace() << QString("modversion:refresh(%1,%2)").arg(modId_, id_) << " version=" << (version_ ? *version_ : "");
     return true;
 }
 

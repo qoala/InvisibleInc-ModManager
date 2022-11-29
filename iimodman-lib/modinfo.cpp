@@ -57,9 +57,15 @@ const QString &ModInfo::version() const
     return impl->version();
 }
 
+static bool isSteamId(const QString &id)
+{
+    static const QRegularExpression workshopRe("^workshop-\\d+$");
+    return id.contains(workshopRe);
+}
+
 bool ModInfo::isSteam() const
 {
-    return impl->id().startsWith("workshop-");
+    return isSteamId(impl->id());
 }
 
 QString ModInfo::steamId() const
@@ -86,17 +92,19 @@ void ModInfo::clear()
     impl = Impl::emptyImpl;
 }
 
-const ModInfo ModInfo::readModInfo(QIODevice &file, const QString &id)
+const ModInfo ModInfo::readModInfo(QIODevice &file, const QString &id, IDStatus status)
 {
     if (id.isEmpty())
         return ModInfo();
 
+    QString steamId;
     QString name;
     QString version;
 
     if (file.isOpen() || file.open(QIODevice::ReadOnly))
     {
-        const QRegularExpression linePattern("^\\s*(\\w+)\\s*=\\s*(.*)$");
+        static const QRegularExpression linePattern("^\\s*(\\w+)\\s*=\\s*(.*)$");
+        static const QRegularExpression digitPattern("^\\d+$");
         QTextStream in(&file);
         while (!in.atEnd())
         {
@@ -107,18 +115,27 @@ const ModInfo ModInfo::readModInfo(QIODevice &file, const QString &id)
                 QString key = match.captured(1);
                 if (key == "name")
                 {
-                    name = match.captured(2);
+                    name = match.captured(2).trimmed();
                 }
                 else if (key == "version")
                 {
-                    version = match.captured(2);
+                    version = match.captured(2).trimmed();
+                }
+                else if (key == "workshop")
+                {
+                    steamId = match.captured(2).trimmed();
+                    if (!steamId.contains(digitPattern))
+                        steamId.clear();
                 }
             }
         }
     }
 
     ModInfo mod;
-    mod.impl = std::make_shared<Impl>(id, name, version.isEmpty() ? QString() : 'v' + version);
+    const QString modId = (status == ID_LOCKED || isSteamId(id) || steamId.isEmpty()) ? id : QStringLiteral("workshop-%1").arg(steamId);
+    if (!version.isEmpty() && !version.startsWith('v'))
+        version = 'v' + version;
+    mod.impl = std::make_shared<Impl>(modId, name, version.isEmpty() ? QString() : version);
     return mod;
 }
 

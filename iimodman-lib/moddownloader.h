@@ -32,6 +32,7 @@ struct IIMODMANLIBSHARED_EXPORT SteamModInfo
 
 class ModInfoCall;
 class ModDownloadCall;
+class ApplicationVersionCall;
 
 class IIMODMANLIBSHARED_EXPORT ModDownloader : public QObject
 {
@@ -44,6 +45,7 @@ public:
     ModInfoCall *modInfoCall();
     ModDownloadCall *downloadModVersion(ModCache &cache, const SteamModInfo& info);
     ModDownloadCall *modDownloadCall(ModCache &cache);
+    ApplicationVersionCall *appVersionCall();
 
 private:
     const ModManConfig &config_;
@@ -99,6 +101,31 @@ private:
 
     SteamModInfo info_;
     QString resultVersionId_;
+    QString errorDetail_;
+};
+
+//! Fetches details on the latest release of this mod manager application.
+class IIMODMANLIBSHARED_EXPORT ApplicationVersionCall : public QObject
+{
+    Q_OBJECT
+    friend ModDownloader;
+
+public:
+    ApplicationVersionCall(QNetworkAccessManager &qnam, QObject *parent);
+
+    void startLatest();
+
+    inline const QString &version() const { return version_; };
+    inline const QString &url() const { return url_; };
+    inline const QString &errorDetail() const { return errorDetail_; };
+
+signals:
+    void finished();
+
+private:
+    QNetworkAccessManager &qnam_;
+    QString version_;
+    QString url_;
     QString errorDetail_;
 };
 

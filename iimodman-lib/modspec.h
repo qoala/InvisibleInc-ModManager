@@ -45,15 +45,18 @@ class IIMODMANLIBSHARED_EXPORT SpecMod
 public:
     SpecMod(const QString &id, const QString &name);
     SpecMod(const QString &id, const QString &versionId, const QString &name, const QString &versionName);
+    SpecMod(const QString &id, const QString &versionId, const QString &alias, const QString &name, const QString &versionName);
 
     static std::optional<SpecMod> fromSpecString(const QString &line, const QString &debugRef = QString(), qsizetype debugLine = -1);
 
     QString id() const;
     QString versionId() const;
+    QString alias() const;
     QString name() const;
     QString versionName() const;
 
     SpecMod withoutVersion() const;
+    SpecMod withAlias(const QString &alias) const;
 
     QString asSpecString() const;
     QString asVersionedSpecString() const;

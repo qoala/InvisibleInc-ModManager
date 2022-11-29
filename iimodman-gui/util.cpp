@@ -26,17 +26,33 @@ bool compareSpecModNames(const SpecMod &a, const SpecMod &b)
     return a.name() < b.name();
 }
 
-const QString EMPTY_VERSION = QStringLiteral("-");
 
 const QString &displayVersion(const QString &version)
 {
-    return version.isNull() ? EMPTY_VERSION : version;
+    static const QString emptyVersion = QStringLiteral("-");
+    return version.isNull() ? emptyVersion : version;
+}
+
+const QString displayInfo(const ModInfo &info, const QString &alias)
+{
+    if (alias.isEmpty())
+        return QStringLiteral("%2 [%1]").arg(info.id(), info.name());
+    else
+        return QStringLiteral("%2 [%1@%3]").arg(info.id(), info.name(), alias);
+}
+
+const QString displayInfo(const SpecMod &sm)
+{
+    if (sm.alias().isEmpty())
+        return QStringLiteral("%2 [%1]").arg(sm.id(), sm.name());
+    else
+        return QStringLiteral("%2 [%1@%3]").arg(sm.id(), sm.name(), sm.alias());
 }
 
 bool isSteamModId(const QString &input)
 {
-    QRegularExpression re(QStringLiteral("^workshop-\\d+$"));
-    return re.match(input).hasMatch();
+    static const QRegularExpression re(QStringLiteral("^workshop-\\d+$"));
+    return input.contains(re);
 }
 QString parseSteamModUrl(const QString &input)
 {
@@ -44,7 +60,7 @@ QString parseSteamModUrl(const QString &input)
     if (url.host() != "steamcommunity.com")
         return QString();
 
-    QRegularExpression re(QStringLiteral("(^|&)id=(\\d+)(&|$)"));
+    static const QRegularExpression re(QStringLiteral("(^|&)id=(\\d+)(&|$)"));
     auto match = re.match(url.query());
     if (match.hasMatch())
         return QStringLiteral("workshop-%1").arg(match.captured(2));

@@ -44,19 +44,6 @@ namespace ColumnData {
             return pi.isActive() ? Qt::Checked : Qt::Unchecked;
         return QVariant();
     }
-
-    QString parseIdInput(const QString input)
-    {
-        if (util::isSteamModId(input))
-            return input;
-
-        QRegularExpression nonSteamRe(QStringLiteral("^[\\w.-]+$"));
-        if (nonSteamRe.match(input).hasMatch())
-            return input;
-
-        QString parsed = util::parseSteamModUrl(input);
-        return parsed.isEmpty() ? QString() : parsed;
-    }
 }
 
 
@@ -101,7 +88,7 @@ static bool isBase(int column)
         return false;
     }
 }
-inline bool isBase(const QModelIndex &index)
+static inline bool isBase(const QModelIndex &index)
 {
     return (!index.isValid()
             || (!index.parent().isValid() && isBase(index.column())));
@@ -119,7 +106,7 @@ static int toBaseColumn(int column) {
     }
 }
 
-inline QModelIndex toBaseColumn(const CacheImportModel *model, const QModelIndex &index) {
+static inline QModelIndex toBaseColumn(const CacheImportModel *model, const QModelIndex &index) {
     return model->index(index.row(), toBaseColumn(index.column()));
 }
 
@@ -192,7 +179,7 @@ QVariant CacheImportModel::data(const QModelIndex &index, int role) const
         if (role == modelutil::STATUS_ROLE)
             return modelutil::toVariant(baseStatus);
         else if (role == Qt::DisplayRole)
-            return im->id();
+            return im->installedId();
         break;
     case ACTION:
         if (role == modelutil::STATUS_ROLE)
@@ -260,13 +247,9 @@ bool CacheImportModel::setData(const QModelIndex &index, const QVariant &value, 
         if (!im || !pi)
             return false;
 
-        bool ok = true;
-        QString newId = ColumnData::parseIdInput(value.toString().trimmed());
+        QString newId = modelutil::parseIdInput(value.toString().trimmed());
         if (newId.isEmpty())
-        {
-            ok = false;
             newId = pi->installedId;
-        }
         if (containsDupe(pendingImports, newId, pi->installedId))
         {
             // Do not allow duplicate target IDs.
@@ -296,7 +279,7 @@ bool CacheImportModel::setData(const QModelIndex &index, const QVariant &value, 
             pi->status = PendingImport::IMPORT_DOWNLOAD;
         else if (pi->status == PendingImport::PENDING)
             nextInfo();
-        return ok;
+        return true;
     }
     return false;
 }

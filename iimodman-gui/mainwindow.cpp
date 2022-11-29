@@ -19,17 +19,38 @@
 #include <QKeySequence>
 #include <QLabel>
 #include <QMenuBar>
+#include <QMessageBox>
 #include <QShortcut>
+#include <QStringBuilder>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <modcache.h>
+#include <moddownloader.h>
 #include <modlist.h>
 #include <modspec.h>
+#include <modversion.h>
 
-#ifndef IIMODMANVERSION
-#  define IIMODMANVERSION ""
+#ifndef IIMODMAN_VERSION
+#  define IIMODMAN_VERSION ""
 #endif
 
 namespace iimodmanager {
+
+static const QString statusMessage(const ModManGuiApplication &app, const QString &base)
+{
+    static const QString separator("  \t");
+    const QString installedDetail = (app.config().hasValidPaths()) ? QObject::tr("Installed: %1 mods").arg(app.modList().mods().size()) : QObject::tr("Invisible Inc. install not found.");
+    const QString cacheDetail = QObject::tr("Cache: %1 mods").arg(app.cache().mods().size());
+    return base % separator % installedDetail % separator % cacheDetail;
+}
+
+enum StartupStage {
+    ROOT = 0,
+    CONFIG_VALIDATED,
+    MODS_IMPORTED,
+    APP_VERSION_CHECKED,
+};
+
 
 MainWindow::MainWindow(ModManGuiApplication &app)
     : app(app), isLocked_(false)
@@ -39,7 +60,9 @@ MainWindow::MainWindow(ModManGuiApplication &app)
     createMenuActions();
 
     setWindowTitle(tr("II Mod Manager %1").arg(IIMODMAN_VERSION));
-    resize(980, 460);
+    resize(980, 700);
+
+    QTimer::singleShot(0, this, [=](){ this->onStartup(ROOT); });
 }
 
 void MainWindow::createTabs()
@@ -53,13 +76,14 @@ void MainWindow::createTabs()
     connect(this, &MainWindow::lockChanged, modsPreviewModel, &ModSpecPreviewModel::setLock);
     modsSortFilterProxy = new ModsSortFilterProxyModel(this);
     modsSortFilterProxy->setSourceModel(modsPreviewModel);
-    modsSortFilterProxy->setFilterTextColumns({ModSpecPreviewModel::NAME, ModSpecPreviewModel::ID});
+    modsSortFilterProxy->setFilterTextColumns({ModSpecPreviewModel::NAME, ModSpecPreviewModel::ID, ModSpecPreviewModel::INSTALLED_ALIAS, ModSpecPreviewModel::DEFAULT_ALIAS});
     modsSortFilterProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
     modsSortFilterProxy->setFilterStatusColumn(ModSpecPreviewModel::NAME);
     modsSortFilterProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
     modsView = new QTreeView;
     modsView->setModel(modsSortFilterProxy);
     modsView->header()->setStretchLastSection(false);
+    modsView->hideColumn(ModSpecPreviewModel::DEFAULT_ALIAS); // Column only exported by preview model for filtering.
     modsView->setColumnWidth(ModSpecPreviewModel::NAME, 300);
     modsView->setColumnWidth(ModSpecPreviewModel::ID, 160);
     modsView->setColumnWidth(ModSpecPreviewModel::INSTALLED_VERSION, 110);
@@ -91,7 +115,7 @@ void MainWindow::createTabs()
     revertPreviewBtn = modsActionBtnBox->addButton(tr("Reset Changes"), QDialogButtonBox::ResetRole);
     revertPreviewBtn->setEnabled(false);
     connect(revertPreviewBtn, &QAbstractButton::clicked, this, &MainWindow::revertPreview);
-    connect(modsPreviewModel, &ModSpecPreviewModel::isEmptyChanged, this, &MainWindow::updatePreviewActionsEnabled);
+    connect(modsPreviewModel, &ModSpecPreviewModel::canApplyChanged, this, &MainWindow::updatePreviewActionsEnabled);
 
     QHBoxLayout *modsFilterBtnLayout = new QHBoxLayout;
     modsFilterBtnLayout->addWidget(modsInstalledCheckBox);
@@ -110,7 +134,7 @@ void MainWindow::createTabs()
 
 void MainWindow::createLogDock()
 {
-    QString initialMessage = QString("Mod Manager loaded.  \tInstalled: %1 mods  \tCache: %2 mods").arg(app.modList().mods().size()).arg(app.cache().mods().size());
+    QString initialMessage = statusMessage(app, tr("Mod Manager %1 loaded.").arg(IIMODMAN_VERSION));
 
     logDisplay = new QPlainTextEdit(initialMessage);
     logDisplay->setReadOnly(true);
@@ -209,9 +233,57 @@ void MainWindow::setActionsEnabled(bool enabled)
 
 void MainWindow::updatePreviewActionsEnabled()
 {
-    bool enabled = !isLocked() && !modsPreviewModel->isEmpty();
+    bool enabled = !isLocked() && modsPreviewModel->canApply();
     applyPreviewBtn->setEnabled(enabled);
     revertPreviewBtn->setEnabled(enabled);
+}
+
+static bool hasUncachedMods(const ModCache &cache, const ModList &modList)
+{
+    for (const auto &im : modList.mods())
+        if (!cache.contains(im.id()))
+            return true;
+    return false;
+}
+
+void MainWindow::onStartup(int stage)
+{
+    if (stage < CONFIG_VALIDATED && !app.config().hasValidPaths())
+    {
+        openSettings(true);
+        return;
+    }
+    if (stage < MODS_IMPORTED && hasUncachedMods(app.cache(), app.modList()))
+    {
+        if (QMessageBox::question(this, tr("II Mod Manager"),
+                    tr("There exist installed mods that aren't in the download cache. Do you want to import those mods now?\n(This can also be done later via the Cache menu.)"),
+                    QMessageBox::Yes | QMessageBox::No)
+                == QMessageBox::Yes)
+        {
+            cacheImportInstalled(true);
+            return;
+        }
+    }
+    if (stage < APP_VERSION_CHECKED)
+    {
+        ApplicationVersionCall *call = app.modDownloader().appVersionCall();
+        connect(call, &ApplicationVersionCall::finished, this, [=](){
+                    onNewAppVersion(call->version(), call->url(), call->errorDetail());
+                    call->deleteLater();
+                });
+        call->startLatest();
+        return;
+    }
+}
+
+void MainWindow::onNewAppVersion(const QString version, const QString url, const QString errorInfo)
+{
+    if (!errorInfo.isEmpty())
+        writeText(tr("Failed to check for new versions of II Mod Manager: %1").arg(errorInfo));
+    else if (isVersionLessThan(IIMODMAN_VERSION, version))
+        QMessageBox::warning(this, tr("II Mod Manager"), tr("A new version of Invisible Inc Mod Manager is now available:<br>v%1 -> %2<br><br><a href=\"%3\">%3</a>").arg(IIMODMAN_VERSION, version, url));
+
+    onStartup(APP_VERSION_CHECKED);
 }
 
 void MainWindow::actionStarted()
@@ -282,21 +354,22 @@ void MainWindow::saveCacheSpec()
     command->execute();
 }
 
-void MainWindow::openSettings()
+void MainWindow::openSettings(bool isStartup)
 {
     actionStarted();
     SettingsDialog dialog(app, this);
-    if (app.config().openMaximized())
-        dialog.setWindowState(Qt::WindowMaximized);
     if (dialog.exec() == QDialog::Accepted)
     {
         app.cache().refresh(ModCache::LATEST_ONLY);
         app.modList().refresh();
         logDisplay->appendPlainText("\n--");
-        QString message = QString("Settings updated.  \tInstalled: %1 mods  \tCache: %2 mods").arg(app.modList().mods().size()).arg(app.cache().mods().size());
+        QString message = statusMessage(app, tr("Settings updated."));
         logDisplay->appendPlainText(message);
     }
     actionFinished();
+
+    if (isStartup)
+        QTimer::singleShot(0, this, [=](){ this->onStartup(CONFIG_VALIDATED); });
 }
 
 // Cache actions.
@@ -332,13 +405,16 @@ void MainWindow::cacheAddMod()
     command->execute();
 }
 
-void MainWindow::cacheImportInstalled()
+void MainWindow::cacheImportInstalled(bool isStartup)
 {
     logDisplay->appendPlainText("\n--");
     actionStarted();
     CacheImportInstalledCommand *command = new CacheImportInstalledCommand(app, this);
     connect(command, &CacheImportInstalledCommand::textOutput, this, &MainWindow::writeText);
-    connect(command, &CacheImportInstalledCommand::finished, this, &MainWindow::actionFinished);
+    if (isStartup)
+        connect(command, &CacheImportInstalledCommand::finished, this, [=](){ actionFinished(); onStartup(MODS_IMPORTED); });
+    else
+        connect(command, &CacheImportInstalledCommand::finished, this, &MainWindow::actionFinished);
     command->execute();
 }
 
