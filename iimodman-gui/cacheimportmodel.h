@@ -96,6 +96,7 @@ signals:
 
 protected:
     int columnMax() const override;
+    int idColumn() const override;
 
 private slots:
     void steamInfoFinished();

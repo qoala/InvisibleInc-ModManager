@@ -633,6 +633,23 @@ bool CachedMod::containsVersion(const QDateTime &versionTime) const
     return containsVersion(formatVersionTime(versionTime));
 }
 
+int CachedMod::versionIndex(const QString &versionId) const
+{
+    const QList<CachedVersion> &versions = impl()->versions();
+    const int size = versions.size();
+    for (int i = 0; i < size; ++i)
+    {
+        if (versions.at(i).id() == versionId)
+            return i;
+    }
+    return -1;
+}
+
+int CachedMod::versionIndex(const QDateTime &versionTime) const
+{
+    return versionIndex(formatVersionTime(versionTime));
+}
+
 const CachedVersion *CachedMod::version(const QString &versionId) const
 {
     const CachedVersion *cv = impl()->version(versionId);

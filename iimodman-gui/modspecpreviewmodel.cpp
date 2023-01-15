@@ -120,6 +120,8 @@ namespace ColumnData {
             return modelutil::nullData(role, baseStatus);
         if (role == Qt::ForegroundRole && !pc.isActive())
             return QColor(Qt::gray);
+        if (role == Qt::EditRole)
+            return cm ? cm->versionIndex(pc.versionId) : -1;
 
         QString version = versionString(cm, im, pc);
         return modelutil::versionData(version, baseStatus, role);
@@ -141,6 +143,8 @@ namespace ColumnData {
             return modelutil::nullData(role, baseStatus);
         if (role == Qt::ForegroundRole && !pc.isActive())
             return QColor(Qt::gray);
+        if (role == Qt::EditRole)
+            return cm ? cm->versionIndex(pc.versionId) : -1;
 
         const CachedVersion *cv = cm ? cachedVersion(cm, pc) : nullptr;
         if (!cv && role == modelutil::STATUS_ROLE)
@@ -261,6 +265,11 @@ int ModSpecPreviewModel::columnMax() const
     return COLUMN_MAX;
 }
 
+int ModSpecPreviewModel::idColumn() const
+{
+    return ModSpecPreviewModel::ID;
+}
+
 static bool isBase(int column)
 {
     switch (column)
@@ -359,8 +368,8 @@ ModSpecPreviewModel::PendingChange *ModSpecPreviewModel::seekMutablePendingRow(i
 
 QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 {
-    if (role != Qt::ForegroundRole && role != Qt::BackgroundRole && role != Qt::ToolTipRole
-            && isBase(index))
+    if ((role != Qt::ForegroundRole && role != Qt::BackgroundRole && role != Qt::ToolTipRole
+            && isBase(index)) || role == modelutil::MOD_ID_ROLE)
         return ModsModel::data(toBaseColumn(this, index), role);
 
     const CachedMod *cm;
@@ -515,6 +524,42 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
         reportSpecChanged(row, true);
         return true;
     }
+    else if (role == Qt::EditRole
+            && (index.column() == TARGET_VERSION || index.column() == TARGET_VERSION_TIME))
+    {
+        int row = index.row();
+        const CachedMod *cm;
+        const InstalledMod *im;
+        PendingChange *pc = seekMutablePendingRow(row, &cm, &im);
+        if (!pc || !cm)
+            return false; // Only fails to return a model on error.
+
+        const QList<CachedVersion> &versions = cm->versions();
+        int newIndex = value.toInt();
+        if (newIndex < 0 || newIndex >= versions.size())
+            return false;
+        const CachedVersion &tv = versions.at(newIndex);
+
+        pc->versionId = tv.id();
+
+        if (newIndex == 0)
+            pc->versionPin = PendingChange::LATEST;
+        else if (tv.installed())
+            pc->versionPin = PendingChange::CURRENT;
+        else
+            pc->versionPin = PendingChange::PINNED;
+
+        if (pc->type == PendingChange::RE_ALIAS)
+        {} // No change to type.
+        else if (!im)
+            pc->type = PendingChange::INSTALL;
+        else if (!tv.installed())
+            pc->type = PendingChange::UPDATE;
+        else if (newIndex == 0)
+            pc->type = PendingChange::PIN_LATEST;
+        else
+            pc->type = PendingChange::PIN_CURRENT;
+    }
     return false;
 }
 
@@ -595,6 +640,21 @@ Qt::ItemFlags ModSpecPreviewModel::flags(const QModelIndex &index) const
             const InstalledMod *im;
             const PendingChange pc = seekPendingRow(index.row(), &cm, &im);
             if (pc.type == PendingChange::INSTALL || (im && pc.type != PendingChange::REMOVE))
+                f |= Qt::ItemIsEnabled;
+        }
+        return f;
+    }
+    else if (index.column() == TARGET_VERSION || index.column() == TARGET_VERSION_TIME)
+    {
+        Qt::ItemFlags f = Qt::ItemIsSelectable | Qt::ItemIsEditable;
+        if (!isLocked())
+        {
+            const CachedMod *cm;
+            const InstalledMod *im;
+            const PendingChange pc = seekPendingRow(index.row(), &cm, &im);
+            if (cm && cm->downloaded()
+                    && (pc.type == PendingChange::INSTALL
+                        || (im && pc.type != PendingChange::REMOVE)))
                 f |= Qt::ItemIsEnabled;
         }
         return f;

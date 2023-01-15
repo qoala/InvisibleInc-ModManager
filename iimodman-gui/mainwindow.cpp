@@ -3,6 +3,7 @@
 #include "cacheimportinstalledcommand.h"
 #include "cachesavecommand.h"
 #include "cacheupdatecommand.h"
+#include "comboboxdelegate.h"
 #include "mainwindow.h"
 #include "markupdatescommand.h"
 #include "modelutil.h"
@@ -94,6 +95,10 @@ void MainWindow::createTabs()
     modsView->setColumnWidth(ModSpecPreviewModel::TARGET_VERSION_TIME, 160);
     modsView->sortByColumn(ModSpecPreviewModel::NAME, Qt::AscendingOrder);
     modsView->setSortingEnabled(true);
+    modsView->setItemDelegateForColumn(ModSpecPreviewModel::TARGET_VERSION,
+            new ModVersionComboBoxDelegate(modsPreviewModel, ModSpecPreviewModel::LATEST_VERSION, this));
+    modsView->setItemDelegateForColumn(ModSpecPreviewModel::TARGET_VERSION_TIME,
+            new ModVersionComboBoxDelegate(modsPreviewModel, ModSpecPreviewModel::CACHE_UPDATE_TIME, this));
 
     modsSearchInput = new QLineEdit;
     connect(modsSearchInput, &QLineEdit::textChanged, modsSortFilterProxy, &QSortFilterProxyModel::setFilterFixedString);

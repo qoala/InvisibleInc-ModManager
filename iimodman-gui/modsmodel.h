@@ -41,6 +41,8 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
+    QModelIndex indexOfMod(const QString &modId) const;
+
 signals:
     void textOutput(QString value);
 
@@ -52,6 +54,8 @@ protected:
     //! The highest column number accepted by this model. ('columnCount() - 1' if columnCount is constant).
     //! Subclasses may alter the visible columns. Override columnMax and columnCount as necessary.
     virtual int columnMax() const;
+    //! The column number of the mod ID column.
+    virtual int idColumn() const;
 
     //! Called after ModsModel has processed a change that only affects cached mods.
     //! Subclass implementations must call the base method(or the callback),

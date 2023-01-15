@@ -140,6 +140,7 @@ public slots:
 
 protected:
     int columnMax() const override;
+    int idColumn() const override;
     void reportCacheChanged(const std::function<void ()> &cb, const QString &modId = QString()) override;
     void reportAllChanged(const std::function<void ()> &cb, const QString &modId = QString()) override;
 

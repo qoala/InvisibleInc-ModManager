@@ -15,6 +15,8 @@ namespace modelutil {
 
     enum UserDataRole
     {
+        //! Used on an item to get the mod ID, ignoring the current column. (QString)
+        MOD_ID_ROLE = 0x103,
         //! Used on an item to determine row and field properties in a Status flag set. (Status)
         STATUS_ROLE = 0x100,
         //! Used on a header to identify the column's item type for sorting. (SortType)

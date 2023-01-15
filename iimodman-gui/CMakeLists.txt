@@ -7,6 +7,7 @@ set(IIMODMAN_GUI_SOURCES
     cacheimportmodel.cpp
     cachesavecommand.cpp
     cacheupdatecommand.cpp
+    comboboxdelegate.cpp
     guiconfig.cpp
     guidownloader.cpp
     main.cpp

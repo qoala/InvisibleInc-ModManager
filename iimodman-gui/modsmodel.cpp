@@ -166,6 +166,11 @@ int ModsModel::columnMax() const
     return COLUMN_MAX;
 }
 
+int ModsModel::idColumn() const
+{
+    return ModsModel::ID;
+}
+
 void ModsModel::seekRow(int row, const CachedMod **cm, const InstalledMod **im) const
 {
     if (!cm || !im)
@@ -195,6 +200,11 @@ int ModsModel::rowOf(const QString &modId) const
     return uncachedIndex(modId);
 }
 
+QModelIndex ModsModel::indexOfMod(const QString &modId) const
+{
+    return createIndex(rowOf(modId), idColumn());
+}
+
 QVariant ModsModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
@@ -205,6 +215,9 @@ QVariant ModsModel::data(const QModelIndex &index, int role) const
     seekRow(index.row(), &cm, &im);
     if (!cm && !im)
         return QVariant();
+
+    if (role == modelutil::MOD_ID_ROLE)
+        return cm ? cm->id() : im ? im -> id() : QString();
 
     switch (index.column())
     {

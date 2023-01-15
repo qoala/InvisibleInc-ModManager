@@ -133,6 +133,10 @@ public:
 
     bool containsVersion(const QString &versionId) const;
     bool containsVersion(const QDateTime &versionTime) const;
+    //! The position of the version with the given ID in this mod's versions list,
+    //! or -1 if it isn't in the cache.
+    int versionIndex(const QString &versionId) const;
+    int versionIndex(const QDateTime &versionId) const;
     //! The version with the given ID, or nullptr if it isn't in the cache.
     const CachedVersion *version(const QString &versionId) const;
     //! The latest version, or nullptr if no versions are available.

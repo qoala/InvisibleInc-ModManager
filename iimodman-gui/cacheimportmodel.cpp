@@ -77,6 +77,11 @@ int CacheImportModel::columnMax() const
     return COLUMN_MAX;
 }
 
+int CacheImportModel::idColumn() const
+{
+    return CacheImportModel::ID;
+}
+
 static bool isBase(int column)
 {
     switch (column)
@@ -150,7 +155,7 @@ QVariant CacheImportModel::data(const QModelIndex &index, int role) const
 {
     if (index.row() < cache.mods().size())
         return modelutil::nullData(role);
-    if (isBase(index))
+    if (isBase(index) || role == modelutil::MOD_ID_ROLE)
         return ModsModel::data(toBaseColumn(this, index), role);
     if (role == Qt::BackgroundRole)
     {
