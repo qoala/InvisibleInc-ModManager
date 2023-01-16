@@ -566,6 +566,10 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
             pc->type = PendingChange::PIN_LATEST;
         else
             pc->type = PendingChange::PIN_CURRENT;
+
+        setDirty();
+        reportSpecChanged(row, true);
+        return true;
     }
     return false;
 }

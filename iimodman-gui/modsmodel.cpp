@@ -426,8 +426,8 @@ void ModsModel::updatePersistentIndexes()
     int cacheSize = cache.mods().size();
     for (const auto &fromIndex : savedPersistentIndexes)
     {
-        bool isTopLevel = fromIndex.internalId() != 0;
-        int fromRow = isTopLevel ? fromIndex.row() : fromIndex.internalId() - 1;
+        bool isTopLevel = fromIndex.internalId() == 0;
+        int fromRow = isTopLevel ? fromIndex.row() : (fromIndex.internalId() - 1);
         const QString &modId = savedPersistentMappings.at(fromRow);
         int toRow = rowOf(modId);
         if (toRow == -1)
