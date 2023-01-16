@@ -95,8 +95,7 @@ static bool isBase(int column)
 }
 static inline bool isBase(const QModelIndex &index)
 {
-    return (!index.isValid()
-            || (!index.parent().isValid() && isBase(index.column())));
+    return !index.isValid() || isBase(index.column());
 }
 
 static int toBaseColumn(int column) {
@@ -107,12 +106,12 @@ static int toBaseColumn(int column) {
     case CacheImportModel::INSTALLED_VERSION:
         return ModsModel::INSTALLED_VERSION;
     default:
-        return column;
+        return 0;
     }
 }
 
-static inline QModelIndex toBaseColumn(const CacheImportModel *model, const QModelIndex &index) {
-    return model->index(index.row(), toBaseColumn(index.column()));
+static inline QModelIndex toBaseColumn(const QModelIndex &index) {
+    return index.siblingAtColumn(toBaseColumn(index.column()));
 }
 
 const CacheImportModel::PendingImport CacheImportModel::seekPendingRow(int row, const InstalledMod **im) const
@@ -153,10 +152,10 @@ CacheImportModel::PendingImport *CacheImportModel::seekMutablePendingRow(int row
 
 QVariant CacheImportModel::data(const QModelIndex &index, int role) const
 {
-    if (index.row() < cache.mods().size())
-        return modelutil::nullData(role);
+    if (index.parent().isValid() || index.row() < cache.mods().size())
+        return modelutil::nullData(role); // Ignore child rows and cache rows.
     if (isBase(index) || role == modelutil::MOD_ID_ROLE)
-        return ModsModel::data(toBaseColumn(this, index), role);
+        return ModsModel::data(toBaseColumn(index), role);
     if (role == Qt::BackgroundRole)
     {
         if (index.column() == ACTION || index.column() == ID)
@@ -217,7 +216,7 @@ static bool containsDupe(const QHash<QString, CacheImportModel::PendingImport> &
 
 bool CacheImportModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (index.row() < cache.mods().size())
+    if (index.parent().isValid() || index.row() < cache.mods().size())
         return false;
     if (index.column() == ACTION && role == Qt::CheckStateRole)
     {
@@ -343,6 +342,8 @@ QVariant CacheImportModel::headerData(int section, Qt::Orientation orientation, 
 
 Qt::ItemFlags CacheImportModel::flags(const QModelIndex &index) const
 {
+    if (index.parent().isValid() || index.row() < cache.mods().size())
+        return QAbstractItemModel::flags(index);
     if (index.column() == ACTION)
     {
         Qt::ItemFlags f = Qt::ItemIsSelectable | Qt::ItemIsUserCheckable;

@@ -289,8 +289,7 @@ static bool isBase(int column)
 }
 static inline bool isBase(const QModelIndex &index)
 {
-    return (!index.isValid()
-            || (!index.parent().isValid() && isBase(index.column())));
+    return !index.isValid() || isBase(index.column());
 }
 
 static int toBaseColumn(int column) {
@@ -313,12 +312,12 @@ static int toBaseColumn(int column) {
     case ModSpecPreviewModel::CACHE_UPDATE_TIME:
         return ModsModel::CACHE_UPDATE_TIME;
     default:
-        return column;
+        return 0;
     }
 }
 
-static inline QModelIndex toBaseColumn(const ModSpecPreviewModel *model, const QModelIndex &index) {
-    return model->index(index.row(), toBaseColumn(index.column()));
+static inline QModelIndex toBaseColumn(const QModelIndex &index) {
+    return index.siblingAtColumn(toBaseColumn(index.column()));
 }
 
 const ModSpecPreviewModel::PendingChange ModSpecPreviewModel::seekPendingRow(int row, const CachedMod **cm, const InstalledMod **im) const
@@ -370,7 +369,9 @@ QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 {
     if ((role != Qt::ForegroundRole && role != Qt::BackgroundRole && role != Qt::ToolTipRole
             && isBase(index)) || role == modelutil::MOD_ID_ROLE)
-        return ModsModel::data(toBaseColumn(this, index), role);
+        return ModsModel::data(toBaseColumn(index), role);
+    if (index.parent().isValid()) // Subclass-specific column/role on a child row.
+        return QVariant();
 
     const CachedMod *cm;
     const InstalledMod *im;
@@ -433,6 +434,8 @@ QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 
 bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
+    if (index.parent().isValid())
+        return false;
     if (index.column() == ACTION && role == Qt::CheckStateRole)
     {
         auto state = value.value<Qt::CheckState>();
@@ -618,6 +621,8 @@ QVariant ModSpecPreviewModel::headerData(int section, Qt::Orientation orientatio
 
 Qt::ItemFlags ModSpecPreviewModel::flags(const QModelIndex &index) const
 {
+    if (index.parent().isValid())
+        return QAbstractItemModel::flags(index);
     if (index.column() == ACTION)
     {
         Qt::ItemFlags f = Qt::ItemIsSelectable | Qt::ItemIsUserCheckable;

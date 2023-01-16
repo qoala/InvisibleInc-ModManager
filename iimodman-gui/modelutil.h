@@ -80,6 +80,7 @@ namespace modelutil {
 
     //! Returns row-level status flags.
     Status modStatus(const CachedMod *cm, const InstalledMod *im = nullptr, int role = STATUS_ROLE);
+    Status versionStatus(const CachedVersion *cv, const CachedMod *cm, const InstalledMod *im = nullptr, int role = STATUS_ROLE);
 
     // Model data output helpers.
     QVariant versionData(const QString &version, Status baseStatus, int role);

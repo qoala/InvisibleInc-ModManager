@@ -2,12 +2,20 @@
 #include "modelutil.h"
 
 #include <QComboBox>
+#include <QTimer>
 
 namespace iimodmanager {
 
 ModVersionComboBoxDelegate::ModVersionComboBoxDelegate(ModsModel *mods, int valueColumn, QObject *parent)
     : QStyledItemDelegate(parent), mods(mods), valueColumn(valueColumn)
 {}
+
+void ModVersionComboBoxDelegate::commitEditorChange()
+{
+    QComboBox *editor = qobject_cast<QComboBox*>(sender());
+    emit commitData(editor);
+    emit closeEditor(editor);
+}
 
 QWidget *ModVersionComboBoxDelegate::createEditor(QWidget *parent,
         const QStyleOptionViewItem &/* option */, const QModelIndex &index) const
@@ -16,7 +24,6 @@ QWidget *ModVersionComboBoxDelegate::createEditor(QWidget *parent,
     editor->setFrame(false);
     editor->setInsertPolicy(QComboBox::NoInsert);
 
-    const ModsModel *model = static_cast<const ModsModel*>(index.model());
     const QString modId = index.data(modelutil::MOD_ID_ROLE).toString();
     const QModelIndex rootIndex = mods->indexOfMod(modId);
 
@@ -25,6 +32,9 @@ QWidget *ModVersionComboBoxDelegate::createEditor(QWidget *parent,
         editor->setModel(mods);
         editor->setModelColumn(valueColumn);
         editor->setRootModelIndex(rootIndex);
+        connect(editor, QOverload<int>::of(&QComboBox::activated), this, &ModVersionComboBoxDelegate::commitEditorChange);
+        // Open the combobox list, after it has been attached.
+        QTimer::singleShot(0, editor, [=](){ editor->showPopup(); });
     }
     return editor;
 }

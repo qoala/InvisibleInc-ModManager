@@ -23,6 +23,9 @@ public:
     void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option,
             const QModelIndex &index) const override;
 
+private slots:
+    void commitEditorChange();
+
 private:
     ModsModel *mods;
     const int valueColumn;

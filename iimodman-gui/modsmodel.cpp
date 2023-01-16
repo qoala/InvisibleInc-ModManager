@@ -137,7 +137,7 @@ namespace ColumnData {
 }
 
 ModsModel::ModsModel(const ModCache &cache, const ModList &modList, QObject *parent)
-    : QAbstractListModel(parent), cache(cache), modList(modList)
+    : QAbstractItemModel(parent), cache(cache), modList(modList)
 {
     reindexUncachedMods();
     connect(&cache, &ModCache::aboutToAppendMods, this, &ModsModel::cacheAboutToAppendMods);
@@ -151,8 +151,19 @@ ModsModel::ModsModel(const ModCache &cache, const ModList &modList, QObject *par
 
 int ModsModel::rowCount(const QModelIndex &parent) const
 {
-    Q_UNUSED(parent);
-    return cache.mods().size() + uncachedIdxs().size();
+    if (!parent.isValid())
+        return cache.mods().size() + uncachedIdxs().size();
+
+    if (parent.internalId() == 0)
+    {
+        int row = parent.row();
+        if (row >= 0 && row < cache.mods().size())
+        {
+            const CachedMod &cm = cache.mods().at(row);
+            return cm.versions().size();
+        }
+    }
+    return 0;
 }
 
 int ModsModel::columnCount(const QModelIndex &parent) const
@@ -202,7 +213,35 @@ int ModsModel::rowOf(const QString &modId) const
 
 QModelIndex ModsModel::indexOfMod(const QString &modId) const
 {
-    return createIndex(rowOf(modId), idColumn());
+    return createIndex(rowOf(modId), 0);
+}
+
+QModelIndex ModsModel::index(int row, int column, const QModelIndex &parent) const
+{
+    if (row < 0 || column < 0 || column > columnMax())
+        return QModelIndex();
+    if (parent.isValid())
+    {
+        if (parent.internalId() != 0)
+            return QModelIndex();
+        return createIndex(row, column, parent.row() + 1);
+    }
+    return createIndex(row, column);
+}
+
+QModelIndex ModsModel::parent(const QModelIndex &index) const
+{
+    quintptr id = index.internalId();
+    if (id == 0)
+        return QModelIndex();
+    return createIndex(id - 1, 0);
+}
+
+QModelIndex ModsModel::sibling(int row, int column, const QModelIndex &index) const
+{
+    if (row < 0 || column < 0 || column > columnMax() || index.internalId() > cache.mods().size())
+        return QModelIndex();
+    return createIndex(row, column, index.internalId());
 }
 
 QVariant ModsModel::data(const QModelIndex &index, int role) const
@@ -210,14 +249,41 @@ QVariant ModsModel::data(const QModelIndex &index, int role) const
     if (!index.isValid())
         return QVariant();
 
+    const QModelIndex parent = index.parent();
     const CachedMod *cm;
     const InstalledMod *im;
-    seekRow(index.row(), &cm, &im);
+    seekRow(parent.isValid() ? parent.row() : index.row(), &cm, &im);
     if (!cm && !im)
         return QVariant();
 
     if (role == modelutil::MOD_ID_ROLE)
         return cm ? cm->id() : im ? im -> id() : QString();
+
+    if (parent.isValid())
+    {
+        if (cm && index.row() < cm->versions().size())
+        {
+            const CachedVersion *cv = &cm->versions().at(index.row());
+            modelutil::Status status = modelutil::versionStatus(cv, cm, im, role);
+            switch (index.column())
+            {
+            case NAME:
+                if (role == Qt::DisplayRole)
+                    return cv->info().name();
+                else if (role == modelutil::STATUS_ROLE)
+                    return modelutil::toVariant(status);
+                break;
+            case LATEST_VERSION:
+                {
+                    const QString version = cv->version().value_or(QString());
+                    return modelutil::versionData(version, status, role);
+                }
+            case CACHE_UPDATE_TIME:
+                return modelutil::versionTimeData(cv, status, role);
+            }
+        }
+        return QVariant();
+    }
 
     switch (index.column())
     {
@@ -333,9 +399,9 @@ void ModsModel::savePersistentIndexes()
 
     for (const QModelIndex &index : savedPersistentIndexes)
     {
-        if (savedPersistentMappings[index.row()].isNull())
+        int row = index.internalId() == 0 ? index.row() : (int) index.internalId() - 1;
+        if (savedPersistentMappings[row].isNull())
         {
-            int row = index.row();
             int cacheSize = cache.mods().size();
             if (row < cacheSize)
                 savedPersistentMappings[row] = cache.mods().at(row).id();
@@ -349,14 +415,30 @@ void ModsModel::updatePersistentIndexes()
 {
     QModelIndexList to;
     to.reserve(savedPersistentIndexes.size());
+    int cacheSize = cache.mods().size();
     for (const auto &fromIndex : savedPersistentIndexes)
     {
-        const QString &modId = savedPersistentMappings.at(fromIndex.row());
-        int newIdx = rowOf(modId);
-        if (newIdx != -1)
-            to << createIndex(newIdx, fromIndex.column());
-        else
+        bool isTopLevel = fromIndex.internalId() != 0;
+        int fromRow = isTopLevel ? fromIndex.row() : fromIndex.internalId() - 1;
+        const QString &modId = savedPersistentMappings.at(fromRow);
+        int toRow = rowOf(modId);
+        if (toRow == -1)
             to << QModelIndex(); // Mod is no longer available.
+        else if (isTopLevel)
+            to << createIndex(toRow, fromIndex.column());
+        else if (toRow < cacheSize) // hasParent
+        {
+            const CachedMod &cm = cache.mods().at(toRow);
+            int fromSubRow = fromIndex.row();
+            // TODO: Map child index rows.
+            int toSubRow = fromSubRow;
+            if (toSubRow < cm.versions().size())
+                to << createIndex(toSubRow, fromIndex.column(), toRow + 1);
+            else
+                to << QModelIndex(); // Version is no longer available.
+        }
+        else
+            to << QModelIndex(); // Parent is no longer in cache.
     }
     changePersistentIndexList(savedPersistentIndexes, to);
 

@@ -3,7 +3,7 @@
 
 #include "modelutil.h"
 
-#include <QAbstractListModel>
+#include <QAbstractItemModel>
 #include <modcache.h>
 
 namespace iimodmanager {
@@ -14,7 +14,7 @@ class ModList;
 //! Data model representing the union of the download-cached and installed mods.
 //! Changes to the download cache are reflected immediately.
 //! Changes to the installed mods require a refresh of the mod list.
-class ModsModel : public QAbstractListModel
+class ModsModel : public QAbstractItemModel
 {
     Q_OBJECT
 
@@ -38,6 +38,9 @@ public:
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+    QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+    QModelIndex parent(const QModelIndex &index) const override;
+    QModelIndex sibling(int row, int column, const QModelIndex &index) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 

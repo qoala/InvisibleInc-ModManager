@@ -42,6 +42,8 @@ public:
         treeView->setColumnWidth(CacheImportModel::STEAM_UPDATE_TIME, 160);
         treeView->sortByColumn(CacheImportModel::ACTION, Qt::DescendingOrder);
         treeView->setSortingEnabled(true);
+        treeView->setItemsExpandable(false);
+        treeView->setRootIsDecorated(false);
 
         QDialogButtonBox *buttonBox = new QDialogButtonBox;
         applyButton = buttonBox->addButton(QDialogButtonBox::Apply);

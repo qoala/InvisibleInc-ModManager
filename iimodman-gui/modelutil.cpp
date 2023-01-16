@@ -46,6 +46,24 @@ namespace modelutil {
         return status;
     }
 
+    Status versionStatus(const CachedVersion *cv, const CachedMod *cm, const InstalledMod *im, int role)
+    {
+        Q_UNUSED(im)
+        Status status = NO_STATUS;
+        if (role != STATUS_ROLE)
+            return status;
+
+        if (cv)
+        {
+            status |= CACHED_STATUS;
+            if (cv->info().isSteam())
+                status |= STEAM_STATUS;
+            if (cv->installed())
+                status |= INSTALLED_STATUS;
+        }
+        return status;
+    }
+
     QVariant versionData(const QString &version, Status baseStatus, int role)
     {
         if (version.isEmpty())

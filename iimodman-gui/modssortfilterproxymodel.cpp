@@ -133,6 +133,9 @@ void ModsSortFilterProxyModel::sort(int column, Qt::SortOrder order)
 
 bool ModsSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
+    if (sourceParent.isValid()) // Do not filter or sort child rows.
+        return true;
+
     QModelIndex index = sourceModel()->index(sourceRow, filterStatusColumn, sourceParent);
     modelutil::Status rowStatus = (requiredStatuses || maskedStatuses) ? sourceModel()->data(index, modelutil::STATUS_ROLE).value<Status>() : modelutil::NO_STATUS;
     if ((requiredStatuses && (rowStatus & requiredStatuses) != requiredStatuses)
@@ -160,7 +163,7 @@ bool ModsSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex
 
 bool ModsSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
-    if (sortCancelled)
+    if (sortCancelled || left.parent().isValid()) // Respect cancel. Do not filter or sort child rows.
         return false;
 
     if (left.column() != right.column())
