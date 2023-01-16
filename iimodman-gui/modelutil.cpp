@@ -48,7 +48,7 @@ namespace modelutil {
 
     Status versionStatus(const CachedVersion *cv, const CachedMod *cm, const InstalledMod *im, int role)
     {
-        Q_UNUSED(im)
+        Q_UNUSED(cm)
         Status status = NO_STATUS;
         if (role != STATUS_ROLE)
             return status;
@@ -60,6 +60,13 @@ namespace modelutil {
                 status |= STEAM_STATUS;
             if (cv->installed())
                 status |= INSTALLED_STATUS;
+        }
+        else if (im)
+        {
+            status |= INSTALLED_STATUS;
+            status |= NO_DOWNLOAD_STATUS;
+            if (im->info().isSteam())
+                status |= STEAM_STATUS;
         }
         return status;
     }

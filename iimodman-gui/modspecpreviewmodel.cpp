@@ -387,11 +387,15 @@ QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 
     if (parent.isValid())
     {
-        int versionRow = index.row();
-        const CachedVersion *cv = cm && versionRow < cm->versions().size()
-            ? &cm->versions().at(index.row()) : nullptr;
-        if (cv && index.column() == ACTION && role == Qt::DisplayRole && cv->installed())
-            return QStringLiteral("(installed)");
+        if (index.column() == ACTION && role == Qt::DisplayRole)
+        {
+            int versionRow = index.row();
+            int cachedVersionCount = cm ? cm->versions().size() : 0;
+            const CachedVersion *cv = cm && versionRow < cachedVersionCount
+                ? &cm->versions().at(index.row()) : nullptr;
+            if ((cv && cv->installed()) || (im && versionRow == cachedVersionCount))
+                return QStringLiteral("(installed)");
+        }
 
         return QVariant();
     }
@@ -558,29 +562,41 @@ bool ModSpecPreviewModel::setData(const QModelIndex &index, const QVariant &valu
 
         const QList<CachedVersion> &versions = cm->versions();
         int newIndex = value.toInt();
-        if (newIndex < 0 || newIndex >= versions.size())
+        if (newIndex < 0 || newIndex > versions.size())
             return false;
-        const CachedVersion &tv = versions.at(newIndex);
+        else if (newIndex < versions.size())
+        {
+            const CachedVersion &tv = versions.at(newIndex);
 
-        pc->versionId = tv.id();
+            pc->versionId = tv.id();
 
-        if (newIndex == 0)
-            pc->versionPin = PendingChange::LATEST;
-        else if (tv.installed())
-            pc->versionPin = PendingChange::CURRENT;
-        else
-            pc->versionPin = PendingChange::PINNED;
+            if (newIndex == 0)
+                pc->versionPin = PendingChange::LATEST;
+            else if (tv.installed())
+                pc->versionPin = PendingChange::CURRENT;
+            else
+                pc->versionPin = PendingChange::PINNED;
 
-        if (pc->type == PendingChange::RE_ALIAS)
-        {} // No change to type.
-        else if (!im)
-            pc->type = PendingChange::INSTALL;
-        else if (!tv.installed())
-            pc->type = PendingChange::UPDATE;
-        else if (newIndex == 0)
-            pc->type = PendingChange::PIN_LATEST;
-        else
-            pc->type = PendingChange::PIN_CURRENT;
+            if (pc->type == PendingChange::RE_ALIAS)
+            {} // No change to type.
+            else if (!im)
+                pc->type = PendingChange::INSTALL;
+            else if (!tv.installed())
+                pc->type = PendingChange::UPDATE;
+            else if (newIndex == 0)
+                pc->type = PendingChange::PIN_LATEST;
+            else
+                pc->type = PendingChange::PIN_CURRENT;
+        }
+        else // newIndex == versions.size() : installed, but uncached, version.
+        {
+            if (pc->versionId.isEmpty())
+                return false; // No change.
+            auto target = pinCurrent(im, pc);
+            if (!target)
+                return false;
+            *pc = *target;
+        }
 
         setDirty();
         reportSpecChanged(row, true);

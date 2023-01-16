@@ -155,6 +155,12 @@ ModsModel::ModsModel(ModCache &cache, const ModList &modList, QObject *parent)
     mutableCache = &cache;
 }
 
+//! True if there's an installed version of this mod, but it's not in the cache.
+static bool hasUncachedVersion(const CachedMod &cm, const ModList &modList)
+{
+    return !cm.installedVersion() && modList.contains(cm.id());
+}
+
 int ModsModel::rowCount(const QModelIndex &parent) const
 {
     if (!parent.isValid())
@@ -166,7 +172,8 @@ int ModsModel::rowCount(const QModelIndex &parent) const
         if (row >= 0 && row < cache.mods().size())
         {
             const CachedMod &cm = cache.mods().at(row);
-            return cm.versions().size();
+            return cm.versions().size()
+                + (hasUncachedVersion(cm, modList) ? 1 : 0); // Extra row for current version.
         }
     }
     return 0;
@@ -282,12 +289,34 @@ QVariant ModsModel::data(const QModelIndex &index, int role) const
                     return modelutil::toVariant(status);
                 break;
             case LATEST_VERSION:
-                {
-                    const QString version = cv->version().value_or(QString());
-                    return modelutil::versionData(version, status, role);
-                }
+                return modelutil::versionData(cv->info().version(), status, role);
             case CACHE_UPDATE_TIME:
                 return modelutil::versionTimeData(cv, status, role);
+            default:
+                break;
+            }
+        }
+        else if (im && index.row() == (cm ? cm->versions().size() : 0))
+        {
+            modelutil::Status status = modelutil::versionStatus(nullptr, cm, im, role);
+            switch (index.column())
+            {
+            case NAME:
+                if (role == Qt::DisplayRole)
+                    return im->info().name();
+                else if (role == modelutil::STATUS_ROLE)
+                    return modelutil::toVariant(status);
+                break;
+            case LATEST_VERSION:
+                return modelutil::versionData(im->info().version(), status, role);
+            case CACHE_UPDATE_TIME:
+                if (role == Qt::DisplayRole)
+                    return QStringLiteral("(not in cache)");
+                else if (role == modelutil::STATUS_ROLE)
+                    return modelutil::toVariant(status | modelutil::NULL_STATUS);
+                break;
+            default:
+                break;
             }
         }
         return QVariant();
