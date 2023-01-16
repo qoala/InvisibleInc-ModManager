@@ -293,7 +293,7 @@ static bool isBase(int column)
 }
 static inline bool isBase(const QModelIndex &index)
 {
-    return !index.isValid() || isBase(index.column());
+    return isBase(index.column());
 }
 
 static int toBaseColumn(int column) {
@@ -371,15 +371,30 @@ ModSpecPreviewModel::PendingChange *ModSpecPreviewModel::seekMutablePendingRow(i
 
 QVariant ModSpecPreviewModel::data(const QModelIndex &index, int role) const
 {
+    if (!index.isValid())
+        return QVariant();
     if ((role != Qt::ForegroundRole && role != Qt::BackgroundRole && role != Qt::ToolTipRole
             && isBase(index)) || role == modelutil::MOD_ID_ROLE)
         return ModsModel::data(toBaseColumn(index), role);
-    if (index.parent().isValid()) // Subclass-specific column/role on a child row.
-        return QVariant();
+    QModelIndex parent = index.parent();
+    if (parent.isValid() && !(role == Qt::DisplayRole && index.column() == ACTION))
+        return QVariant(); // Subclass-specific column/role on a child row.
 
     const CachedMod *cm;
     const InstalledMod *im;
-    const PendingChange pc = seekPendingRow(index.row(), &cm, &im);
+    int modRow = parent.isValid() ? parent.row() : index.row();
+    const PendingChange pc = seekPendingRow(modRow, &cm, &im);
+
+    if (parent.isValid())
+    {
+        int versionRow = index.row();
+        const CachedVersion *cv = cm && versionRow < cm->versions().size()
+            ? &cm->versions().at(index.row()) : nullptr;
+        if (cv && index.column() == ACTION && role == Qt::DisplayRole && cv->installed())
+            return QStringLiteral("(installed)");
+
+        return QVariant();
+    }
 
     modelutil::Status baseStatus = modelutil::modStatus(cm, im, role);
 
