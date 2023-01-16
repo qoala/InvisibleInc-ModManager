@@ -27,7 +27,7 @@ namespace modelutil {
                 status |= NO_DOWNLOAD_STATUS;
             // TODO: Store recent SteamModInfo in ModCache and track CAN_DOWNLOAD_UPDATE_STATUS.
 
-            if (cm->installedVersion())
+            if (im)
             {
                 status |= INSTALLED_STATUS;
                 if (cm->installedVersion() != cm->latestVersion())
