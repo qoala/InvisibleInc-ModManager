@@ -95,6 +95,7 @@ public:
     };
 
     ModSpecPreviewModel(const ModCache &cache, const ModList &modList, QObject *parent);
+    ModSpecPreviewModel(ModCache &cache, const ModList &modList, QObject *parent);
 
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;

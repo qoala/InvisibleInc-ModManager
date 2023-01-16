@@ -254,9 +254,17 @@ const CachedVersion *ModCache::refreshVersion(const QString &modId, const QStrin
     if (!m)
         return nullptr;
 
-    emit aboutToRefresh({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
+    bool refreshingExisting;
+    {
+        const CachedVersion *v = m->impl()->version(versionId);
+        refreshingExisting = v && !v->info().isEmpty();
+    }
+
+    if (refreshingExisting)
+        emit aboutToRefresh({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
     const CachedVersion *v = m->impl()->refreshVersion(versionId, level);
-    emit refreshed({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
+    if (refreshingExisting)
+        emit refreshed({modId}, {modIdx}, ModCache::VERSION_ONLY_HINT);
     return v;
 }
 

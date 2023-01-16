@@ -137,7 +137,7 @@ namespace ColumnData {
 }
 
 ModsModel::ModsModel(const ModCache &cache, const ModList &modList, QObject *parent)
-    : QAbstractItemModel(parent), cache(cache), modList(modList)
+    : QAbstractItemModel(parent), cache(cache), modList(modList), mutableCache(nullptr)
 {
     reindexUncachedMods();
     connect(&cache, &ModCache::aboutToAppendMods, this, &ModsModel::cacheAboutToAppendMods);
@@ -147,6 +147,12 @@ ModsModel::ModsModel(const ModCache &cache, const ModList &modList, QObject *par
     connect(&cache, &ModCache::metadataChanged, this, &ModsModel::cacheMetadataChanged);
     connect(&modList, &ModList::aboutToRefresh, this, &ModsModel::installedModsAboutToRefresh);
     connect(&modList, &ModList::refreshed, this, &ModsModel::installedModsRefreshed);
+}
+
+ModsModel::ModsModel(ModCache &cache, const ModList &modList, QObject *parent)
+    : ModsModel(std::as_const(cache), modList, parent)
+{
+    mutableCache = &cache;
 }
 
 int ModsModel::rowCount(const QModelIndex &parent) const
@@ -264,6 +270,8 @@ QVariant ModsModel::data(const QModelIndex &index, int role) const
         if (cm && index.row() < cm->versions().size())
         {
             const CachedVersion *cv = &cm->versions().at(index.row());
+            if (mutableCache && cv->info().isEmpty())
+                cv = mutableCache->refreshVersion(cm->id(), cv->id());
             modelutil::Status status = modelutil::versionStatus(cv, cm, im, role);
             switch (index.column())
             {

@@ -254,6 +254,10 @@ ModSpecPreviewModel::ModSpecPreviewModel(const ModCache &cache, const ModList &m
     : ModsModel(cache, modList, parent), isLocked_(false), dirty(true), previousAppliableState_(false)
 {}
 
+ModSpecPreviewModel::ModSpecPreviewModel(ModCache &cache, const ModList &modList, QObject *parent)
+    : ModsModel(cache, modList, parent), isLocked_(false), dirty(true), previousAppliableState_(false)
+{}
+
 int ModSpecPreviewModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);

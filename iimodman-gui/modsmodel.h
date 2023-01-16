@@ -35,6 +35,7 @@ public:
     };
 
     ModsModel(const ModCache &cache, const ModList &modList, QObject *parent = nullptr);
+    ModsModel(ModCache &mutableCache, const ModList &modList, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -52,6 +53,7 @@ signals:
 protected:
     const ModCache &cache;
     const ModList &modList;
+    ModCache *mutableCache;
 
     inline int columnMin() const { return 0; };
     //! The highest column number accepted by this model. ('columnCount() - 1' if columnCount is constant).
