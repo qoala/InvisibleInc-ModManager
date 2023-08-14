@@ -17,6 +17,7 @@ class CacheUpdateCommand : public QObject
 
 public:
     CacheUpdateCommand(ModManGuiApplication &app, QObject *parent = nullptr);
+    CacheUpdateCommand(ModManGuiApplication &app, bool onlyAlreadyPending, QObject *parent = nullptr);
 
     void execute();
 
@@ -38,6 +39,7 @@ private:
     ModManGuiApplication &app;
 
     ModInfoCall *steamInfoCall;
+    bool onlyAlreadyPending;
     QStringList workshopIds;
     QList<SteamModInfo> steamInfos;
     qsizetype loopIndex;

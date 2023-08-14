@@ -191,9 +191,12 @@ void MainWindow::createMenuActions()
     quitAct->setShortcuts(QKeySequence::Quit);
     connect(quitAct, &QAction::triggered, QApplication::instance(), &QApplication::quit);
 
-    cacheUpdateAct = new QAction(tr("Download &Updates"), this);
-    cacheUpdateAct->setStatusTip(tr("Check for and download updates for all mods in the cache"));
-    connect(cacheUpdateAct, &QAction::triggered, this, &MainWindow::cacheUpdate);
+    cacheCheckDlUpdateAct = new QAction(tr("Check and Download &Updates"), this);
+    cacheCheckDlUpdateAct->setStatusTip(tr("Check for and download updates for all mods in the cache"));
+    connect(cacheCheckDlUpdateAct, &QAction::triggered, this, &MainWindow::cacheCheckDlUpdate);
+    cacheDownloadUpdateAct = new QAction(tr("&Download Known Updates"), this);
+    cacheDownloadUpdateAct->setStatusTip(tr("Download any updates previously identified by an interrupted 'Check and Download'"));
+    connect(cacheDownloadUpdateAct, &QAction::triggered, this, &MainWindow::cacheDownloadUpdate);
     markUpdatesAct = new QAction(tr("Mark &Updates For Installation"), this);
     markUpdatesAct->setStatusTip(tr("Propose updating all installed mods with newer downloaded versions. Click \"Apply\" to install."));
     connect(markUpdatesAct, &QAction::triggered, this, &MainWindow::markUpdates);
@@ -214,11 +217,23 @@ void MainWindow::createMenuActions()
     fileMenu->addAction(settingsAct);
     fileMenu->addAction(quitAct);
     QMenu *cacheMenu = menuBar()->addMenu(tr("&Cache"));
-    cacheMenu->addAction(cacheUpdateAct);
+    cacheMenu->addAction(cacheCheckDlUpdateAct);
+    cacheMenu->addAction(cacheDownloadUpdateAct);
     cacheMenu->addAction(markUpdatesAct);
     cacheMenu->addSeparator();
     cacheMenu->addAction(cacheAddModAct);
     cacheMenu->addAction(cacheImportInstalledAct);
+    setActionsEnabled(true);
+}
+
+static bool knownDownloadableUpdates(const ModCache &cache)
+{
+    for (const CachedMod &m : cache.mods())
+    {
+        if (m.availableVersion())
+            return true;
+    }
+    return false;
 }
 
 void MainWindow::setActionsEnabled(bool enabled)
@@ -230,7 +245,8 @@ void MainWindow::setActionsEnabled(bool enabled)
     saveInstalledVersionSpecAct->setEnabled(enabled);
     saveCacheSpecAct->setEnabled(enabled);
     settingsAct->setEnabled(enabled);
-    cacheUpdateAct->setEnabled(enabled);
+    cacheCheckDlUpdateAct->setEnabled(enabled);
+    cacheDownloadUpdateAct->setEnabled(knownDownloadableUpdates(app.cache()));
     markUpdatesAct->setEnabled(enabled);
     cacheAddModAct->setEnabled(enabled);
     cacheImportInstalledAct->setEnabled(enabled);
@@ -379,11 +395,23 @@ void MainWindow::openSettings(bool isStartup)
 
 // Cache actions.
 
-void MainWindow::cacheUpdate()
+void MainWindow::cacheCheckDlUpdate()
 {
     logDisplay->appendPlainText("\n--");
     actionStarted();
     CacheUpdateCommand *command = new CacheUpdateCommand(app, this);
+    connect(command, &CacheUpdateCommand::textOutput, this, &MainWindow::writeText);
+    connect(command, &CacheUpdateCommand::finished, this, &MainWindow::actionFinished);
+    connect(command, &CacheUpdateCommand::beginProgress, this, &MainWindow::beginProgress);
+    connect(command, &CacheUpdateCommand::updateProgress, this->logProgress, &QProgressBar::setValue);
+    command->execute();
+}
+
+void MainWindow::cacheDownloadUpdate()
+{
+    logDisplay->appendPlainText("\n--");
+    actionStarted();
+    CacheUpdateCommand *command = new CacheUpdateCommand(app, true, this);
     connect(command, &CacheUpdateCommand::textOutput, this, &MainWindow::writeText);
     connect(command, &CacheUpdateCommand::finished, this, &MainWindow::actionFinished);
     connect(command, &CacheUpdateCommand::beginProgress, this, &MainWindow::beginProgress);

@@ -51,7 +51,8 @@ private slots:
     void saveCacheSpec();
     void openSettings(bool isStartup = false);
     // Cache Menu
-    void cacheUpdate();
+    void cacheCheckDlUpdate();
+    void cacheDownloadUpdate();
     void markUpdates();
     void cacheAddMod();
     void cacheImportInstalled(bool isStartup = false);
@@ -89,7 +90,8 @@ private:
     QAction *settingsAct;
     QAction *quitAct;
     QMenu *cacheMenu;
-    QAction *cacheUpdateAct;
+    QAction *cacheCheckDlUpdateAct;
+    QAction *cacheDownloadUpdateAct;
     QAction *markUpdatesAct;
     QAction *cacheAddModAct;
     QAction *cacheImportInstalledAct;

@@ -10,7 +10,11 @@
 namespace iimodmanager {
 
 CacheUpdateCommand::CacheUpdateCommand(ModManGuiApplication  &app, QObject *parent)
-  : QObject(parent), app(app)
+  : QObject(parent), app(app), onlyAlreadyPending(false)
+{}
+
+CacheUpdateCommand::CacheUpdateCommand(ModManGuiApplication  &app, bool onlyAlreadyPending, QObject *parent)
+  : QObject(parent), app(app), onlyAlreadyPending(onlyAlreadyPending)
 {}
 
 void CacheUpdateCommand::execute()
@@ -23,12 +27,18 @@ void CacheUpdateCommand::execute()
     {
         const ModInfo &cachedInfo = mod.info();
         if (cachedInfo.isSteam())
-            workshopIds.append(cachedInfo.steamId());
+        {
+            if (!onlyAlreadyPending || mod.availableVersion())
+                workshopIds.append(cachedInfo.steamId());
+        }
     }
 
     if (workshopIds.empty())
     {
-        emit textOutput("No workshop mods in the cache. Try adding new mods first.");
+        if (onlyAlreadyPending)
+            emit textOutput("No workshop mods pending update. Try checking for updates first.");
+        else
+            emit textOutput("No workshop mods in the cache. Try adding new mods first.");
         emit finished();
         deleteLater();
     }
