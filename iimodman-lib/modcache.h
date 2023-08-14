@@ -130,6 +130,7 @@ public:
     const QString &defaultAlias() const;
     const QList<CachedVersion> &versions() const;
     bool downloaded() const;
+    const std::optional<QDateTime> availableVersion() const;
 
     bool containsVersion(const QString &versionId) const;
     bool containsVersion(const QDateTime &versionTime) const;

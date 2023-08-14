@@ -77,6 +77,7 @@ public:
     inline const QList<CachedVersion> &versions() const { return versions_; };
     inline const CachedVersion *installedVersion() const { return installedVersion_; };
     const CachedVersion *versionFromHash(const QString &hash, const QString &expectedVersionId) const;
+    inline const std::optional<QDateTime> availableVersion() const { return availableVersion_; };
 
 // file-visibility:
     const CachedVersion *version(const QString &versionId) const;
@@ -98,6 +99,7 @@ private:
     QString defaultAlias_;
     QList<CachedVersion> versions_;
     ModInfo info_;
+    mutable std::optional<QDateTime> availableVersion_;
 
     CachedVersion *installedVersion_;
 
@@ -720,6 +722,7 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level, const QString &previ
     versions_.clear();
     versions_.reserve(versionPaths.size());
     ModCache::RefreshLevel versionLevel = level == ModCache::LATEST_ONLY ? ModCache::FULL : level;
+    QString availableVersionId = availableVersion() ? formatVersionTime(*availableVersion()) : QString();
     for (const auto &versionPath : versionPaths)
     {
         CachedVersion cachedVersion(cache, id(), versionPath.fileName());
@@ -728,6 +731,11 @@ bool CachedMod::Impl::refresh(ModCache::RefreshLevel level, const QString &previ
             versions_.append(cachedVersion);
             if (level == ModCache::LATEST_ONLY)
                 versionLevel = ModCache::ID_ONLY;
+            if (cachedVersion.id() == availableVersionId)
+            {
+                availableVersion_.reset();
+                availableVersionId.clear();
+            }
         }
     }
 
@@ -821,6 +829,8 @@ bool CachedMod::Impl::readDb(const QJsonObject &modObject)
         name = modObject["modName"].toString();
     if (modObject.contains("defaultAlias") && modObject["defaultAlias"].isString())
         defaultAlias_ = modObject["defaultAlias"].toString();
+    if (modObject.contains("availableVersion") && modObject["availableVersion"].isString())
+        availableVersion_ = QDateTime::fromString(modObject["availableVersion"].toString(), Qt::ISODate);
 
     if (!id_.isEmpty() && !name.isEmpty())
     {
@@ -836,6 +846,8 @@ void CachedMod::Impl::writeDb(QJsonObject &modObject) const
     modObject["modName"] = info().name();
     if (!defaultAlias().isEmpty())
         modObject["defaultAlias"] = defaultAlias();
+    if (availableVersion())
+        modObject["availableVersion"] = availableVersion()->toString(Qt::ISODate);
 }
 
 const CachedVersion *CachedMod::Impl::versionFromHash(const QString &hash, const QString &expectedVersionId) const
@@ -862,11 +874,25 @@ void CachedMod::Impl::sortVersions()
 
     std::sort(versions_.begin(), versions_.end(), compareVersionIds);
 
+    // Keep installed-version up to date.
     if (!installedVersionId.isEmpty())
     {
         installedVersion_ = version(installedVersionId);
         if (!installedVersion_)
             qCWarning(modcache) << info_.toString() << "no longer contains installed version after refresh:" << installedVersionId;
+    }
+    // Clear available-version if it's now downloaded.
+    if (availableVersion())
+    {
+        QString availableVersionId = formatVersionTime(*availableVersion());
+        for (const CachedVersion &cv : versions())
+        {
+            if (cv.id() == availableVersionId)
+            {
+                availableVersion_.reset();
+                break;
+            }
+        }
     }
 }
 
