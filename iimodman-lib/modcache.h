@@ -94,6 +94,10 @@ public:
     void unmarkInstalledMod(const QString &modId);
     //! Updates the default alias of the mod given by mod ID.
     void setDefaultAlias(const QString &modId, const QString &newAlias);
+    //! Mark that a mod has an available version (by timestamp) that can be downloaded.
+    void markAvailableVersion(const QString &modId, const QDateTime &versionTime);
+    //! Remove any marked available versions.
+    void clearAvailableVersion(const QString &modId);
 
     ~ModCache();
 

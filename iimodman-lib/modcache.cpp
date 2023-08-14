@@ -89,6 +89,8 @@ public:
     const CachedVersion *markInstalledVersion(const QString &hash, const QString &expectedVersionId, bool *modified);
     inline void unmarkInstalled() { installedVersion_ = nullptr; };
     inline void setDefaultAlias(const QString &newAlias) { defaultAlias_ = newAlias; }
+    inline void setAvailableVersion(const QDateTime &value) { availableVersion_ = value; }
+    inline void clearAvailableVersion() { availableVersion_.reset(); }
 
     bool readDb(const QJsonObject &modObject);
     void writeDb(QJsonObject &modObject) const;
@@ -312,6 +314,28 @@ void ModCache::setDefaultAlias(const QString &modId, const QString &input)
         for (auto &v : m->impl()->versions())
             v.impl()->refreshSpecMod();
 
+        emit metadataChanged({modId}, {modIdx});
+    }
+}
+
+void ModCache::markAvailableVersion(const QString &modId, const QDateTime &versionTime)
+{
+    int modIdx;
+    CachedMod *m = impl->mod(modId, &modIdx);
+    if (m)
+    {
+        m->impl()->setAvailableVersion(versionTime);
+        emit metadataChanged({modId}, {modIdx});
+    }
+}
+
+void ModCache::clearAvailableVersion(const QString &modId)
+{
+    int modIdx;
+    CachedMod *m = impl->mod(modId, &modIdx);
+    if (m)
+    {
+        m->impl()->clearAvailableVersion();
         emit metadataChanged({modId}, {modIdx});
     }
 }
@@ -626,6 +650,11 @@ const QList<CachedVersion> &CachedMod::versions() const
 bool CachedMod::downloaded() const
 {
     return !impl()->versions().isEmpty();
+}
+
+const std::optional<QDateTime> CachedMod::availableVersion() const
+{
+    return impl()->availableVersion();
 }
 
 bool CachedMod::containsVersion(const QString &versionId) const

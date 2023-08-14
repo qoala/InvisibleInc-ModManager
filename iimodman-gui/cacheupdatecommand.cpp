@@ -78,6 +78,9 @@ void CacheUpdateCommand::nextSteamInfo()
         steamInfoCall->deleteLater();
         steamInfoCall = nullptr;
 
+        // Save the existence of available versions early.
+        app.cache().saveMetadata();
+
         emit beginProgress(steamInfos.size());
         emit textOutput(QString("Found %1 updates. Downloading...").arg(steamInfos.size()));
         startDownloads();
@@ -102,6 +105,7 @@ void CacheUpdateCommand::steamInfoFinished()
     }
     else if (!cachedMod->containsVersion(steamInfo.lastUpdated))
     {
+        app.cache().markAvailableVersion(modId, steamInfo.lastUpdated);
         steamInfos.append(steamInfo);
     }
     nextSteamInfo();
